@@ -498,6 +498,9 @@ export default class World
         // Playground
         this.sections.playground = new PlaygroundSection({
             ...options,
+            physics: this.physics,
+            car: this.car,
+            scene: this.scene,
             x: - 38,
             y: - 34
             // x: - 15,
