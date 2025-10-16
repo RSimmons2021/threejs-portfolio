@@ -1,4 +1,6 @@
 import * as THREE from 'three'
+import BowlingScoreSystem from '../BowlingScoreSystem.js'
+import FieldGoalScoreSystem from '../FieldGoalScoreSystem.js'
 
 export default class PlaygroundSection
 {
@@ -14,6 +16,10 @@ export default class PlaygroundSection
         this.debug = _options.debug
         this.x = _options.x
         this.y = _options.y
+        this.physics = _options.physics
+        this.car = _options.car
+        this.scene = _options.scene
+        this.camera = _options.camera
 
         // Debug
         if(this.debug)
@@ -32,6 +38,65 @@ export default class PlaygroundSection
         this.setStatic()
         this.setBricksWalls()
         this.setBowling()
+        this.setScoringSystems()
+    }
+
+    setScoringSystems()
+    {
+        // Bowling score system
+        this.bowlingScoreSystem = new BowlingScoreSystem({
+            time: this.time,
+            physics: this.physics,
+            scene: this.scene,
+            camera: this.camera,
+            debug: this.debug
+        })
+
+        // Register all bowling pins
+        if(this.bowling && this.bowling.pins && this.bowling.pins.items)
+        {
+            for(const pin of this.bowling.pins.items)
+            {
+                if(pin.collision && pin.collision.body)
+                {
+                    this.bowlingScoreSystem.registerPin(pin.collision.body)
+                }
+            }
+        }
+
+        // Field goal score system
+        this.fieldGoalScoreSystem = new FieldGoalScoreSystem({
+            time: this.time,
+            physics: this.physics,
+            car: this.car,
+            debug: this.debug
+        })
+
+        // Show scoreboards when player enters playground area
+        const playgroundArea = this.areas.add({
+            position: new THREE.Vector2(this.x, this.y),
+            halfExtents: new THREE.Vector2(20, 20)
+        })
+
+        playgroundArea.on('in', () =>
+        {
+            this.bowlingScoreSystem.showScoreboard()
+            this.fieldGoalScoreSystem.showScoreboard()
+        })
+
+        playgroundArea.on('out', () =>
+        {
+            this.bowlingScoreSystem.hideScoreboard()
+            this.fieldGoalScoreSystem.hideScoreboard()
+        })
+
+        // Update bowling reset to also reset score
+        const originalBowlingReset = this.bowling.reset
+        this.bowling.reset = () =>
+        {
+            originalBowlingReset()
+            this.bowlingScoreSystem.resetPins()
+        }
     }
 
     setStatic()
