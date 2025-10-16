@@ -197,6 +197,12 @@ export default class Application
             this.passes.horizontalBlurPass.enabled = this.passes.horizontalBlurPass.material.uniforms.uStrength.value.x > 0
             this.passes.verticalBlurPass.enabled = this.passes.verticalBlurPass.material.uniforms.uStrength.value.y > 0
 
+            // Render portal views first (render-to-texture)
+            if(this.world && this.world.portals)
+            {
+                this.world.portals.renderPortalViews()
+            }
+
             // Renderer
             this.passes.composer.render()
             // this.renderer.domElement.style.background = 'black'

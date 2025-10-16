@@ -19,7 +19,7 @@ export default class EasterEggs
 
         this.setKonamiCode()
         this.setWigs()
-        // this.setEggs()
+        // this.setEggs()  // Disabled hidden eggs
     }
 
     setKonamiCode()

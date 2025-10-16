@@ -32,6 +32,7 @@ export default class Camera
         this.setInstance()
         this.setZoom()
         this.setPan()
+        this.setCameraShake()
         this.setOrbitControls()
     }
 
@@ -328,6 +329,58 @@ export default class Camera
             this.pan.value.x += (this.pan.targetValue.x - this.pan.value.x) * this.pan.easing
             this.pan.value.y += (this.pan.targetValue.y - this.pan.value.y) * this.pan.easing
         })
+    }
+
+    setCameraShake()
+    {
+        // Set up camera shake system
+        this.shake = {}
+        this.shake.intensity = 0
+        this.shake.decay = 0.95
+        this.shake.offset = new THREE.Vector3()
+        this.shake.enabled = true
+
+        // Method to trigger shake based on impact velocity
+        this.shake.trigger = (impactVelocity) =>
+        {
+            if(!this.shake.enabled) return
+
+            // Scale shake intensity based on impact (reduced from 0.1 to 0.02, max from 0.5 to 0.1)
+            this.shake.intensity = Math.min(impactVelocity * 0.02, 0.1)
+        }
+
+        // Time tick for shake decay and application
+        this.time.on('tick', () =>
+        {
+            if(this.shake.intensity > 0.001)
+            {
+                // Generate random shake offset
+                this.shake.offset.x = (Math.random() - 0.5) * this.shake.intensity
+                this.shake.offset.y = (Math.random() - 0.5) * this.shake.intensity
+                this.shake.offset.z = (Math.random() - 0.5) * this.shake.intensity * 0.5
+
+                // Apply shake to camera position
+                if(!this.orbitControls.enabled)
+                {
+                    this.instance.position.add(this.shake.offset)
+                }
+
+                // Decay shake over time
+                this.shake.intensity *= this.shake.decay
+            }
+            else
+            {
+                this.shake.intensity = 0
+                this.shake.offset.set(0, 0, 0)
+            }
+        })
+
+        // Debug
+        if(this.debug)
+        {
+            this.debugFolder.add(this.shake, 'enabled').name('shakeEnabled')
+            this.debugFolder.add(this.shake, 'decay').min(0.8).max(0.99).step(0.01).name('shakeDecay')
+        }
     }
 
     setOrbitControls()

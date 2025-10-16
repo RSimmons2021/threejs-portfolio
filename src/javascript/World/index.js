@@ -22,6 +22,11 @@ import Controls from './Controls.js'
 import Sounds from './Sounds.js'
 import gsap from 'gsap'
 import EasterEggs from './EasterEggs.js'
+import ParticleTrails from './ParticleTrails.js'
+import AdvancedLighting from './AdvancedLighting.js'
+import DayNightCycle from './DayNightCycle.js'
+import GhostCar from './GhostCar.js'
+import Portals from './Portals.js'
 
 export default class World
 {
@@ -75,6 +80,11 @@ export default class World
         this.setTiles()
         this.setWalls()
         this.setSections()
+        this.setParticleTrails()
+        this.setAdvancedLighting()
+        this.setDayNightCycle()
+        this.setGhostCar()
+        this.setPortals()
         this.setEasterEggs()
     }
 
@@ -310,7 +320,8 @@ export default class World
             time: this.time,
             sizes: this.sizes,
             controls: this.controls,
-            sounds: this.sounds
+            sounds: this.sounds,
+            camera: this.camera
         })
 
         this.container.add(this.physics.models.container)
@@ -493,6 +504,78 @@ export default class World
             // y: - 4
         })
         this.container.add(this.sections.playground.container)
+    }
+
+    setParticleTrails()
+    {
+        this.particleTrails = new ParticleTrails({
+            time: this.time,
+            car: this.car,
+            physics: this.physics,
+            camera: this.camera,
+            debug: this.debugFolder
+        })
+        this.container.add(this.particleTrails.container)
+    }
+
+    setAdvancedLighting()
+    {
+        this.advancedLighting = new AdvancedLighting({
+            time: this.time,
+            scene: this.scene,
+            car: this.car,
+            physics: this.physics,
+            debug: this.debugFolder
+        })
+        // Add lights directly to scene for proper illumination
+        this.scene.add(this.advancedLighting.ambientLight)
+        this.scene.add(this.advancedLighting.directionalLight)
+        this.scene.add(this.advancedLighting.spotlight)
+        this.scene.add(this.advancedLighting.spotlightTarget)
+        if(this.advancedLighting.spotlightHelper)
+        {
+            this.scene.add(this.advancedLighting.spotlightHelper)
+        }
+    }
+
+    setDayNightCycle()
+    {
+        this.dayNightCycle = new DayNightCycle({
+            time: this.time,
+            floor: this.floor,
+            materials: this.materials,
+            advancedLighting: this.advancedLighting,
+            debug: this.debugFolder
+        })
+    }
+
+    setGhostCar()
+    {
+        this.ghostCar = new GhostCar({
+            time: this.time,
+            resources: this.resources,
+            car: this.car,
+            physics: this.physics,
+            materials: this.materials,
+            sounds: this.sounds,
+            debug: this.debugFolder
+        })
+        this.container.add(this.ghostCar.container)
+    }
+
+    setPortals()
+    {
+        this.portals = new Portals({
+            time: this.time,
+            scene: this.scene,
+            camera: this.camera,
+            renderer: this.renderer,
+            car: this.car,
+            physics: this.physics,
+            sounds: this.sounds,
+            debug: this.debugFolder
+        })
+        this.container.add(this.portals.container)
     }
 
     setEasterEggs()

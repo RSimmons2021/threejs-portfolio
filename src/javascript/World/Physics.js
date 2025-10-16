@@ -11,6 +11,7 @@ export default class Physics
         this.sizes = _options.sizes
         this.controls = _options.controls
         this.sounds = _options.sounds
+        this.camera = _options.camera
 
         // Set up
         if(this.debug)
@@ -186,7 +187,7 @@ export default class Physics
             this.car.chassis.body.quaternion.setFromAxisAngle(new CANNON.Vec3(0, 0, 1), - Math.PI * 0.5)
 
             /**
-             * Sound
+             * Sound & Camera Shake
              */
             this.car.chassis.body.addEventListener('collide', (_event) =>
             {
@@ -194,6 +195,12 @@ export default class Physics
                 {
                     const relativeVelocity = _event.contact.getImpactVelocityAlongNormal()
                     this.sounds.play('carHit', relativeVelocity)
+
+                    // Trigger camera shake based on impact velocity
+                    if(this.camera && this.camera.shake)
+                    {
+                        this.camera.shake.trigger(Math.abs(relativeVelocity))
+                    }
                 }
             })
 
