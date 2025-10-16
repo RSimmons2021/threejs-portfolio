@@ -124,21 +124,24 @@ export default class Project
         this.floor.container.updateMatrix()
         this.container.add(this.floor.container)
 
-        // Texture
-        this.floor.texture = this.floorTexture
-        this.floor.texture.magFilter = THREE.NearestFilter
-        this.floor.texture.minFilter = THREE.LinearFilter
+        // Texture - only create if floor texture exists
+        if(this.floorTexture)
+        {
+            this.floor.texture = this.floorTexture
+            this.floor.texture.magFilter = THREE.NearestFilter
+            this.floor.texture.minFilter = THREE.LinearFilter
 
-        // Geometry
-        this.floor.geometry = this.geometries.floor
+            // Geometry
+            this.floor.geometry = this.geometries.floor
 
-        // Material
-        this.floor.material =  new THREE.MeshBasicMaterial({ transparent: true, depthWrite: false, alphaMap: this.floor.texture })
+            // Material
+            this.floor.material =  new THREE.MeshBasicMaterial({ transparent: true, depthWrite: false, alphaMap: this.floor.texture })
 
-        // Mesh
-        this.floor.mesh = new THREE.Mesh(this.floor.geometry, this.floor.material)
-        this.floor.mesh.matrixAutoUpdate = false
-        this.floor.container.add(this.floor.mesh)
+            // Mesh
+            this.floor.mesh = new THREE.Mesh(this.floor.geometry, this.floor.material)
+            this.floor.mesh.matrixAutoUpdate = false
+            this.floor.container.add(this.floor.mesh)
+        }
 
         // Distinctions
         if(this.distinctions)

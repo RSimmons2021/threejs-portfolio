@@ -15,12 +15,12 @@ export default class Floor
         // Geometry
         this.geometry = new THREE.PlaneGeometry(2, 2, 10, 10)
 
-        // Colors
+        // Colors - Changed to olive/sage green and beige tones
         this.colors = {}
-        this.colors.topLeft = '#f5883c'
-        this.colors.topRight = '#ff9043'
-        this.colors.bottomRight = '#fccf92'
-        this.colors.bottomLeft = '#f5aa58'
+        this.colors.topLeft = '#8B9B7A'      // Sage green
+        this.colors.topRight = '#7A8A69'     // Olive green
+        this.colors.bottomRight = '#D4C5B0'  // Beige
+        this.colors.bottomLeft = '#B8A999'   // Tan
 
         // Material
         this.material = new FloorMaterial()

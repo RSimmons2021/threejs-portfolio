@@ -16,21 +16,12 @@ export default class ThreejsJourney
         this.$no = this.$container.querySelector('.js-no')
         this.step = 0
         this.maxStep = this.$messages.length - 1
-        this.seenCount = window.localStorage.getItem('threejsJourneySeenCount') || 0
-        this.seenCount = parseInt(this.seenCount)
-        this.shown = false
-        this.traveledDistance = 0
-        this.minTraveledDistance = (this.config.debug ? 5 : 75) * (this.seenCount + 1)
-        this.prevent = !!window.localStorage.getItem('threejsJourneyPrevent')
+        // Popup completely disabled
+        this.prevent = true
+        this.shown = true
 
-        if(this.config.debug)
-            this.start()
-        
-        if(this.prevent)
-            return
-
-        this.setYesNo()
-        this.setLog()
+        // Don't show popup
+        return
 
         this.time.on('tick', () =>
         {
@@ -100,37 +91,10 @@ export default class ThreejsJourney
 
     setLog()
     {
-//         console.log(
-//             `%c 
-// ▶
-// ▶▶▶▶
-// ▶▶▶▶▶▶▶
-// ▶▶▶▶▶▶▶▶▶▶
-// ▶▶▶▶▶▶▶▶     ▶
-// ▶▶▶▶      ▶▶▶▶▶▶▶▶
-// ▶     ▶▶▶▶▶▶▶▶▶▶▶▶▶▶▶▶
-//    ▶▶▶▶▶▶▶▶▶▶▶▶▶▶▶▶▶▶▶▶▶▶
-//       ▶▶▶▶▶▶▶▶▶▶▶▶▶▶▶▶      
-// ▶▶        ▶▶▶▶▶▶▶▶▶▶     ▶   ▶▶▶
-// ▶▶▶▶▶▶        ▶      ▶▶▶▶▶   ▶▶▶▶▶▶
-// ▶▶▶▶▶▶▶▶▶▶▶       ▶▶▶▶▶▶▶▶   ▶▶▶▶▶▶▶▶▶
-// ▶▶▶▶▶▶▶▶▶▶▶▶▶   ▶▶▶▶▶▶▶▶▶▶   ▶▶▶▶▶▶▶
-// ▶▶▶▶▶▶▶▶▶▶▶▶▶   ▶▶▶▶▶▶▶▶▶▶   ▶▶▶▶
-// ▶▶▶▶▶▶▶▶▶▶▶▶▶   ▶▶▶▶▶▶▶▶▶▶   ▶
-//  ▶▶▶▶▶▶▶▶▶▶▶▶   ▶▶▶▶▶▶▶▶▶▶
-//      ▶▶▶▶▶▶▶▶   ▶▶▶▶▶▶▶
-// ▶▶▶▶     ▶▶▶▶   ▶▶▶
-// ▶▶▶▶▶▶▶     ▶   
-// ▶▶▶▶▶▶▶▶▶▶
-// ▶▶▶▶▶▶▶
-// ▶▶
-//             `,
-//             'color: #705df2;'
-//         )
-        console.log('%cWhat are you doing here?! you sneaky developer...', 'color: #32ffce');
-        console.log('%cDo you want to learn how this portfolio has been made?', 'color: #32ffce');
-        console.log('%cCheckout Three.js Journey 👉 https://threejs-journey.com?c=p2', 'color: #32ffce');
-        console.log('%c— Bruno', 'color: #777777');
+        console.log('%cWelcome to my portfolio!', 'color: #32ffce; font-size: 16px; font-weight: bold;');
+        console.log('%cFull-Stack Software Engineer | React, TypeScript, Node.js', 'color: #32ffce');
+        console.log('%cCheckout my work: https://github.com/RSimmons2021', 'color: #32ffce');
+        console.log('%c— Richard Simmons', 'color: #777777');
     }
 
     hide()

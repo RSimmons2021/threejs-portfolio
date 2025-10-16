@@ -21,7 +21,7 @@ export default class InformationSection
         this.setStatic()
         this.setBaguettes()
         this.setLinks()
-        this.setActivities()
+        this.setBio()  // Replaced setActivities with custom bio
         this.setTiles()
     }
 
@@ -89,20 +89,20 @@ export default class InformationSection
         // Options
         this.links.options = [
             {
-                href: 'https://twitter.com/bruno_simon/',
-                labelTexture: this.resources.items.informationContactTwitterLabelTexture
-            },
-            {
-                href: 'https://github.com/brunosimon/',
+                href: 'https://github.com/RSimmons2021',
                 labelTexture: this.resources.items.informationContactGithubLabelTexture
             },
             {
-                href: 'https://www.linkedin.com/in/simonbruno77/',
+                href: 'https://www.linkedin.com/in/richard-simmons-a3916958',
                 labelTexture: this.resources.items.informationContactLinkedinLabelTexture
             },
             {
-                href: 'mailto:simon.bruno.77@gmail.com',
+                href: 'mailto:richard.simmons.dev@gmail.com',
                 labelTexture: this.resources.items.informationContactMailLabelTexture
+            },
+            {
+                href: 'https://richard-simmons-portfolio.vercel.app',
+                labelTexture: this.resources.items.informationContactTwitterLabelTexture
             }
         ]
 
@@ -146,32 +146,85 @@ export default class InformationSection
         }
     }
 
-    setActivities()
+    setBio()
     {
         // Set up
-        this.activities = {}
-        this.activities.x = this.x + 0
-        this.activities.y = this.y - 10
-        this.activities.multiplier = 5.5
+        this.bio = {}
+        this.bio.x = this.x + 0
+        this.bio.y = this.y - 10
+        this.bio.width = 18  // Increased width for longer text
+        this.bio.height = 10  // Increased height for more lines
+
+        // Create canvas texture for bio text
+        const canvas = document.createElement('canvas')
+        canvas.width = 1024
+        canvas.height = 512
+        const context = canvas.getContext('2d')
+
+        // Background
+        context.fillStyle = '#000000'
+        context.fillRect(0, 0, canvas.width, canvas.height)
+
+        // Text
+        context.fillStyle = '#ffffff'
+        context.font = 'bold 48px Arial, sans-serif'
+        context.textAlign = 'center'
+        context.textBaseline = 'middle'
+
+        // Bio text - Your personal journey
+        const lines = [
+            'RICHARD SIMMONS',
+            'Full-Stack Software Engineer',
+            '',
+            'Passionate about the intersection',
+            'of design and technology.',
+            '',
+            'From Wright State to Toyota to founding',
+            'Zoan Collective - building experiences that matter.'
+        ]
+
+        const lineHeight = 56
+        const startY = 30
+
+        context.font = 'bold 52px Arial, sans-serif'
+        context.fillText(lines[0], canvas.width / 2, startY)
+
+        context.font = 'bold 38px Arial, sans-serif'
+        context.fillText(lines[1], canvas.width / 2, startY + lineHeight)
+
+        context.font = '36px Arial, sans-serif'
+        for(let i = 2; i < lines.length; i++) {
+            context.fillText(lines[i], canvas.width / 2, startY + (i * lineHeight))
+        }
 
         // Geometry
-        this.activities.geometry = new THREE.PlaneGeometry(2 * this.activities.multiplier, 1 * this.activities.multiplier, 1, 1)
+        this.bio.geometry = new THREE.PlaneGeometry(this.bio.width, this.bio.height, 1, 1)
 
-        // Texture
-        this.activities.texture = this.resources.items.informationActivitiesTexture
-        this.activities.texture.magFilter = THREE.NearestFilter
-        this.activities.texture.minFilter = THREE.LinearFilter
+        // Texture from canvas
+        this.bio.texture = new THREE.CanvasTexture(canvas)
+        this.bio.texture.magFilter = THREE.NearestFilter
+        this.bio.texture.minFilter = THREE.LinearFilter
 
         // Material
-        this.activities.material = new THREE.MeshBasicMaterial({ wireframe: false, color: 0xffffff, alphaMap: this.activities.texture, transparent: true })
+        this.bio.material = new THREE.MeshBasicMaterial({
+            wireframe: false,
+            color: 0xffffff,
+            map: this.bio.texture,
+            transparent: true
+        })
 
         // Mesh
-        this.activities.mesh = new THREE.Mesh(this.activities.geometry, this.activities.material)
-        this.activities.mesh.position.x = this.activities.x
-        this.activities.mesh.position.y = this.activities.y
-        this.activities.mesh.matrixAutoUpdate = false
-        this.activities.mesh.updateMatrix()
-        this.container.add(this.activities.mesh)
+        this.bio.mesh = new THREE.Mesh(this.bio.geometry, this.bio.material)
+        this.bio.mesh.position.x = this.bio.x
+        this.bio.mesh.position.y = this.bio.y
+        this.bio.mesh.matrixAutoUpdate = false
+        this.bio.mesh.updateMatrix()
+        this.container.add(this.bio.mesh)
+    }
+
+    setActivities()
+    {
+        // Removed - replaced with setBio()
     }
 
     setTiles()

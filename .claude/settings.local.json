@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cd:*)",
+      "Bash(dir \"C:\\Users\\fowl_\\Documents\\GitHub\\threejs portfolio\")",
+      "Bash(dir /s \"C:\\Users\\fowl_\\Documents\\GitHub\\threejs portfolio\\src\")"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

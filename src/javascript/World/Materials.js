@@ -43,7 +43,7 @@ export default class Materials
         // Setup
         this.shades = {}
         this.shades.items = {}
-        this.shades.indirectColor = '#d04500'
+        this.shades.indirectColor = '#800020'  // Changed to burgundy
 
         this.shades.uniforms = {
             uRevealProgress: 0,
@@ -62,10 +62,10 @@ export default class Materials
         this.shades.items.white.uniforms.matcap.value = this.resources.items.matcapWhiteTexture
         this.items.white = this.shades.items.white
 
-        // Orange
+        // Orange (replaced with emerald green for olive/burgundy palette)
         this.shades.items.orange = new MatcapMaterial()
         this.shades.items.orange.name = 'shadeOrange'
-        this.shades.items.orange.uniforms.matcap.value = this.resources.items.matcapOrangeTexture
+        this.shades.items.orange.uniforms.matcap.value = this.resources.items.matcapEmeraldGreenTexture  // Using emerald green instead
         this.items.orange = this.shades.items.orange
 
         // Green
@@ -181,7 +181,7 @@ export default class Materials
     {
         this.items.floorShadow = new FloorShadowMaterial()
         this.items.floorShadow.depthWrite = false
-        this.items.floorShadow.shadowColor = '#d04500'
+        this.items.floorShadow.shadowColor = '#800020'  // Changed to burgundy
         this.items.floorShadow.uniforms.uShadowColor.value = new THREE.Color(this.items.floorShadow.shadowColor)
         this.items.floorShadow.uniforms.uAlpha.value = 0
 
