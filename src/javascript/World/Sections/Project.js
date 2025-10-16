@@ -208,5 +208,50 @@ export default class Project
         this.floor.areaLabel.matrixAutoUpdate = false
         this.floor.areaLabel.updateMatrix()
         this.floor.container.add(this.floor.areaLabel)
+
+        // Project name/description text
+        this.setProjectDescription()
+    }
+
+    setProjectDescription()
+    {
+        // Create canvas for project description text
+        const canvas = document.createElement('canvas')
+        canvas.width = 1024
+        canvas.height = 256
+        const context = canvas.getContext('2d')
+
+        // Background (transparent or black)
+        context.fillStyle = 'rgba(0, 0, 0, 0.7)'
+        context.fillRect(0, 0, canvas.width, canvas.height)
+
+        // Text
+        context.fillStyle = '#ffffff'
+        context.font = 'bold 60px Arial, sans-serif'
+        context.textAlign = 'center'
+        context.textBaseline = 'middle'
+        context.fillText(this.name, canvas.width / 2, canvas.height / 2)
+
+        // Create texture from canvas
+        const texture = new THREE.CanvasTexture(canvas)
+        texture.magFilter = THREE.NearestFilter
+        texture.minFilter = THREE.LinearFilter
+
+        // Create plane geometry and material
+        const geometry = new THREE.PlaneGeometry(8, 2)
+        const material = new THREE.MeshBasicMaterial({
+            map: texture,
+            transparent: true,
+            depthWrite: false
+        })
+
+        // Create mesh
+        this.floor.descriptionMesh = new THREE.Mesh(geometry, material)
+        this.floor.descriptionMesh.position.x = 0
+        this.floor.descriptionMesh.position.y = 5  // Position above the open link
+        this.floor.descriptionMesh.position.z = 0.002
+        this.floor.descriptionMesh.matrixAutoUpdate = false
+        this.floor.descriptionMesh.updateMatrix()
+        this.floor.container.add(this.floor.descriptionMesh)
     }
 }
