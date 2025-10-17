@@ -78,15 +78,48 @@ export default class FieldGoalScoreSystem
         `
 
         this.scoreboardElement.innerHTML = `
-            <div style="font-size: 24px; margin-bottom: 10px; color: #FFD700;">🏈 FIELD GOAL</div>
-            <div style="font-size: 18px; margin-bottom: 5px;">Distance: <span id="fg-distance">0.0</span>m</div>
-            <div style="font-size: 18px; margin-bottom: 5px;">Best: <span id="fg-best">0.0</span>m</div>
-            <div style="font-size: 18px; margin-bottom: 5px;">Score: <span id="fg-score">0</span></div>
-            <div style="font-size: 16px; color: #FFD700;">Jumps: <span id="fg-jumps">0</span></div>
-            <div style="font-size: 12px; margin-top: 10px; color: rgba(255,255,255,0.8);">Jump far to score big! 🚀</div>
+            <div class="fg-title" style="font-size: 24px; margin-bottom: 10px; color: #FFD700;">🏈 FIELD GOAL</div>
+            <div class="fg-distance" style="font-size: 18px; margin-bottom: 5px;">Distance: <span id="fg-distance">0.0</span>m</div>
+            <div class="fg-best" style="font-size: 18px; margin-bottom: 5px;">Best: <span id="fg-best">0.0</span>m</div>
+            <div class="fg-score-text" style="font-size: 18px; margin-bottom: 5px;">Score: <span id="fg-score">0</span></div>
+            <div class="fg-jumps" style="font-size: 16px; color: #FFD700;">Jumps: <span id="fg-jumps">0</span></div>
+            <div class="fg-hint" style="font-size: 12px; margin-top: 10px; color: rgba(255,255,255,0.8);">Jump far to score big! 🚀</div>
         `
 
         document.body.appendChild(this.scoreboardElement)
+
+        // Add mobile-specific styles
+        const mobileStyle = document.createElement('style')
+        mobileStyle.textContent = `
+            @media (max-width: 768px) {
+                .fieldgoal-scoreboard {
+                    top: 10px !important;
+                    left: 10px !important;
+                    padding: 12px !important;
+                    min-width: 150px !important;
+                    border-width: 2px !important;
+                    border-radius: 10px !important;
+                }
+                .fieldgoal-scoreboard .fg-title {
+                    font-size: 16px !important;
+                    margin-bottom: 6px !important;
+                }
+                .fieldgoal-scoreboard .fg-distance,
+                .fieldgoal-scoreboard .fg-best,
+                .fieldgoal-scoreboard .fg-score-text {
+                    font-size: 13px !important;
+                    margin-bottom: 3px !important;
+                }
+                .fieldgoal-scoreboard .fg-jumps {
+                    font-size: 12px !important;
+                }
+                .fieldgoal-scoreboard .fg-hint {
+                    font-size: 9px !important;
+                    margin-top: 6px !important;
+                }
+            }
+        `
+        document.head.appendChild(mobileStyle)
     }
 
     createJumpResultUI()
@@ -275,14 +308,11 @@ export default class FieldGoalScoreSystem
 
     showScoreboard()
     {
-        // Always keep scoreboard visible in playground
         this.scoreboardElement.style.display = 'block'
-        this.scoreboardElement.style.opacity = '1'
-        this.scoreboardElement.style.transform = 'translateX(0)'
 
-        gsap.from(this.scoreboardElement, {
-            x: -100,
-            opacity: 0,
+        gsap.to(this.scoreboardElement, {
+            x: 0,
+            opacity: 1,
             duration: 0.5,
             ease: 'power2.out'
         })
@@ -290,9 +320,15 @@ export default class FieldGoalScoreSystem
 
     hideScoreboard()
     {
-        // Keep visible - no longer hide the scoreboard
-        // This ensures the scoreboard stays visible while in playground
-        return
+        gsap.to(this.scoreboardElement, {
+            x: -100,
+            opacity: 0,
+            duration: 0.3,
+            ease: 'power2.in',
+            onComplete: () => {
+                this.scoreboardElement.style.display = 'none'
+            }
+        })
     }
 
     resetScore()

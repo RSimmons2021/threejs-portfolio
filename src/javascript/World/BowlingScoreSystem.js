@@ -70,14 +70,46 @@ export default class BowlingScoreSystem
         `
 
         this.scoreboardElement.innerHTML = `
-            <div style="font-size: 24px; margin-bottom: 10px; color: #FFD700;">🎳 BOWLING</div>
-            <div style="font-size: 18px; margin-bottom: 5px;">Pins: <span id="bowling-pins">0</span>/10</div>
-            <div style="font-size: 18px; margin-bottom: 5px;">Score: <span id="bowling-score">0</span></div>
-            <div style="font-size: 16px; color: #FFD700;">Strikes: <span id="bowling-strikes">0</span></div>
-            <div style="font-size: 12px; margin-top: 10px; color: rgba(255,255,255,0.8);">Bowl a strike for a surprise! 🎯</div>
+            <div class="bowling-title" style="font-size: 24px; margin-bottom: 10px; color: #FFD700;">🎳 BOWLING</div>
+            <div class="bowling-pins" style="font-size: 18px; margin-bottom: 5px;">Pins: <span id="bowling-pins">0</span>/10</div>
+            <div class="bowling-score-text" style="font-size: 18px; margin-bottom: 5px;">Score: <span id="bowling-score">0</span></div>
+            <div class="bowling-strikes" style="font-size: 16px; color: #FFD700;">Strikes: <span id="bowling-strikes">0</span></div>
+            <div class="bowling-hint" style="font-size: 12px; margin-top: 10px; color: rgba(255,255,255,0.8);">Bowl a strike for a surprise! 🎯</div>
         `
 
         document.body.appendChild(this.scoreboardElement)
+
+        // Add mobile-specific styles
+        const mobileStyle = document.createElement('style')
+        mobileStyle.textContent = `
+            @media (max-width: 768px) {
+                .bowling-scoreboard {
+                    top: 10px !important;
+                    right: 10px !important;
+                    padding: 12px !important;
+                    min-width: 140px !important;
+                    border-width: 2px !important;
+                    border-radius: 10px !important;
+                }
+                .bowling-scoreboard .bowling-title {
+                    font-size: 16px !important;
+                    margin-bottom: 6px !important;
+                }
+                .bowling-scoreboard .bowling-pins,
+                .bowling-scoreboard .bowling-score-text {
+                    font-size: 13px !important;
+                    margin-bottom: 3px !important;
+                }
+                .bowling-scoreboard .bowling-strikes {
+                    font-size: 12px !important;
+                }
+                .bowling-scoreboard .bowling-hint {
+                    font-size: 9px !important;
+                    margin-top: 6px !important;
+                }
+            }
+        `
+        document.head.appendChild(mobileStyle)
     }
 
     createStrikeOverlay()
@@ -358,14 +390,11 @@ export default class BowlingScoreSystem
 
     showScoreboard()
     {
-        // Always keep scoreboard visible in playground
         this.scoreboardElement.style.display = 'block'
-        this.scoreboardElement.style.opacity = '1'
-        this.scoreboardElement.style.transform = 'translateX(0)'
 
-        gsap.from(this.scoreboardElement, {
-            x: 100,
-            opacity: 0,
+        gsap.to(this.scoreboardElement, {
+            x: 0,
+            opacity: 1,
             duration: 0.5,
             ease: 'power2.out'
         })
@@ -373,9 +402,15 @@ export default class BowlingScoreSystem
 
     hideScoreboard()
     {
-        // Keep visible - no longer hide the scoreboard
-        // This ensures the scoreboard stays visible while in playground
-        return
+        gsap.to(this.scoreboardElement, {
+            x: 100,
+            opacity: 0,
+            duration: 0.3,
+            ease: 'power2.in',
+            onComplete: () => {
+                this.scoreboardElement.style.display = 'none'
+            }
+        })
     }
 
     resetPins()
