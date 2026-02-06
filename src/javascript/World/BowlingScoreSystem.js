@@ -1,5 +1,6 @@
 import * as THREE from 'three'
 import gsap from 'gsap'
+import resumePdfUrl from '../../../assets/Richard_Simmons_Resume.pdf'
 
 export default class BowlingScoreSystem
 {
@@ -345,11 +346,14 @@ export default class BowlingScoreSystem
     {
         console.log('📥 Downloading resume...')
 
-        // Create a download link for the resume
+        // Use the bundled resume asset URL so this works in dev and production builds
         const link = document.createElement('a')
-        link.href = '/Richard_Simmons_Resume.pdf' // Update this path to your actual resume
+        link.href = resumePdfUrl
         link.download = 'Richard_Simmons_Resume.pdf'
+        link.rel = 'noopener'
+        document.body.appendChild(link)
         link.click()
+        link.remove()
 
         this.closeResumePopup()
 
