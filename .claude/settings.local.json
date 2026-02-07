@@ -5,7 +5,8 @@
       "Bash(dir \"C:\\Users\\fowl_\\Documents\\GitHub\\threejs portfolio\")",
       "Bash(dir /s \"C:\\Users\\fowl_\\Documents\\GitHub\\threejs portfolio\\src\")",
       "Bash(find:*)",
-      "Bash(wc:*)"
+      "Bash(wc:*)",
+      "Bash(npx vite build:*)"
     ],
     "deny": [],
     "ask": []
