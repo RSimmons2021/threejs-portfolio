@@ -1,6 +1,6 @@
 import gsap from 'gsap'
 
-export default class ThreejsJourney
+export default class Journey
 {
     constructor(_options)
     {
@@ -10,7 +10,7 @@ export default class ThreejsJourney
         this.world = _options.world
 
         // Setup
-        this.$container = document.querySelector('.js-threejs-journey')
+        this.$container = document.querySelector('.js-journey')
         this.$messages = [...this.$container.querySelectorAll('.js-message')]
         this.$yes = this.$container.querySelector('.js-yes')
         this.$no = this.$container.querySelector('.js-no')
@@ -18,8 +18,8 @@ export default class ThreejsJourney
         this.step = 0
         this.maxStep = this.$messages.length - 1
         this.traveledDistance = 0
-        this.seenCount = Number(window.localStorage.getItem('threejsJourneySeenCount') || 0)
-        this.prevent = window.localStorage.getItem('threejsJourneyPrevent') === '1'
+        this.seenCount = Number(window.localStorage.getItem('journeySeenCount') || 0)
+        this.prevent = window.localStorage.getItem('journeyPrevent') === '1'
         this.shown = this.prevent || this.config.touch
         this.minTraveledDistance = this.seenCount === 0 ? 4 : 22
 
@@ -51,7 +51,7 @@ export default class ThreejsJourney
             {
                 this.hide()
             })
-            window.localStorage.setItem('threejsJourneyPrevent', 1)
+            window.localStorage.setItem('journeyPrevent', 1)
         })
 
         this.$no.addEventListener('click', () =>
@@ -135,7 +135,7 @@ export default class ThreejsJourney
         })
 
         this.shown = true
-        window.localStorage.setItem('threejsJourneySeenCount', this.seenCount + 1)
+        window.localStorage.setItem('journeySeenCount', this.seenCount + 1)
     }
 
     updateMessages()
@@ -162,12 +162,12 @@ export default class ThreejsJourney
             const messageHeight = $message.offsetHeight
             if(i < this.step)
             {
-                $message.style.transform = `translateY(${-height}px)`
+                $message.style.transform = `translateY(${-height}px) scale(1)`
                 height += messageHeight + 16
             }
             else
             {
-                $message.style.transform = `translateY(${messageHeight + 12}px)`
+                $message.style.transform = `translateY(${messageHeight + 12}px) scale(0.97)`
             }
             i--
         }

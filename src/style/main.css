@@ -56,7 +56,7 @@ html
     cursor: pointer;
 }
 
-.threejs-journey
+.journey
 {
     display: none;
     flex-direction: column;
@@ -69,12 +69,12 @@ html
     z-index: 900;
 }
 
-.threejs-journey.is-active
+.journey.is-active
 {
     display: flex;
 }
 
-.threejs-journey .message
+.journey .message
 {
     position: absolute;
     bottom: 0;
@@ -84,17 +84,18 @@ html
     line-height: 1.45;
     letter-spacing: 0.01em;
     opacity: 0;
-    transform: translateY(120px);
-    transition: transform 0.5s cubic-bezier(0.5, 0, 0.25, 1), opacity 0.45s 0.2s cubic-bezier(0.5, 0, 0.25, 1);
+    transform: translateY(24px) scale(0.97);
+    transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.4s 0.1s cubic-bezier(0.22, 1, 0.36, 1);
     text-shadow: 0 2px 10px rgba(7, 11, 17, 0.45);
 }
 
-.threejs-journey .message.is-visible
+.journey .message.is-visible
 {
     opacity: 1;
+    transform: translateY(0) scale(1);
 }
 
-.threejs-journey .boy
+.journey .boy
 {
     position: absolute;
     bottom: 100%;
@@ -106,7 +107,7 @@ html
     filter: drop-shadow(0 8px 18px rgba(3, 8, 13, 0.55));
 }
 
-.threejs-journey .boy .variant
+.journey .boy .variant
 {
     position: absolute;
     top: 0;
@@ -117,38 +118,38 @@ html
     transition: transform 0.15s ease-in;
 }
 
-.threejs-journey .boy .variant.is-yay
+.journey .boy .variant.is-yay
 {
     background: url('../images/boyYay.png');
 }
 
-.threejs-journey .boy .variant.is-shrugging
+.journey .boy .variant.is-shrugging
 {
     background: url('../images/boyShrugging.png');
 }
 
-.threejs-journey.is-hover-yes .boy .variant.is-yay
+.journey.is-hover-yes .boy .variant.is-yay
 {
     transform: translateY(0);
     transition-delay: 0.1s;
     transition-timing-function: ease-out;
 }
 
-.threejs-journey.is-hover-no .boy .variant.is-shrugging
+.journey.is-hover-no .boy .variant.is-shrugging
 {
     transform: translateY(0);
     transition-delay: 0.1s;
     transition-timing-function: ease-out;
 }
 
-.threejs-journey.is-hover-none .boy .variant.is-hi
+.journey.is-hover-none .boy .variant.is-hi
 {
     transform: translateY(0);
     transition-delay: 0.1s;
     transition-timing-function: ease-out;
 }
 
-.threejs-journey .boy .is-hi .body
+.journey .boy .is-hi .body
 {
     position: absolute;
     top: 0;
@@ -158,7 +159,7 @@ html
     background: url('../images/boyHiBody.png');
 }
 
-.threejs-journey .boy .is-hi .arm
+.journey .boy .is-hi .arm
 {
     position: absolute;
     bottom: 0;
@@ -181,21 +182,23 @@ html
     100% { transform: rotate(0deg); }
 }
 
-.threejs-journey .message .bubble
+.journey .message .bubble
 {
     position: relative;
     padding: 16px 20px;
     border: 1px solid var(--ui-border);
     border-radius: 12px;
     background:
-        linear-gradient(140deg, rgba(17, 32, 46, 0.8), rgba(33, 56, 76, 0.48));
+        linear-gradient(180deg, rgba(142, 212, 255, 0.04) 0%, transparent 40%),
+        linear-gradient(140deg, rgba(17, 32, 46, 0.82), rgba(33, 56, 76, 0.5));
     box-shadow:
-        inset 0 0 0 1px rgba(234, 248, 255, 0.08),
-        0 18px 40px rgba(3, 10, 16, 0.35);
-    backdrop-filter: blur(8px);
+        inset 0 1px 0 rgba(234, 248, 255, 0.1),
+        inset 0 0 0 1px rgba(234, 248, 255, 0.06),
+        0 12px 32px rgba(3, 10, 16, 0.35);
+    backdrop-filter: blur(10px);
 }
 
-.threejs-journey .message .tip
+.journey .message .tip
 {
     position: absolute;
     width: 12px;
@@ -206,13 +209,13 @@ html
     opacity: 0.85;
 }
 
-.threejs-journey .message.is-answers
+.journey .message.is-answers
 {
     display: flex;
     justify-content: flex-end;
 }
 
-.threejs-journey .message .answer
+.journey .message .answer
 {
     position: relative;
     display: flex;
@@ -223,9 +226,15 @@ html
     text-decoration: none;
     cursor: pointer;
     overflow: hidden;
+    transition: transform 0.15s ease;
 }
 
-.threejs-journey .message .answer .background
+.journey .message .answer:active
+{
+    transform: scale(0.96);
+}
+
+.journey .message .answer .background
 {
     position: absolute;
     top: 0;
@@ -235,7 +244,7 @@ html
     border-radius: 11px;
 }
 
-.threejs-journey .message .answer .hover
+.journey .message .answer .hover
 {
     position: absolute;
     top: 0;
@@ -249,12 +258,12 @@ html
     will-change: transform;
 }
 
-.threejs-journey .message .answer:hover .hover
+.journey .message .answer:hover .hover
 {
     transform: scaleX(1);
 }
 
-.threejs-journey .message .answer .label
+.journey .message .answer .label
 {
     position: relative;
     font-family: 'Bebas Neue', sans-serif;
@@ -262,29 +271,30 @@ html
     font-size: 24px;
 }
 
-.threejs-journey .message .answer.is-no
+.journey .message .answer.is-no
 {
     color: var(--ui-text);
 }
 
-.threejs-journey .message .answer.is-no .background
+.journey .message .answer.is-no .background
 {
     border: 1px solid var(--ui-border);
     background: linear-gradient(160deg, rgba(21, 34, 47, 0.62), rgba(34, 56, 76, 0.4));
+    backdrop-filter: blur(6px);
 }
 
-.threejs-journey .message .answer.is-yes
+.journey .message .answer.is-yes
 {
     color: #1e3247;
 }
 
-.threejs-journey .message .answer.is-yes .background
+.journey .message .answer.is-yes .background
 {
     background: linear-gradient(160deg, #f0f8ff, #bbdcf7);
     opacity: 0.92;
 }
 
-.threejs-journey .message .answer.is-no .hover
+.journey .message .answer.is-no .hover
 {
     transform-origin: 100% 0;
     opacity: 0.22;
@@ -306,6 +316,21 @@ html
 {
     left: 50%;
     top: 22px;
+    transform: translateX(-50%);
+}
+
+.experience-hud.is-mobile
+{
+    left: 8px;
+    top: 8px;
+    gap: 6px;
+    max-width: calc(100vw - 16px);
+}
+
+.experience-hud.is-mobile.is-avoid-scoreboards
+{
+    left: 50%;
+    top: 66px;
     transform: translateX(-50%);
 }
 
@@ -370,26 +395,57 @@ html
     color: var(--ui-warning);
 }
 
+.experience-hud.is-mobile .experience-hud__row
+{
+    gap: 6px;
+}
+
+.experience-hud.is-mobile .experience-hud__pill
+{
+    min-width: 90px;
+    padding: 6px 8px;
+    border-radius: 9px;
+}
+
+.experience-hud.is-mobile .experience-hud__label
+{
+    font-size: 14px;
+}
+
+.experience-hud.is-mobile .experience-hud__value
+{
+    font-size: 12px;
+}
+
+.experience-hud.is-mobile .experience-hud__tip
+{
+    max-width: min(88vw, 360px);
+    padding: 7px 9px;
+    border-radius: 8px;
+    font-size: 10.5px;
+    line-height: 1.25;
+}
+
 @media (max-width: 768px)
 {
-    .threejs-journey
+    .journey
     {
         width: min(96vw, 390px);
         right: 8px;
         bottom: 8px;
     }
 
-    .threejs-journey .message
+    .journey .message
     {
         font-size: 14px;
     }
 
-    .threejs-journey .message .bubble
+    .journey .message .bubble
     {
         padding: 12px 14px;
     }
 
-    .threejs-journey .message .answer .label
+    .journey .message .answer .label
     {
         font-size: 20px;
     }
@@ -421,6 +477,6 @@ html
 
     .experience-hud__tip
     {
-        font-size: 12px;
+        font-size: 10.5px;
     }
 }

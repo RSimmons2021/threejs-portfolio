@@ -5,6 +5,7 @@ export default class ExperienceHUD
         this.time = _options.time
         this.physics = _options.physics
         this.dayNightCycle = _options.dayNightCycle
+        this.isMobile = this.detectMobile()
 
         this.updateInterval = 120
         this.lastUpdateAt = 0
@@ -18,11 +19,32 @@ export default class ExperienceHUD
         }
 
         this.setElements()
+        this.applyDeviceClass()
+        this.updateInstructionText()
+
+        window.addEventListener('resize', () =>
+        {
+            const nextIsMobile = this.detectMobile()
+            if(nextIsMobile !== this.isMobile)
+            {
+                this.isMobile = nextIsMobile
+                this.applyDeviceClass()
+                this.updateInstructionText()
+            }
+        })
 
         this.time.on('tick', () =>
         {
             this.update()
         })
+    }
+
+    detectMobile()
+    {
+        const coarsePointer = window.matchMedia('(pointer: coarse)').matches
+        const touchCapable = navigator.maxTouchPoints > 0
+        const narrowViewport = window.innerWidth <= 768
+        return coarsePointer || touchCapable || narrowViewport
     }
 
     setElements()
@@ -41,8 +63,8 @@ export default class ExperienceHUD
                 </div>
             </div>
             <div class="experience-hud__row experience-hud__row--secondary">
-                <div class="experience-hud__tip">WASD / Arrows drive, Shift boosts, H horns, R resets</div>
-                <div class="experience-hud__tip">Goal: bowl a strike to unlock the resume download</div>
+                <div class="experience-hud__tip js-hud-tip-controls"></div>
+                <div class="experience-hud__tip js-hud-tip-goal">Goal: bowl a strike to unlock the resume download</div>
             </div>
         `
 
@@ -50,6 +72,29 @@ export default class ExperienceHUD
 
         this.$cycle = this.$container.querySelector('.js-hud-cycle')
         this.$speed = this.$container.querySelector('.js-hud-speed')
+        this.$controlsTip = this.$container.querySelector('.js-hud-tip-controls')
+    }
+
+    applyDeviceClass()
+    {
+        this.$container.classList.toggle('is-mobile', this.isMobile)
+    }
+
+    updateInstructionText()
+    {
+        if(!this.$controlsTip)
+        {
+            return
+        }
+
+        if(this.isMobile)
+        {
+            this.$controlsTip.textContent = 'Mobile: use left joystick + right pedals. Tap prompts to interact.'
+        }
+        else
+        {
+            this.$controlsTip.textContent = 'WASD / Arrows drive, Shift boosts, H horns, R resets'
+        }
     }
 
     shouldAvoidScoreboards()

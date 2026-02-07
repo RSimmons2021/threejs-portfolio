@@ -158,7 +158,6 @@ export default class Controls extends EventEmitter
         this.touch.joystick.$element.style.transition = 'opacity 0.3s 0.0s'
         this.touch.joystick.$element.style.willChange = 'opacity'
         this.touch.joystick.$element.style.opacity = '0'
-        // this.touch.joystick.$element.style.backgroundColor = '#ff0000'
         document.body.appendChild(this.touch.joystick.$element)
 
         this.touch.joystick.$cursor = document.createElement('div')
@@ -167,11 +166,14 @@ export default class Controls extends EventEmitter
         this.touch.joystick.$cursor.style.left = 'calc(50% - 30px)'
         this.touch.joystick.$cursor.style.width = '60px'
         this.touch.joystick.$cursor.style.height = '60px'
-        this.touch.joystick.$cursor.style.border = '2px solid #ffffff'
+        this.touch.joystick.$cursor.style.border = '2px solid rgba(142, 212, 255, 0.85)'
         this.touch.joystick.$cursor.style.borderRadius = '50%'
+        this.touch.joystick.$cursor.style.background = 'radial-gradient(circle, rgba(142, 212, 255, 0.15), transparent 70%)'
+        this.touch.joystick.$cursor.style.boxShadow = '0 0 12px rgba(142, 212, 255, 0.25), inset 0 0 8px rgba(142, 212, 255, 0.1)'
         this.touch.joystick.$cursor.style.boxSizing = 'border-box'
         this.touch.joystick.$cursor.style.pointerEvents = 'none'
         this.touch.joystick.$cursor.style.willChange = 'transform'
+        this.touch.joystick.$cursor.style.transition = 'box-shadow 0.2s ease'
         this.touch.joystick.$element.appendChild(this.touch.joystick.$cursor)
 
         this.touch.joystick.$limit = document.createElement('div')
@@ -180,11 +182,15 @@ export default class Controls extends EventEmitter
         this.touch.joystick.$limit.style.left = 'calc(50% - 75px)'
         this.touch.joystick.$limit.style.width = '150px'
         this.touch.joystick.$limit.style.height = '150px'
-        this.touch.joystick.$limit.style.border = '2px solid #ffffff'
+        this.touch.joystick.$limit.style.border = '1px solid rgba(173, 222, 255, 0.35)'
         this.touch.joystick.$limit.style.borderRadius = '50%'
-        this.touch.joystick.$limit.style.opacity = '0.25'
+        this.touch.joystick.$limit.style.background = 'radial-gradient(circle, rgba(11, 20, 30, 0.4), rgba(11, 20, 30, 0.2) 70%)'
+        this.touch.joystick.$limit.style.backdropFilter = 'blur(4px)'
+        this.touch.joystick.$limit.style.boxShadow = 'inset 0 0 0 1px rgba(255, 255, 255, 0.06), 0 8px 24px rgba(3, 10, 16, 0.3)'
+        this.touch.joystick.$limit.style.opacity = '0.6'
         this.touch.joystick.$limit.style.pointerEvents = 'none'
         this.touch.joystick.$limit.style.boxSizing = 'border-box'
+        this.touch.joystick.$limit.style.transition = 'opacity 0.2s ease, border-color 0.2s ease'
         this.touch.joystick.$element.appendChild(this.touch.joystick.$limit)
 
         // Angle
@@ -263,7 +269,9 @@ export default class Controls extends EventEmitter
                 this.touch.joystick.angle.current.x = touch.clientX
                 this.touch.joystick.angle.current.y = touch.clientY
 
-                this.touch.joystick.$limit.style.opacity = '0.5'
+                this.touch.joystick.$limit.style.opacity = '0.85'
+                this.touch.joystick.$limit.style.borderColor = 'rgba(142, 212, 255, 0.6)'
+                this.touch.joystick.$cursor.style.boxShadow = '0 0 18px rgba(142, 212, 255, 0.4), inset 0 0 10px rgba(142, 212, 255, 0.15)'
 
                 document.addEventListener('touchend', this.touch.joystick.events.touchend)
                 document.addEventListener('touchmove', this.touch.joystick.events.touchmove, { passive: false })
@@ -297,7 +305,9 @@ export default class Controls extends EventEmitter
             {
                 this.touch.joystick.active = false
 
-                this.touch.joystick.$limit.style.opacity = '0.25'
+                this.touch.joystick.$limit.style.opacity = '0.6'
+                this.touch.joystick.$limit.style.borderColor = 'rgba(173, 222, 255, 0.35)'
+                this.touch.joystick.$cursor.style.boxShadow = '0 0 12px rgba(142, 212, 255, 0.25), inset 0 0 8px rgba(142, 212, 255, 0.1)'
 
                 this.touch.joystick.$cursor.style.transform = 'translateX(0px) translateY(0px)'
 
@@ -334,11 +344,15 @@ export default class Controls extends EventEmitter
         this.touch.boost.$border.style.left = 'calc(50% - 30px)'
         this.touch.boost.$border.style.width = '60px'
         this.touch.boost.$border.style.height = '60px'
-        this.touch.boost.$border.style.border = '2px solid #ffffff'
-        this.touch.boost.$border.style.borderRadius = '10px'
+        this.touch.boost.$border.style.border = '1px solid rgba(173, 222, 255, 0.4)'
+        this.touch.boost.$border.style.borderRadius = '12px'
+        this.touch.boost.$border.style.background = 'linear-gradient(140deg, rgba(17, 32, 46, 0.55), rgba(33, 56, 76, 0.3))'
+        this.touch.boost.$border.style.backdropFilter = 'blur(6px)'
+        this.touch.boost.$border.style.boxShadow = 'inset 0 0 0 1px rgba(255, 255, 255, 0.06), 0 6px 18px rgba(3, 10, 16, 0.25)'
         this.touch.boost.$border.style.boxSizing = 'border-box'
-        this.touch.boost.$border.style.opacity = '0.25'
+        this.touch.boost.$border.style.opacity = '0.65'
         this.touch.boost.$border.style.willChange = 'opacity'
+        this.touch.boost.$border.style.transition = 'opacity 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease'
         this.touch.boost.$element.appendChild(this.touch.boost.$border)
 
         this.touch.boost.$icon = document.createElement('div')
@@ -369,7 +383,9 @@ export default class Controls extends EventEmitter
                 this.actions.up = true
                 this.actions.boost = true
 
-                this.touch.boost.$border.style.opacity = '0.5'
+                this.touch.boost.$border.style.opacity = '1'
+                this.touch.boost.$border.style.borderColor = 'rgba(142, 212, 255, 0.7)'
+                this.touch.boost.$border.style.boxShadow = 'inset 0 0 0 1px rgba(255, 255, 255, 0.1), 0 0 16px rgba(142, 212, 255, 0.3)'
 
                 document.addEventListener('touchend', this.touch.boost.events.touchend)
             }
@@ -385,7 +401,9 @@ export default class Controls extends EventEmitter
                 this.actions.up = false
                 this.actions.boost = false
 
-                this.touch.boost.$border.style.opacity = '0.25'
+                this.touch.boost.$border.style.opacity = '0.65'
+                this.touch.boost.$border.style.borderColor = 'rgba(173, 222, 255, 0.4)'
+                this.touch.boost.$border.style.boxShadow = 'inset 0 0 0 1px rgba(255, 255, 255, 0.06), 0 6px 18px rgba(3, 10, 16, 0.25)'
 
                 document.removeEventListener('touchend', this.touch.boost.events.touchend)
             }
@@ -418,11 +436,15 @@ export default class Controls extends EventEmitter
         this.touch.forward.$border.style.left = 'calc(50% - 30px)'
         this.touch.forward.$border.style.width = '60px'
         this.touch.forward.$border.style.height = '60px'
-        this.touch.forward.$border.style.border = '2px solid #ffffff'
-        this.touch.forward.$border.style.borderRadius = '10px'
+        this.touch.forward.$border.style.border = '1px solid rgba(173, 222, 255, 0.4)'
+        this.touch.forward.$border.style.borderRadius = '12px'
+        this.touch.forward.$border.style.background = 'linear-gradient(140deg, rgba(17, 32, 46, 0.55), rgba(33, 56, 76, 0.3))'
+        this.touch.forward.$border.style.backdropFilter = 'blur(6px)'
+        this.touch.forward.$border.style.boxShadow = 'inset 0 0 0 1px rgba(255, 255, 255, 0.06), 0 6px 18px rgba(3, 10, 16, 0.25)'
         this.touch.forward.$border.style.boxSizing = 'border-box'
-        this.touch.forward.$border.style.opacity = '0.25'
+        this.touch.forward.$border.style.opacity = '0.65'
         this.touch.forward.$border.style.willChange = 'opacity'
+        this.touch.forward.$border.style.transition = 'opacity 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease'
         this.touch.forward.$element.appendChild(this.touch.forward.$border)
 
         this.touch.forward.$icon = document.createElement('div')
@@ -452,7 +474,9 @@ export default class Controls extends EventEmitter
 
                 this.actions.up = true
 
-                this.touch.forward.$border.style.opacity = '0.5'
+                this.touch.forward.$border.style.opacity = '1'
+                this.touch.forward.$border.style.borderColor = 'rgba(142, 212, 255, 0.7)'
+                this.touch.forward.$border.style.boxShadow = 'inset 0 0 0 1px rgba(255, 255, 255, 0.1), 0 0 16px rgba(142, 212, 255, 0.3)'
 
                 document.addEventListener('touchend', this.touch.forward.events.touchend)
             }
@@ -467,7 +491,9 @@ export default class Controls extends EventEmitter
             {
                 this.actions.up = false
 
-                this.touch.forward.$border.style.opacity = '0.25'
+                this.touch.forward.$border.style.opacity = '0.65'
+                this.touch.forward.$border.style.borderColor = 'rgba(173, 222, 255, 0.4)'
+                this.touch.forward.$border.style.boxShadow = 'inset 0 0 0 1px rgba(255, 255, 255, 0.06), 0 6px 18px rgba(3, 10, 16, 0.25)'
 
                 document.removeEventListener('touchend', this.touch.forward.events.touchend)
             }
@@ -500,11 +526,15 @@ export default class Controls extends EventEmitter
         this.touch.brake.$border.style.left = 'calc(50% - 30px)'
         this.touch.brake.$border.style.width = '60px'
         this.touch.brake.$border.style.height = '60px'
-        this.touch.brake.$border.style.border = '2px solid #ffffff'
-        this.touch.brake.$border.style.borderRadius = '10px'
+        this.touch.brake.$border.style.border = '1px solid rgba(173, 222, 255, 0.4)'
+        this.touch.brake.$border.style.borderRadius = '12px'
+        this.touch.brake.$border.style.background = 'linear-gradient(140deg, rgba(17, 32, 46, 0.55), rgba(33, 56, 76, 0.3))'
+        this.touch.brake.$border.style.backdropFilter = 'blur(6px)'
+        this.touch.brake.$border.style.boxShadow = 'inset 0 0 0 1px rgba(255, 255, 255, 0.06), 0 6px 18px rgba(3, 10, 16, 0.25)'
         this.touch.brake.$border.style.boxSizing = 'border-box'
-        this.touch.brake.$border.style.opacity = '0.25'
+        this.touch.brake.$border.style.opacity = '0.65'
         this.touch.brake.$border.style.willChange = 'opacity'
+        this.touch.brake.$border.style.transition = 'opacity 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease'
         this.touch.brake.$element.appendChild(this.touch.brake.$border)
 
         this.touch.brake.$icon = document.createElement('div')
@@ -533,7 +563,9 @@ export default class Controls extends EventEmitter
 
                 this.actions.brake = true
 
-                this.touch.brake.$border.style.opacity = '0.5'
+                this.touch.brake.$border.style.opacity = '1'
+                this.touch.brake.$border.style.borderColor = 'rgba(142, 212, 255, 0.7)'
+                this.touch.brake.$border.style.boxShadow = 'inset 0 0 0 1px rgba(255, 255, 255, 0.1), 0 0 16px rgba(142, 212, 255, 0.3)'
 
                 document.addEventListener('touchend', this.touch.brake.events.touchend)
             }
@@ -548,7 +580,9 @@ export default class Controls extends EventEmitter
             {
                 this.actions.brake = false
 
-                this.touch.brake.$border.style.opacity = '0.25'
+                this.touch.brake.$border.style.opacity = '0.65'
+                this.touch.brake.$border.style.borderColor = 'rgba(173, 222, 255, 0.4)'
+                this.touch.brake.$border.style.boxShadow = 'inset 0 0 0 1px rgba(255, 255, 255, 0.06), 0 6px 18px rgba(3, 10, 16, 0.25)'
 
                 document.removeEventListener('touchend', this.touch.brake.events.touchend)
             }
@@ -581,11 +615,15 @@ export default class Controls extends EventEmitter
         this.touch.backward.$border.style.left = 'calc(50% - 30px)'
         this.touch.backward.$border.style.width = '60px'
         this.touch.backward.$border.style.height = '60px'
-        this.touch.backward.$border.style.border = '2px solid #ffffff'
-        this.touch.backward.$border.style.borderRadius = '10px'
+        this.touch.backward.$border.style.border = '1px solid rgba(173, 222, 255, 0.4)'
+        this.touch.backward.$border.style.borderRadius = '12px'
+        this.touch.backward.$border.style.background = 'linear-gradient(140deg, rgba(17, 32, 46, 0.55), rgba(33, 56, 76, 0.3))'
+        this.touch.backward.$border.style.backdropFilter = 'blur(6px)'
+        this.touch.backward.$border.style.boxShadow = 'inset 0 0 0 1px rgba(255, 255, 255, 0.06), 0 6px 18px rgba(3, 10, 16, 0.25)'
         this.touch.backward.$border.style.boxSizing = 'border-box'
-        this.touch.backward.$border.style.opacity = '0.25'
+        this.touch.backward.$border.style.opacity = '0.65'
         this.touch.backward.$border.style.willChange = 'opacity'
+        this.touch.backward.$border.style.transition = 'opacity 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease'
         this.touch.backward.$element.appendChild(this.touch.backward.$border)
 
         this.touch.backward.$icon = document.createElement('div')
@@ -616,7 +654,9 @@ export default class Controls extends EventEmitter
 
                 this.actions.down = true
 
-                this.touch.backward.$border.style.opacity = '0.5'
+                this.touch.backward.$border.style.opacity = '1'
+                this.touch.backward.$border.style.borderColor = 'rgba(142, 212, 255, 0.7)'
+                this.touch.backward.$border.style.boxShadow = 'inset 0 0 0 1px rgba(255, 255, 255, 0.1), 0 0 16px rgba(142, 212, 255, 0.3)'
 
                 document.addEventListener('touchend', this.touch.backward.events.touchend)
             }
@@ -631,7 +671,9 @@ export default class Controls extends EventEmitter
             {
                 this.actions.down = false
 
-                this.touch.backward.$border.style.opacity = '0.25'
+                this.touch.backward.$border.style.opacity = '0.65'
+                this.touch.backward.$border.style.borderColor = 'rgba(173, 222, 255, 0.4)'
+                this.touch.backward.$border.style.boxShadow = 'inset 0 0 0 1px rgba(255, 255, 255, 0.06), 0 6px 18px rgba(3, 10, 16, 0.25)'
 
                 document.removeEventListener('touchend', this.touch.backward.events.touchend)
             }
