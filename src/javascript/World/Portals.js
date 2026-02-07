@@ -26,9 +26,15 @@ export default class Portals
         this.settings.animationSpeed = 1.0
         this.settings.renderResolution = 512
         this.settings.particleCount = 100
+        this.settings.renderInterval = 2
+        this.settings.maxRenderDistance = 45
 
         // Debug counter
         this.debugUpdateCount = 0
+        this.renderFrameCount = 0
+        this.verboseLogs = Boolean(this.debug)
+        this.tempDirection = new THREE.Vector3()
+        this.tempToPortal = new THREE.Vector3()
 
         // Portal pairs
         this.portals = []
@@ -52,13 +58,13 @@ export default class Portals
             this.update()
         })
 
-        console.log('🌀 Portal system initialized -', this.portals.length, 'portals in intro section with labels!')
+        this.log('🌀 Portal system initialized -', this.portals.length, 'portals in intro section with labels!')
 
         // Log portal positions for debugging
         for(const portalPair of this.portals)
         {
             const entrance = portalPair.entrance
-            console.log(`  📍 ${portalPair.name} portal at (${entrance.position.x.toFixed(2)}, ${entrance.position.y.toFixed(2)}) → Destination: (${entrance.destinationPos.x.toFixed(2)}, ${entrance.destinationPos.y.toFixed(2)})`)
+            this.log(`  📍 ${portalPair.name} portal at (${entrance.position.x.toFixed(2)}, ${entrance.position.y.toFixed(2)}) → Destination: (${entrance.destinationPos.x.toFixed(2)}, ${entrance.destinationPos.y.toFixed(2)})`)
         }
 
         // Debug
@@ -72,6 +78,22 @@ export default class Portals
             })
             this.debugFolder.add(this.settings, 'glowIntensity').min(0).max(3).step(0.1).name('glowIntensity')
             this.debugFolder.add(this.settings, 'animationSpeed').min(0.1).max(3).step(0.1).name('animSpeed')
+        }
+    }
+
+    log(..._args)
+    {
+        if(this.verboseLogs)
+        {
+            console.log(..._args)
+        }
+    }
+
+    warn(..._args)
+    {
+        if(this.verboseLogs)
+        {
+            console.warn(..._args)
         }
     }
 
@@ -377,19 +399,19 @@ export default class Portals
         // FIXED: Access physics car body, not visual car
         if(!this.physics || !this.physics.car || !this.physics.car.chassis || !this.physics.car.chassis.body)
         {
-            // Log once when car reference is missing
-            if(!this.carMissingLogged)
-            {
-                console.warn('⚠️ Portal: Physics car missing. physics:', !!this.physics, 'physics.car:', !!this.physics?.car, 'chassis:', !!this.physics?.car?.chassis, 'body:', !!this.physics?.car?.chassis?.body)
-                this.carMissingLogged = true
-            }
-            return
+                // Log once when car reference is missing
+                if(!this.carMissingLogged)
+                {
+                    this.warn('⚠️ Portal: Physics car missing. physics:', !!this.physics, 'physics.car:', !!this.physics?.car, 'chassis:', !!this.physics?.car?.chassis, 'body:', !!this.physics?.car?.chassis?.body)
+                    this.carMissingLogged = true
+                }
+                return
         }
 
         // Car reference is valid, reset warning flag
         if(this.carMissingLogged)
         {
-            console.log('✅ Portal: Physics car reference now valid!')
+            this.log('✅ Portal: Physics car reference now valid!')
             this.carMissingLogged = false
         }
 
@@ -411,12 +433,12 @@ export default class Portals
             // Debug: Log when car gets close to any portal
             if(distance < detectionRadius * 2)
             {
-                console.log('🚗 Car near', portalPair.name, 'portal - Distance:', distance.toFixed(2), '/ Detection radius:', detectionRadius.toFixed(2))
+                this.log('🚗 Car near', portalPair.name, 'portal - Distance:', distance.toFixed(2), '/ Detection radius:', detectionRadius.toFixed(2))
             }
 
             if(distance < detectionRadius)
             {
-                console.log('🌀 TELEPORTING through', portalPair.name, '- Distance:', distance.toFixed(2))
+                this.log('🌀 TELEPORTING through', portalPair.name, '- Distance:', distance.toFixed(2))
 
                 // Teleport to the entrance's destination
                 this.teleportCar(entrance)
@@ -443,7 +465,7 @@ export default class Portals
 
         const dest = portal.destinationPos
 
-        console.log('✨ Teleporting car to:', dest.x.toFixed(2), dest.y.toFixed(2), dest.z.toFixed(2))
+        this.log('✨ Teleporting car to:', dest.x.toFixed(2), dest.y.toFixed(2), dest.z.toFixed(2))
 
         // Teleport physics body
         this.physics.car.chassis.body.position.set(
@@ -459,7 +481,7 @@ export default class Portals
         // Wake up physics body
         this.physics.car.chassis.body.wakeUp()
 
-        console.log('✅ Teleport complete!')
+        this.log('✅ Teleport complete!')
     }
 
     update()
@@ -468,7 +490,7 @@ export default class Portals
         this.debugUpdateCount++
         if(this.debugUpdateCount === 60)
         {
-            console.log('🔄 Portal update() is running. Enabled:', this.settings.enabled, 'Car exists:', !!this.car, 'Physics exists:', !!this.physics)
+            this.log('🔄 Portal update() is running. Enabled:', this.settings.enabled, 'Car exists:', !!this.car, 'Physics exists:', !!this.physics)
             this.debugUpdateCount = 0
         }
 
@@ -549,12 +571,41 @@ export default class Portals
     {
         if(!this.settings.enabled) return
         if(!this.renderer || !this.scene) return
+        if(!this.camera || !this.camera.instance) return
+
+        this.renderFrameCount++
+        if(this.renderFrameCount % this.settings.renderInterval !== 0)
+        {
+            return
+        }
+
+        const cameraPosition = this.camera.instance.position
+        this.camera.instance.getWorldDirection(this.tempDirection)
+        const maxDistanceSq = this.settings.maxRenderDistance * this.settings.maxRenderDistance
 
         // Render each portal's view
         for(const portalPair of this.portals)
         {
             for(const portal of [portalPair.entrance, portalPair.exit])
             {
+                this.tempToPortal.copy(portal.position).sub(cameraPosition)
+                const distanceSq = this.tempToPortal.lengthSq()
+                if(distanceSq > maxDistanceSq)
+                {
+                    continue
+                }
+                if(distanceSq < 0.0001)
+                {
+                    continue
+                }
+
+                // Skip rendering portals mostly behind camera
+                const facing = this.tempDirection.dot(this.tempToPortal.normalize())
+                if(facing < -0.3)
+                {
+                    continue
+                }
+
                 // Temporarily hide this portal to avoid recursive rendering
                 portal.group.visible = false
 

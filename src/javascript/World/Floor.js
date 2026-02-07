@@ -6,6 +6,7 @@ export default class Floor
     constructor(_options)
     {
         // Options
+        this.time = _options.time
         this.debug = _options.debug
 
         // Container
@@ -24,31 +25,53 @@ export default class Floor
 
         // Material
         this.material = new FloorMaterial()
+        this.material.uniforms.uWetness.value = 0
+        this.tempTopLeft = new THREE.Color()
+        this.tempTopRight = new THREE.Color()
+        this.tempBottomRight = new THREE.Color()
+        this.tempBottomLeft = new THREE.Color()
+
+        // Keep one texture and update bytes in place to avoid allocations
+        this.backgroundData = new Uint8Array(2 * 2 * 4)
+        this.backgroundTexture = new THREE.DataTexture(this.backgroundData, 2, 2)
+        this.backgroundTexture.magFilter = THREE.LinearFilter
+        this.backgroundTexture.minFilter = THREE.LinearFilter
+        this.backgroundTexture.needsUpdate = true
+        this.material.uniforms.tBackground.value = this.backgroundTexture
 
         this.updateMaterial = () =>
         {
-            const topLeft = new THREE.Color(this.colors.topLeft)
-            const topRight = new THREE.Color(this.colors.topRight)
-            const bottomRight = new THREE.Color(this.colors.bottomRight)
-            const bottomLeft = new THREE.Color(this.colors.bottomLeft)
+            const topLeft = this.tempTopLeft.set(this.colors.topLeft)
+            const topRight = this.tempTopRight.set(this.colors.topRight)
+            const bottomRight = this.tempBottomRight.set(this.colors.bottomRight)
+            const bottomLeft = this.tempBottomLeft.set(this.colors.bottomLeft)
 
             topLeft.convertLinearToSRGB()
             topRight.convertLinearToSRGB()
             bottomRight.convertLinearToSRGB()
             bottomLeft.convertLinearToSRGB()
 
-            const data = new Uint8Array([
-                Math.round(bottomLeft.r * 255), Math.round(bottomLeft.g * 255), Math.round(bottomLeft.b * 255), 255,
-                Math.round(bottomRight.r * 255), Math.round(bottomRight.g * 255), Math.round(bottomRight.b * 255), 255,
-                Math.round(topLeft.r * 255), Math.round(topLeft.g * 255), Math.round(topLeft.b * 255), 255,
-                Math.round(topRight.r * 255), Math.round(topRight.g * 255), Math.round(topRight.b * 255), 255
-            ])
+            this.backgroundData[0] = Math.round(bottomLeft.r * 255)
+            this.backgroundData[1] = Math.round(bottomLeft.g * 255)
+            this.backgroundData[2] = Math.round(bottomLeft.b * 255)
+            this.backgroundData[3] = 255
 
-            this.backgroundTexture = new THREE.DataTexture(data, 2, 2)
-            this.backgroundTexture.magFilter = THREE.LinearFilter
+            this.backgroundData[4] = Math.round(bottomRight.r * 255)
+            this.backgroundData[5] = Math.round(bottomRight.g * 255)
+            this.backgroundData[6] = Math.round(bottomRight.b * 255)
+            this.backgroundData[7] = 255
+
+            this.backgroundData[8] = Math.round(topLeft.r * 255)
+            this.backgroundData[9] = Math.round(topLeft.g * 255)
+            this.backgroundData[10] = Math.round(topLeft.b * 255)
+            this.backgroundData[11] = 255
+
+            this.backgroundData[12] = Math.round(topRight.r * 255)
+            this.backgroundData[13] = Math.round(topRight.g * 255)
+            this.backgroundData[14] = Math.round(topRight.b * 255)
+            this.backgroundData[15] = 255
+
             this.backgroundTexture.needsUpdate = true
-
-            this.material.uniforms.tBackground.value = this.backgroundTexture
         }
 
         this.updateMaterial()
@@ -59,6 +82,19 @@ export default class Floor
         this.mesh.matrixAutoUpdate = false
         this.mesh.updateMatrix()
         this.container.add(this.mesh)
+
+        this.setWetness = (_value) =>
+        {
+            this.material.uniforms.uWetness.value = Math.min(Math.max(_value, 0), 1)
+        }
+
+        if(this.time)
+        {
+            this.time.on('tick', () =>
+            {
+                this.material.uniforms.uTime.value = this.time.elapsed
+            })
+        }
 
         // Debug
         if(this.debug)

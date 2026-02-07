@@ -14,25 +14,30 @@ export default class ThreejsJourney
         this.$messages = [...this.$container.querySelectorAll('.js-message')]
         this.$yes = this.$container.querySelector('.js-yes')
         this.$no = this.$container.querySelector('.js-no')
+
         this.step = 0
         this.maxStep = this.$messages.length - 1
-        // Popup completely disabled
-        this.prevent = true
-        this.shown = true
+        this.traveledDistance = 0
+        this.seenCount = Number(window.localStorage.getItem('threejsJourneySeenCount') || 0)
+        this.prevent = window.localStorage.getItem('threejsJourneyPrevent') === '1'
+        this.shown = this.prevent || this.config.touch
+        this.minTraveledDistance = this.seenCount === 0 ? 4 : 22
 
-        // Don't show popup
-        return
+        this.setYesNo()
+        this.setLog()
 
         this.time.on('tick', () =>
         {
-            if(this.world.physics)
+            if(!this.world.physics || this.shown || this.config.touch)
             {
-                this.traveledDistance += this.world.physics.car.forwardSpeed
+                return
+            }
 
-                if(!this.config.touch && !this.shown && this.traveledDistance > this.minTraveledDistance)
-                {
-                    this.start()
-                }
+            this.traveledDistance += Math.abs(this.world.physics.car.forwardSpeed)
+
+            if(this.traveledDistance > this.minTraveledDistance)
+            {
+                this.start()
             }
         })
     }
@@ -42,7 +47,7 @@ export default class ThreejsJourney
         // Clicks
         this.$yes.addEventListener('click', () =>
         {
-            gsap.delayedCall(2, () =>
+            gsap.delayedCall(1.5, () =>
             {
                 this.hide()
             })
@@ -53,7 +58,7 @@ export default class ThreejsJourney
         {
             this.next()
 
-            gsap.delayedCall(5, () =>
+            gsap.delayedCall(4.5, () =>
             {
                 this.hide()
             })
@@ -91,20 +96,21 @@ export default class ThreejsJourney
 
     setLog()
     {
-        console.log('%cWelcome to my portfolio!', 'color: #32ffce; font-size: 16px; font-weight: bold;');
-        console.log('%cFull-Stack Software Engineer | React, TypeScript, Node.js', 'color: #32ffce');
-        console.log('%cCheckout my work: https://github.com/RSimmons2021', 'color: #32ffce');
-        console.log('%c— Richard Simmons', 'color: #777777');
+        if(this.config.debug)
+        {
+            console.log('%cWelcome to Richard Simmons Portfolio', 'color: #8ED4FF; font-size: 14px; font-weight: 700;')
+            console.log('%cUse WASD / Arrows to drive. Shift to boost. H to horn.', 'color: #8ED4FF')
+        }
     }
 
     hide()
     {
-        for(const _$message of this.$messages)
+        for(const $message of this.$messages)
         {
-            _$message.classList.remove('is-visible')
+            $message.classList.remove('is-visible')
         }
 
-        gsap.delayedCall(0.5, () =>
+        gsap.delayedCall(0.45, () =>
         {
             this.$container.classList.remove('is-active')
         })
@@ -112,24 +118,23 @@ export default class ThreejsJourney
 
     start()
     {
+        if(this.shown || this.prevent || this.config.touch)
+        {
+            return
+        }
+
+        this.step = 0
         this.$container.classList.add('is-active')
 
         window.requestAnimationFrame(() =>
         {
             this.next()
-
-            gsap.delayedCall(4, () =>
-            {
-                this.next()
-            })
-            gsap.delayedCall(7, () =>
-            {
-                this.next()
-            })
+            gsap.delayedCall(3.2, () => this.next())
+            gsap.delayedCall(6.4, () => this.next())
+            gsap.delayedCall(9.0, () => this.next())
         })
 
         this.shown = true
-        
         window.localStorage.setItem('threejsJourneySeenCount', this.seenCount + 1)
     }
 
@@ -138,11 +143,12 @@ export default class ThreejsJourney
         let i = 0
 
         // Visibility
-        for(const _$message of this.$messages)
+        for(const $message of this.$messages)
         {
             if(i < this.step)
-                _$message.classList.add('is-visible')
-
+            {
+                $message.classList.add('is-visible')
+            }
             i++
         }
 
@@ -151,22 +157,20 @@ export default class ThreejsJourney
 
         let height = 0
         i = this.maxStep
-        for(const _$message of this.$messages)
+        for(const $message of this.$messages)
         {
-            const messageHeight = _$message.offsetHeight
+            const messageHeight = $message.offsetHeight
             if(i < this.step)
             {
-                _$message.style.transform = `translateY(${- height}px)`
-                height += messageHeight + 20
+                $message.style.transform = `translateY(${-height}px)`
+                height += messageHeight + 16
             }
             else
             {
-                _$message.style.transform = `translateY(${messageHeight}px)`
+                $message.style.transform = `translateY(${messageHeight + 12}px)`
             }
-
             i--
         }
-
 
         this.$messages.reverse()
     }
@@ -174,10 +178,11 @@ export default class ThreejsJourney
     next()
     {
         if(this.step > this.maxStep)
+        {
             return
+        }
 
         this.step++
-
         this.updateMessages()
     }
 }

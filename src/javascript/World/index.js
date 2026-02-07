@@ -27,6 +27,7 @@ import AdvancedLighting from './AdvancedLighting.js'
 import DayNightCycle from './DayNightCycle.js'
 import GhostCar from './GhostCar.js'
 import Portals from './Portals.js'
+import ExperienceHUD from './ExperienceHUD.js'
 
 export default class World
 {
@@ -83,6 +84,7 @@ export default class World
         this.setParticleTrails()
         this.setAdvancedLighting()
         this.setDayNightCycle()
+        this.setExperienceHUD()
         this.setGhostCar()
         this.setPortals()
         this.setEasterEggs()
@@ -294,6 +296,7 @@ export default class World
     setFloor()
     {
         this.floor = new Floor({
+            time: this.time,
             debug: this.debugFolder
         })
 
@@ -530,15 +533,7 @@ export default class World
             physics: this.physics,
             debug: this.debugFolder
         })
-        // Add lights directly to scene for proper illumination
-        this.scene.add(this.advancedLighting.ambientLight)
-        this.scene.add(this.advancedLighting.directionalLight)
-        this.scene.add(this.advancedLighting.spotlight)
-        this.scene.add(this.advancedLighting.spotlightTarget)
-        if(this.advancedLighting.spotlightHelper)
-        {
-            this.scene.add(this.advancedLighting.spotlightHelper)
-        }
+        this.scene.add(this.advancedLighting.container)
     }
 
     setDayNightCycle()
@@ -549,6 +544,15 @@ export default class World
             materials: this.materials,
             advancedLighting: this.advancedLighting,
             debug: this.debugFolder
+        })
+    }
+
+    setExperienceHUD()
+    {
+        this.experienceHUD = new ExperienceHUD({
+            time: this.time,
+            physics: this.physics,
+            dayNightCycle: this.dayNightCycle
         })
     }
 

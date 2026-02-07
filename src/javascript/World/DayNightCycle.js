@@ -15,63 +15,121 @@ export default class DayNightCycle
         // Settings
         this.settings = {}
         this.settings.enabled = true
-        this.settings.cycleDuration = 60 // seconds for full day/night cycle
-        this.settings.autoPlay = false
+        this.settings.cycleDuration = 120 // seconds for full day/night cycle
+        this.settings.autoPlay = true
         this.settings.currentTime = 0.5 // 0 = night, 0.5 = day, 1 = night
-        this.settings.transitionSpeed = 0.5 // Speed multiplier
+        this.settings.transitionSpeed = 0.5
+
+        this.weatherInfluence = {
+            ambientMultiplier: 1,
+            directionalMultiplier: 1,
+            spotlightMultiplier: 1,
+            floorDarkness: 0,
+            materialIndirectMultiplier: 1,
+            flash: 0
+        }
 
         // Color schemes
         this.colorSchemes = {
             day: {
                 floor: {
-                    topLeft: '#8B9B7A',      // Sage green
-                    topRight: '#7A8A69',     // Olive green
-                    bottomRight: '#D4C5B0',  // Beige
-                    bottomLeft: '#B8A999'    // Tan
+                    topLeft: '#8B9B7A',
+                    topRight: '#7A8A69',
+                    bottomRight: '#D4C5B0',
+                    bottomLeft: '#B8A999'
                 },
-                ambient: '#6B7F3F',          // Olive green
+                ambient: '#6B7F3F',
                 ambientIntensity: 0.3,
                 directional: '#ffffff',
                 directionalIntensity: 0.5,
                 spotlight: '#ffffff',
                 spotlightIntensity: 1.5,
-                materialIndirect: '#800020' // Burgundy
+                materialIndirect: '#800020'
+            },
+            sunrise: {
+                floor: {
+                    topLeft: '#6D7D6C',
+                    topRight: '#7E7562',
+                    bottomRight: '#D0A279',
+                    bottomLeft: '#A97A65'
+                },
+                ambient: '#7B6652',
+                ambientIntensity: 0.25,
+                directional: '#FFD2A1',
+                directionalIntensity: 0.4,
+                spotlight: '#FFE2BF',
+                spotlightIntensity: 1.8,
+                materialIndirect: '#92503A'
+            },
+            sunset: {
+                floor: {
+                    topLeft: '#5A5B6E',
+                    topRight: '#785D6A',
+                    bottomRight: '#B97F64',
+                    bottomLeft: '#8B5E57'
+                },
+                ambient: '#5A4A63',
+                ambientIntensity: 0.2,
+                directional: '#FFB38A',
+                directionalIntensity: 0.35,
+                spotlight: '#FFD7C2',
+                spotlightIntensity: 2.1,
+                materialIndirect: '#6A3F56'
             },
             night: {
                 floor: {
-                    topLeft: '#2C3E50',      // Dark blue-gray
-                    topRight: '#34495E',     // Slightly lighter blue-gray
-                    bottomRight: '#1A1A2E',  // Very dark blue
-                    bottomLeft: '#16213E'    // Dark navy
+                    topLeft: '#2C3E50',
+                    topRight: '#34495E',
+                    bottomRight: '#1A1A2E',
+                    bottomLeft: '#16213E'
                 },
-                ambient: '#1E3A5F',          // Dark blue
+                ambient: '#1E3A5F',
                 ambientIntensity: 0.15,
-                directional: '#8AB4F8',      // Cool blue
+                directional: '#8AB4F8',
                 directionalIntensity: 0.2,
-                spotlight: '#B4C7E7',        // Cool light blue
+                spotlight: '#B4C7E7',
                 spotlightIntensity: 2.5,
-                materialIndirect: '#4A5568' // Cool gray
+                materialIndirect: '#4A5568'
             }
         }
 
-        // Current values (will interpolate between day/night)
+        this.timeline = [
+            { time: 0.0, scheme: 'night' },
+            { time: 0.23, scheme: 'sunrise' },
+            { time: 0.5, scheme: 'day' },
+            { time: 0.77, scheme: 'sunset' },
+            { time: 1.0, scheme: 'night' }
+        ]
+
+        this.schemeColors = this.prepareColorSchemes()
+
         this.currentColors = {
             floor: {
-                topLeft: new THREE.Color(this.colorSchemes.day.floor.topLeft),
-                topRight: new THREE.Color(this.colorSchemes.day.floor.topRight),
-                bottomRight: new THREE.Color(this.colorSchemes.day.floor.bottomRight),
-                bottomLeft: new THREE.Color(this.colorSchemes.day.floor.bottomLeft)
+                topLeft: new THREE.Color(),
+                topRight: new THREE.Color(),
+                bottomRight: new THREE.Color(),
+                bottomLeft: new THREE.Color()
             },
-            ambient: new THREE.Color(this.colorSchemes.day.ambient),
-            ambientIntensity: this.colorSchemes.day.ambientIntensity,
-            directional: new THREE.Color(this.colorSchemes.day.directional),
-            directionalIntensity: this.colorSchemes.day.directionalIntensity,
-            spotlight: new THREE.Color(this.colorSchemes.day.spotlight),
-            spotlightIntensity: this.colorSchemes.day.spotlightIntensity,
-            materialIndirect: new THREE.Color(this.colorSchemes.day.materialIndirect)
+            ambient: new THREE.Color(),
+            ambientIntensity: 0,
+            directional: new THREE.Color(),
+            directionalIntensity: 0,
+            spotlight: new THREE.Color(),
+            spotlightIntensity: 0,
+            materialIndirect: new THREE.Color()
         }
 
-        console.log('🌓 Day/Night cycle initialized - Current time:', this.settings.currentTime)
+        this.floorColorOutput = {
+            topLeft: new THREE.Color(),
+            topRight: new THREE.Color(),
+            bottomRight: new THREE.Color(),
+            bottomLeft: new THREE.Color()
+        }
+
+        this.tempFlashColor = new THREE.Color(0xffffff)
+
+        this.lastAppliedTime = -1
+        this.lastWeatherSignature = ''
 
         // Time tick
         this.time.on('tick', () =>
@@ -83,7 +141,7 @@ export default class DayNightCycle
         if(this.debug)
         {
             this.debugFolder = this.debug.addFolder('dayNightCycle')
-            this.debugFolder.open() // Open by default so it's visible
+            this.debugFolder.open()
             this.debugFolder.add(this.settings, 'enabled').name('enabled')
             this.debugFolder.add(this.settings, 'autoPlay').name('autoPlay')
             this.debugFolder.add(this.settings, 'currentTime').min(0).max(1).step(0.01).name('time').listen()
@@ -91,8 +149,46 @@ export default class DayNightCycle
             this.debugFolder.add(this.settings, 'transitionSpeed').min(0.1).max(2).step(0.1).name('transitionSpeed')
             this.debugFolder.add(this, 'transitionToDay').name('→ Day')
             this.debugFolder.add(this, 'transitionToNight').name('→ Night')
+            this.debugFolder.add(this, 'transitionToSunrise').name('→ Sunrise')
             this.debugFolder.add(this, 'transitionToSunset').name('→ Sunset')
         }
+    }
+
+    prepareColorSchemes()
+    {
+        const result = {}
+
+        for(const key in this.colorSchemes)
+        {
+            const source = this.colorSchemes[key]
+            result[key] = {
+                floor: {
+                    topLeft: new THREE.Color(source.floor.topLeft),
+                    topRight: new THREE.Color(source.floor.topRight),
+                    bottomRight: new THREE.Color(source.floor.bottomRight),
+                    bottomLeft: new THREE.Color(source.floor.bottomLeft)
+                },
+                ambient: new THREE.Color(source.ambient),
+                ambientIntensity: source.ambientIntensity,
+                directional: new THREE.Color(source.directional),
+                directionalIntensity: source.directionalIntensity,
+                spotlight: new THREE.Color(source.spotlight),
+                spotlightIntensity: source.spotlightIntensity,
+                materialIndirect: new THREE.Color(source.materialIndirect)
+            }
+        }
+
+        return result
+    }
+
+    setWeatherInfluence(_influence = {})
+    {
+        if(typeof _influence.ambientMultiplier === 'number') this.weatherInfluence.ambientMultiplier = _influence.ambientMultiplier
+        if(typeof _influence.directionalMultiplier === 'number') this.weatherInfluence.directionalMultiplier = _influence.directionalMultiplier
+        if(typeof _influence.spotlightMultiplier === 'number') this.weatherInfluence.spotlightMultiplier = _influence.spotlightMultiplier
+        if(typeof _influence.floorDarkness === 'number') this.weatherInfluence.floorDarkness = _influence.floorDarkness
+        if(typeof _influence.materialIndirectMultiplier === 'number') this.weatherInfluence.materialIndirectMultiplier = _influence.materialIndirectMultiplier
+        if(typeof _influence.flash === 'number') this.weatherInfluence.flash = _influence.flash
     }
 
     transitionToDay()
@@ -113,20 +209,48 @@ export default class DayNightCycle
         })
     }
 
-    transitionToSunset()
+    transitionToSunrise()
     {
         gsap.to(this.settings, {
-            currentTime: 0.75,
-            duration: 2 / this.settings.transitionSpeed,
+            currentTime: 0.23,
+            duration: 2.5 / this.settings.transitionSpeed,
             ease: 'power2.inOut'
         })
     }
 
+    transitionToSunset()
+    {
+        gsap.to(this.settings, {
+            currentTime: 0.77,
+            duration: 2.5 / this.settings.transitionSpeed,
+            ease: 'power2.inOut'
+        })
+    }
+
+    getTimelineBlend(_time)
+    {
+        for(let i = 0; i < this.timeline.length - 1; i++)
+        {
+            const start = this.timeline[i]
+            const end = this.timeline[i + 1]
+            if(_time >= start.time && _time <= end.time)
+            {
+                const range = end.time - start.time
+                const ratio = range > 0 ? (_time - start.time) / range : 0
+                return { from: start.scheme, to: end.scheme, ratio: this.easeInOutSine(ratio) }
+            }
+        }
+
+        return { from: 'night', to: 'night', ratio: 0 }
+    }
+
     update()
     {
-        if(!this.settings.enabled) return
+        if(!this.settings.enabled)
+        {
+            return
+        }
 
-        // Update cycle time if auto-playing
         if(this.settings.autoPlay)
         {
             const delta = this.time.delta / 1000
@@ -134,107 +258,82 @@ export default class DayNightCycle
             this.settings.currentTime = (this.settings.currentTime + increment * this.settings.transitionSpeed) % 1
         }
 
-        // Calculate interpolation factor
-        // 0.0 = night, 0.5 = day, 1.0 = night
-        let factor
-        if(this.settings.currentTime <= 0.5)
+        const weatherSignature = `${this.weatherInfluence.ambientMultiplier.toFixed(3)}-${this.weatherInfluence.directionalMultiplier.toFixed(3)}-${this.weatherInfluence.spotlightMultiplier.toFixed(3)}-${this.weatherInfluence.floorDarkness.toFixed(3)}-${this.weatherInfluence.materialIndirectMultiplier.toFixed(3)}-${this.weatherInfluence.flash.toFixed(3)}`
+        const timeChanged = Math.abs(this.settings.currentTime - this.lastAppliedTime) > 0.0008
+        const weatherChanged = weatherSignature !== this.lastWeatherSignature
+
+        if(!timeChanged && !weatherChanged)
         {
-            // Night to day (0 -> 0.5)
-            factor = this.settings.currentTime * 2 // 0 to 1
-        }
-        else
-        {
-            // Day to night (0.5 -> 1)
-            factor = 1 - (this.settings.currentTime - 0.5) * 2 // 1 to 0
+            return
         }
 
-        // Apply smooth easing
-        factor = this.easeInOutSine(factor)
+        this.lastAppliedTime = this.settings.currentTime
+        this.lastWeatherSignature = weatherSignature
+
+        const blend = this.getTimelineBlend(this.settings.currentTime)
+        const from = this.schemeColors[blend.from]
+        const to = this.schemeColors[blend.to]
+        const t = blend.ratio
 
         // Interpolate floor colors
-        this.currentColors.floor.topLeft.lerpColors(
-            new THREE.Color(this.colorSchemes.night.floor.topLeft),
-            new THREE.Color(this.colorSchemes.day.floor.topLeft),
-            factor
-        )
-        this.currentColors.floor.topRight.lerpColors(
-            new THREE.Color(this.colorSchemes.night.floor.topRight),
-            new THREE.Color(this.colorSchemes.day.floor.topRight),
-            factor
-        )
-        this.currentColors.floor.bottomRight.lerpColors(
-            new THREE.Color(this.colorSchemes.night.floor.bottomRight),
-            new THREE.Color(this.colorSchemes.day.floor.bottomRight),
-            factor
-        )
-        this.currentColors.floor.bottomLeft.lerpColors(
-            new THREE.Color(this.colorSchemes.night.floor.bottomLeft),
-            new THREE.Color(this.colorSchemes.day.floor.bottomLeft),
-            factor
-        )
+        this.currentColors.floor.topLeft.lerpColors(from.floor.topLeft, to.floor.topLeft, t)
+        this.currentColors.floor.topRight.lerpColors(from.floor.topRight, to.floor.topRight, t)
+        this.currentColors.floor.bottomRight.lerpColors(from.floor.bottomRight, to.floor.bottomRight, t)
+        this.currentColors.floor.bottomLeft.lerpColors(from.floor.bottomLeft, to.floor.bottomLeft, t)
 
-        // Update floor colors
+        // Apply weather darkening and lightning flash to floor
+        const floorDarkness = Math.min(Math.max(this.weatherInfluence.floorDarkness, 0), 1)
+        const floorFlash = Math.min(Math.max(this.weatherInfluence.flash * 0.35, 0), 0.35)
+
+        this.floorColorOutput.topLeft.copy(this.currentColors.floor.topLeft).multiplyScalar(1 - floorDarkness * 0.55).lerp(this.tempFlashColor, floorFlash)
+        this.floorColorOutput.topRight.copy(this.currentColors.floor.topRight).multiplyScalar(1 - floorDarkness * 0.55).lerp(this.tempFlashColor, floorFlash)
+        this.floorColorOutput.bottomRight.copy(this.currentColors.floor.bottomRight).multiplyScalar(1 - floorDarkness * 0.6).lerp(this.tempFlashColor, floorFlash)
+        this.floorColorOutput.bottomLeft.copy(this.currentColors.floor.bottomLeft).multiplyScalar(1 - floorDarkness * 0.6).lerp(this.tempFlashColor, floorFlash)
+
         if(this.floor)
         {
-            this.floor.colors.topLeft = '#' + this.currentColors.floor.topLeft.getHexString()
-            this.floor.colors.topRight = '#' + this.currentColors.floor.topRight.getHexString()
-            this.floor.colors.bottomRight = '#' + this.currentColors.floor.bottomRight.getHexString()
-            this.floor.colors.bottomLeft = '#' + this.currentColors.floor.bottomLeft.getHexString()
+            this.floor.colors.topLeft = '#' + this.floorColorOutput.topLeft.getHexString()
+            this.floor.colors.topRight = '#' + this.floorColorOutput.topRight.getHexString()
+            this.floor.colors.bottomRight = '#' + this.floorColorOutput.bottomRight.getHexString()
+            this.floor.colors.bottomLeft = '#' + this.floorColorOutput.bottomLeft.getHexString()
             this.floor.updateMaterial()
         }
 
         // Interpolate lighting colors and intensities
         if(this.advancedLighting)
         {
-            // Ambient
-            this.currentColors.ambient.lerpColors(
-                new THREE.Color(this.colorSchemes.night.ambient),
-                new THREE.Color(this.colorSchemes.day.ambient),
-                factor
-            )
-            this.currentColors.ambientIntensity =
-                this.colorSchemes.night.ambientIntensity +
-                (this.colorSchemes.day.ambientIntensity - this.colorSchemes.night.ambientIntensity) * factor
+            this.currentColors.ambient.lerpColors(from.ambient, to.ambient, t)
+            this.currentColors.directional.lerpColors(from.directional, to.directional, t)
+            this.currentColors.spotlight.lerpColors(from.spotlight, to.spotlight, t)
+
+            this.currentColors.ambientIntensity = (from.ambientIntensity + (to.ambientIntensity - from.ambientIntensity) * t) * this.weatherInfluence.ambientMultiplier + this.weatherInfluence.flash * 0.2
+            this.currentColors.directionalIntensity = (from.directionalIntensity + (to.directionalIntensity - from.directionalIntensity) * t) * this.weatherInfluence.directionalMultiplier + this.weatherInfluence.flash * 0.75
+            this.currentColors.spotlightIntensity = (from.spotlightIntensity + (to.spotlightIntensity - from.spotlightIntensity) * t) * this.weatherInfluence.spotlightMultiplier + this.weatherInfluence.flash * 0.45
 
             this.advancedLighting.ambientLight.color.copy(this.currentColors.ambient)
             this.advancedLighting.ambientLight.intensity = this.currentColors.ambientIntensity
 
-            // Directional
-            this.currentColors.directional.lerpColors(
-                new THREE.Color(this.colorSchemes.night.directional),
-                new THREE.Color(this.colorSchemes.day.directional),
-                factor
-            )
-            this.currentColors.directionalIntensity =
-                this.colorSchemes.night.directionalIntensity +
-                (this.colorSchemes.day.directionalIntensity - this.colorSchemes.night.directionalIntensity) * factor
-
             this.advancedLighting.directionalLight.color.copy(this.currentColors.directional)
             this.advancedLighting.directionalLight.intensity = this.currentColors.directionalIntensity
-
-            // Spotlight
-            this.currentColors.spotlight.lerpColors(
-                new THREE.Color(this.colorSchemes.night.spotlight),
-                new THREE.Color(this.colorSchemes.day.spotlight),
-                factor
-            )
-            this.currentColors.spotlightIntensity =
-                this.colorSchemes.night.spotlightIntensity +
-                (this.colorSchemes.day.spotlightIntensity - this.colorSchemes.night.spotlightIntensity) * factor
 
             this.advancedLighting.spotlight.color.copy(this.currentColors.spotlight)
             this.advancedLighting.settings.spotlightIntensity = this.currentColors.spotlightIntensity
         }
 
-        // Interpolate material colors
         if(this.materials)
         {
-            this.currentColors.materialIndirect.lerpColors(
-                new THREE.Color(this.colorSchemes.night.materialIndirect),
-                new THREE.Color(this.colorSchemes.day.materialIndirect),
-                factor
-            )
-            this.materials.shades.indirectColor = '#' + this.currentColors.materialIndirect.getHexString()
+            this.currentColors.materialIndirect.lerpColors(from.materialIndirect, to.materialIndirect, t)
+            this.currentColors.materialIndirect.multiplyScalar(this.weatherInfluence.materialIndirectMultiplier)
+            this.currentColors.materialIndirect.lerp(this.tempFlashColor, Math.min(this.weatherInfluence.flash * 0.25, 0.2))
+
+            for(const materialKey in this.materials.shades.items)
+            {
+                const material = this.materials.shades.items[materialKey]
+                if(material.uniforms && material.uniforms.uIndirectColor)
+                {
+                    material.uniforms.uIndirectColor.value.copy(this.currentColors.materialIndirect)
+                }
+            }
         }
     }
 

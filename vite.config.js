@@ -13,7 +13,42 @@ export default {
     {
         outDir: '../dist', // Output in the dist/ folder
         emptyOutDir: true, // Empty the folder first
-        sourcemap: true // Add sourcemap
+        sourcemap: true, // Add sourcemap
+        rollupOptions:
+        {
+            output:
+            {
+                manualChunks(id)
+                {
+                    if(!id.includes('node_modules'))
+                    {
+                        return null
+                    }
+
+                    if(id.includes('three'))
+                    {
+                        return 'three-vendor'
+                    }
+
+                    if(id.includes('cannon'))
+                    {
+                        return 'physics-vendor'
+                    }
+
+                    if(id.includes('gsap'))
+                    {
+                        return 'animation-vendor'
+                    }
+
+                    if(id.includes('howler'))
+                    {
+                        return 'audio-vendor'
+                    }
+
+                    return 'vendor'
+                }
+            }
+        }
     },
     plugins:
     [

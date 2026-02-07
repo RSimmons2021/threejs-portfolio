@@ -9,7 +9,7 @@ export default class Time extends EventEmitter
     {
         super()
 
-        this.start = Date.now()
+        this.start = performance.now()
         this.current = this.start
         this.elapsed = 0
         this.delta = 16
@@ -25,7 +25,7 @@ export default class Time extends EventEmitter
     {
         this.ticker = window.requestAnimationFrame(this.tick)
 
-        const current = Date.now()
+        const current = performance.now()
 
         this.delta = current - this.current
         this.elapsed = current - this.start

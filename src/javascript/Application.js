@@ -30,6 +30,7 @@ export default class Application
         this.resources = new Resources()
 
         this.setConfig()
+        this.setPerformanceProfile()
         this.setDebug()
         this.setRenderer()
         this.setCamera()
@@ -62,6 +63,22 @@ export default class Application
     }
 
     /**
+     * Performance profile
+     */
+    setPerformanceProfile()
+    {
+        const coarsePointer = window.matchMedia('(pointer: coarse)').matches
+        const touchDevice = coarsePointer || navigator.maxTouchPoints > 0
+
+        this.performance = {}
+        this.performance.minDpr = 1
+        this.performance.maxDpr = touchDevice ? 1.5 : 2
+        this.performance.currentDpr = Math.min(window.devicePixelRatio, this.performance.maxDpr)
+        this.performance.sampleSize = 120
+        this.performance.samples = []
+    }
+
+    /**
      * Set debug
      */
     setDebug()
@@ -88,14 +105,15 @@ export default class Application
         })
         // this.renderer.setClearColor(0x414141, 1)
         this.renderer.setClearColor(0x000000, 1)
-        // this.renderer.setPixelRatio(Math.min(Math.max(window.devicePixelRatio, 1.5), 2))
-        this.renderer.setPixelRatio(2)
+        this.renderer.setPixelRatio(this.performance.currentDpr)
         this.renderer.setSize(this.sizes.viewport.width, this.sizes.viewport.height)
         this.renderer.autoClear = false
 
         // Resize event
         this.sizes.on('resize', () =>
         {
+            this.performance.currentDpr = Math.min(window.devicePixelRatio, this.performance.maxDpr)
+            this.renderer.setPixelRatio(this.performance.currentDpr)
             this.renderer.setSize(this.sizes.viewport.width, this.sizes.viewport.height)
         })
     }
@@ -137,6 +155,7 @@ export default class Application
         }
 
         this.passes.composer = new EffectComposer(this.renderer)
+        this.passes.composer.setPixelRatio(this.performance.currentDpr)
 
         // Create passes
         this.passes.renderPass = new RenderPass(this.scene, this.camera.instance)
@@ -194,6 +213,33 @@ export default class Application
         // Time tick
         this.time.on('tick', () =>
         {
+            this.performance.samples.push(this.time.delta)
+            if(this.performance.samples.length >= this.performance.sampleSize)
+            {
+                const total = this.performance.samples.reduce((sum, value) => sum + value, 0)
+                const averageDelta = total / this.performance.samples.length
+                this.performance.samples.length = 0
+
+                let nextDpr = this.performance.currentDpr
+                if(averageDelta > 24)
+                {
+                    nextDpr = Math.max(this.performance.minDpr, this.performance.currentDpr - 0.1)
+                }
+                else if(averageDelta < 18)
+                {
+                    nextDpr = Math.min(this.performance.maxDpr, this.performance.currentDpr + 0.1)
+                }
+
+                if(Math.abs(nextDpr - this.performance.currentDpr) > 0.01)
+                {
+                    this.performance.currentDpr = nextDpr
+                    this.renderer.setPixelRatio(this.performance.currentDpr)
+                    this.passes.composer.setPixelRatio(this.performance.currentDpr)
+                    this.renderer.setSize(this.sizes.viewport.width, this.sizes.viewport.height)
+                    this.passes.composer.setSize(this.sizes.viewport.width, this.sizes.viewport.height)
+                }
+            }
+
             this.passes.horizontalBlurPass.enabled = this.passes.horizontalBlurPass.material.uniforms.uStrength.value.x > 0
             this.passes.verticalBlurPass.enabled = this.passes.verticalBlurPass.material.uniforms.uStrength.value.y > 0
 
@@ -214,6 +260,7 @@ export default class Application
         {
             this.renderer.setSize(this.sizes.viewport.width, this.sizes.viewport.height)
             this.passes.composer.setSize(this.sizes.viewport.width, this.sizes.viewport.height)
+            this.passes.composer.setPixelRatio(this.performance.currentDpr)
             this.passes.horizontalBlurPass.material.uniforms.uResolution.value.x = this.sizes.viewport.width
             this.passes.horizontalBlurPass.material.uniforms.uResolution.value.y = this.sizes.viewport.height
             this.passes.verticalBlurPass.material.uniforms.uResolution.value.x = this.sizes.viewport.width

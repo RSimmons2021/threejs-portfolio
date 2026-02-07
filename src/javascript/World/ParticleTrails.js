@@ -32,6 +32,9 @@ export default class ParticleTrails
         this.particleIndex = 0
         this.timeSinceLastEmit = 0
         this.emitInterval = 1000 / this.settings.particlesPerSecond // milliseconds
+        this.tempLocalOffset = new THREE.Vector3(-0.8, 0, -0.2)
+        this.tempWorldOffset = new THREE.Vector3()
+        this.tempQuaternion = new THREE.Quaternion()
 
         this.setGeometry()
         this.setMaterial()
@@ -160,8 +163,6 @@ export default class ParticleTrails
         this.mesh.frustumCulled = false
         this.mesh.renderOrder = 999 // Render on top
         this.container.add(this.mesh)
-
-        console.log('✨ Particle trails initialized')
     }
 
     emitParticle()
@@ -186,18 +187,18 @@ export default class ParticleTrails
         const carQuaternion = this.car.chassis.body.quaternion
 
         // Calculate emission position (behind the car, near the ground)
-        const localOffset = new THREE.Vector3(-0.8, 0, -0.2) // Behind and slightly below car center
-        const worldOffset = localOffset.applyQuaternion(new THREE.Quaternion(
+        this.tempQuaternion.set(
             carQuaternion.x,
             carQuaternion.y,
             carQuaternion.z,
             carQuaternion.w
-        ))
+        )
+        this.tempWorldOffset.copy(this.tempLocalOffset).applyQuaternion(this.tempQuaternion)
 
         particle.position.set(
-            carPosition.x + worldOffset.x,
-            carPosition.y + worldOffset.y,
-            carPosition.z + worldOffset.z + Math.random() * 0.1 - 0.05
+            carPosition.x + this.tempWorldOffset.x,
+            carPosition.y + this.tempWorldOffset.y,
+            carPosition.z + this.tempWorldOffset.z + Math.random() * 0.1 - 0.05
         )
 
         // Add some random spread
@@ -242,7 +243,7 @@ export default class ParticleTrails
         this.timeSinceLastEmit += this.time.delta
         if(this.timeSinceLastEmit >= this.emitInterval)
         {
-            const emitted = this.emitParticle()
+            this.emitParticle()
             this.timeSinceLastEmit = 0
         }
 
