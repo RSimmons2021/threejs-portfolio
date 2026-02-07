@@ -2,6 +2,7 @@ export default class ExperienceHUD
 {
     constructor(_options)
     {
+        this.config = _options.config
         this.time = _options.time
         this.physics = _options.physics
         this.dayNightCycle = _options.dayNightCycle
@@ -41,10 +42,9 @@ export default class ExperienceHUD
 
     detectMobile()
     {
-        const coarsePointer = window.matchMedia('(pointer: coarse)').matches
-        const touchCapable = navigator.maxTouchPoints > 0
-        const narrowViewport = window.innerWidth <= 768
-        return coarsePointer || touchCapable || narrowViewport
+        const touchLayout = window.matchMedia('(max-width: 768px), (hover: none) and (pointer: coarse)').matches
+        const usingTouchControls = Boolean(this.config && this.config.touch)
+        return touchLayout || usingTouchControls
     }
 
     setElements()
