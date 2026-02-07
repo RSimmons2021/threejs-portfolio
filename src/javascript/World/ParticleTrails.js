@@ -1,4 +1,6 @@
 import * as THREE from 'three'
+import particleTrailVertex from '../../shaders/particleTrail/vertex.glsl'
+import particleTrailFragment from '../../shaders/particleTrail/fragment.glsl'
 
 export default class ParticleTrails
 {
@@ -29,6 +31,7 @@ export default class ParticleTrails
         // Particle pool
         this.particles = []
         this.maxParticles = 150
+        this.activeCount = 0
         this.particleIndex = 0
         this.timeSinceLastEmit = 0
         this.emitInterval = 1000 / this.settings.particlesPerSecond // milliseconds
@@ -109,48 +112,8 @@ export default class ParticleTrails
             uniforms: {
                 uPixelRatio: { value: Math.min(window.devicePixelRatio, 2) }
             },
-            vertexShader: `
-                attribute float alpha;
-                attribute float size;
-                attribute vec3 color;
-
-                varying float vAlpha;
-                varying vec3 vColor;
-
-                uniform float uPixelRatio;
-
-                void main()
-                {
-                    vAlpha = alpha;
-                    vColor = color;
-
-                    vec4 modelPosition = modelMatrix * vec4(position, 1.0);
-                    vec4 viewPosition = viewMatrix * modelPosition;
-                    vec4 projectionPosition = projectionMatrix * viewPosition;
-
-                    gl_Position = projectionPosition;
-                    gl_PointSize = size * uPixelRatio * 100.0;
-                    gl_PointSize *= (1.0 / -viewPosition.z);
-                }
-            `,
-            fragmentShader: `
-                varying float vAlpha;
-                varying vec3 vColor;
-
-                void main()
-                {
-                    // Create circular particles
-                    float distanceToCenter = distance(gl_PointCoord, vec2(0.5));
-                    float strength = 0.05 / distanceToCenter - 0.1;
-                    strength = clamp(strength, 0.0, 1.0);
-
-                    // Apply glow effect
-                    vec3 finalColor = vColor * strength;
-                    float finalAlpha = vAlpha * strength;
-
-                    gl_FragColor = vec4(finalColor, finalAlpha);
-                }
-            `,
+            vertexShader: particleTrailVertex,
+            fragmentShader: particleTrailFragment,
             transparent: true,
             depthWrite: false,
             blending: THREE.AdditiveBlending
@@ -251,6 +214,10 @@ export default class ParticleTrails
         const positions = this.geometry.attributes.position.array
         const alphas = this.geometry.attributes.alpha.array
         const sizes = this.geometry.attributes.size.array
+        const deltaSeconds = this.time.delta / 1000
+
+        let activeCount = 0
+        let dirty = false
 
         for(let i = 0; i < this.maxParticles; i++)
         {
@@ -258,8 +225,10 @@ export default class ParticleTrails
 
             if(particle.active)
             {
+                dirty = true
+
                 // Update life
-                particle.life += this.time.delta / 1000
+                particle.life += deltaSeconds
 
                 if(particle.life >= particle.maxLife)
                 {
@@ -270,6 +239,8 @@ export default class ParticleTrails
                 }
                 else
                 {
+                    activeCount++
+
                     // Update position with velocity
                     particle.position.add(particle.velocity)
 
@@ -287,9 +258,14 @@ export default class ParticleTrails
             }
         }
 
-        // Mark attributes as needing update
-        this.geometry.attributes.position.needsUpdate = true
-        this.geometry.attributes.alpha.needsUpdate = true
-        this.geometry.attributes.size.needsUpdate = true
+        this.activeCount = activeCount
+
+        // Only flag GPU upload when something actually changed
+        if(dirty)
+        {
+            this.geometry.attributes.position.needsUpdate = true
+            this.geometry.attributes.alpha.needsUpdate = true
+            this.geometry.attributes.size.needsUpdate = true
+        }
     }
 }

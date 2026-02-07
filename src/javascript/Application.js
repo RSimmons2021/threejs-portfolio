@@ -13,6 +13,7 @@ import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js'
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js'
 import BlurPass from './Passes/Blur.js'
 import GlowsPass from './Passes/Glows.js'
+import VignettePass from './Passes/Vignette.js'
 
 export default class Application
 {
@@ -204,11 +205,24 @@ export default class Application
             folder.add(this.passes.glowsPass.material.uniforms.uAlpha, 'value').step(0.001).min(0).max(1).name('alpha')
         }
 
+        this.passes.vignettePass = new ShaderPass(VignettePass)
+        this.passes.vignettePass.material.uniforms.uIntensity.value = 0.35
+        this.passes.vignettePass.material.uniforms.uSmoothness.value = 0.65
+
+        // Debug
+        if(this.debug)
+        {
+            const folder = this.passes.debugFolder.addFolder('vignette')
+            folder.add(this.passes.vignettePass.material.uniforms.uIntensity, 'value').step(0.01).min(0).max(1).name('intensity')
+            folder.add(this.passes.vignettePass.material.uniforms.uSmoothness, 'value').step(0.01).min(0.1).max(1).name('smoothness')
+        }
+
         // Add passes
         this.passes.composer.addPass(this.passes.renderPass)
         this.passes.composer.addPass(this.passes.horizontalBlurPass)
         this.passes.composer.addPass(this.passes.verticalBlurPass)
         this.passes.composer.addPass(this.passes.glowsPass)
+        this.passes.composer.addPass(this.passes.vignettePass)
 
         // Time tick
         this.time.on('tick', () =>
@@ -340,8 +354,12 @@ export default class Application
         this.time.off('tick')
         this.sizes.off('resize')
 
-        this.camera.orbitControls.dispose()
+        this.camera.dispose()
         this.renderer.dispose()
-        this.debug.destroy()
+
+        if(this.debug)
+        {
+            this.debug.destroy()
+        }
     }
 }

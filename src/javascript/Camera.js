@@ -28,12 +28,21 @@ export default class Camera
             // this.debugFolder.open()
         }
 
+        // Store bound listeners for cleanup
+        this._listeners = []
+
         this.setAngle()
         this.setInstance()
         this.setZoom()
         this.setPan()
         this.setCameraShake()
         this.setOrbitControls()
+    }
+
+    _addListener(target, event, handler, options)
+    {
+        target.addEventListener(event, handler, options)
+        this._listeners.push({ target, event, handler, options })
     }
 
     setAngle()
@@ -121,7 +130,7 @@ export default class Camera
         this.zoom.distance = this.zoom.minDistance + this.zoom.amplitude * this.zoom.value
 
         // Listen to mousewheel event
-        document.addEventListener('mousewheel', (_event) =>
+        this._addListener(document, 'mousewheel', (_event) =>
         {
             this.zoom.targetValue += _event.deltaY * 0.001
             this.zoom.targetValue = Math.min(Math.max(this.zoom.targetValue, 0), 1)
@@ -132,7 +141,7 @@ export default class Camera
         this.zoom.touch.startDistance = 0
         this.zoom.touch.startValue = 0
 
-        this.renderer.domElement.addEventListener('touchstart', (_event) =>
+        this._addListener(this.renderer.domElement, 'touchstart', (_event) =>
         {
             if(_event.touches.length === 2)
             {
@@ -141,7 +150,7 @@ export default class Camera
             }
         })
 
-        this.renderer.domElement.addEventListener('touchmove', (_event) =>
+        this._addListener(this.renderer.domElement, 'touchmove', (_event) =>
         {
             if(_event.touches.length === 2)
             {
@@ -267,23 +276,23 @@ export default class Camera
         }
 
         // Mouse
-        window.addEventListener('mousedown', (_event) =>
+        this._addListener(window, 'mousedown', (_event) =>
         {
             this.pan.down(_event.clientX, _event.clientY)
         })
 
-        window.addEventListener('mousemove', (_event) =>
+        this._addListener(window, 'mousemove', (_event) =>
         {
             this.pan.move(_event.clientX, _event.clientY)
         })
 
-        window.addEventListener('mouseup', () =>
+        this._addListener(window, 'mouseup', () =>
         {
             this.pan.up()
         })
 
         // Touch
-        this.renderer.domElement.addEventListener('touchstart', (_event) =>
+        this._addListener(this.renderer.domElement, 'touchstart', (_event) =>
         {
             if(_event.touches.length === 1)
             {
@@ -291,7 +300,7 @@ export default class Camera
             }
         })
 
-        this.renderer.domElement.addEventListener('touchmove', (_event) =>
+        this._addListener(this.renderer.domElement, 'touchmove', (_event) =>
         {
             if(_event.touches.length === 1)
             {
@@ -299,7 +308,7 @@ export default class Camera
             }
         })
 
-        this.renderer.domElement.addEventListener('touchend', () =>
+        this._addListener(this.renderer.domElement, 'touchend', () =>
         {
             this.pan.up()
         })
@@ -396,5 +405,22 @@ export default class Camera
         {
             this.debugFolder.add(this.orbitControls, 'enabled').name('orbitControlsEnabled')
         }
+    }
+
+    dispose()
+    {
+        // Remove all tracked event listeners
+        for(const listener of this._listeners)
+        {
+            listener.target.removeEventListener(listener.event, listener.handler, listener.options)
+        }
+        this._listeners.length = 0
+
+        // Dispose orbit controls
+        this.orbitControls.dispose()
+
+        // Clear event emitter subscriptions
+        this.time.off('tick')
+        this.sizes.off('resize')
     }
 }

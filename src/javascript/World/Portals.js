@@ -1,4 +1,6 @@
 import * as THREE from 'three'
+import portalGlowVertex from '../../shaders/portalGlow/vertex.glsl'
+import portalGlowFragment from '../../shaders/portalGlow/fragment.glsl'
 
 export default class Portals
 {
@@ -25,6 +27,8 @@ export default class Portals
         this.settings.glowIntensity = 1.5
         this.settings.animationSpeed = 1.0
         this.settings.renderResolution = 512
+        this.settings.renderResolutionLow = 256
+        this.settings.lodDistance = 20 // Distance threshold for low-res rendering
         this.settings.particleCount = 100
         this.settings.renderInterval = 2
         this.settings.maxRenderDistance = 45
@@ -166,15 +170,21 @@ export default class Portals
             labelText: labelText
         }
 
-        // Create render target for portal view
+        // Create render targets for portal view (high and low resolution)
+        const rtOptions = {
+            minFilter: THREE.LinearFilter,
+            magFilter: THREE.LinearFilter,
+            format: THREE.RGBAFormat
+        }
         portal.renderTarget = new THREE.WebGLRenderTarget(
             this.settings.renderResolution,
             this.settings.renderResolution,
-            {
-                minFilter: THREE.LinearFilter,
-                magFilter: THREE.LinearFilter,
-                format: THREE.RGBAFormat
-            }
+            rtOptions
+        )
+        portal.renderTargetLow = new THREE.WebGLRenderTarget(
+            this.settings.renderResolutionLow,
+            this.settings.renderResolutionLow,
+            rtOptions
         )
 
         // Create portal camera
@@ -234,35 +244,8 @@ export default class Portals
                 uColor: { value: portal.color },
                 uTime: { value: 0 }
             },
-            vertexShader: `
-                varying vec2 vUv;
-                void main()
-                {
-                    vUv = uv;
-                    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-                }
-            `,
-            fragmentShader: `
-                uniform vec3 uColor;
-                uniform float uTime;
-                varying vec2 vUv;
-
-                void main()
-                {
-                    vec2 center = vec2(0.5);
-                    float dist = distance(vUv, center);
-
-                    // Pulsing glow
-                    float pulse = sin(uTime * 2.0) * 0.5 + 0.5;
-                    float glow = 1.0 - smoothstep(0.0, 0.5, dist);
-                    glow = pow(glow, 3.0) * (0.3 + pulse * 0.2);
-
-                    vec3 color = uColor * glow;
-                    float alpha = glow;
-
-                    gl_FragColor = vec4(color, alpha);
-                }
-            `,
+            vertexShader: portalGlowVertex,
+            fragmentShader: portalGlowFragment,
             transparent: true,
             blending: THREE.AdditiveBlending,
             depthWrite: false,
@@ -573,6 +556,12 @@ export default class Portals
         if(!this.renderer || !this.scene) return
         if(!this.camera || !this.camera.instance) return
 
+        // Skip all portal rendering during teleport cooldown (player is mid-transition)
+        if(this.teleportCooldown > this.teleportCooldownDuration * 0.5)
+        {
+            return
+        }
+
         this.renderFrameCount++
         if(this.renderFrameCount % this.settings.renderInterval !== 0)
         {
@@ -582,6 +571,7 @@ export default class Portals
         const cameraPosition = this.camera.instance.position
         this.camera.instance.getWorldDirection(this.tempDirection)
         const maxDistanceSq = this.settings.maxRenderDistance * this.settings.maxRenderDistance
+        const lodDistanceSq = this.settings.lodDistance * this.settings.lodDistance
 
         // Render each portal's view
         for(const portalPair of this.portals)
@@ -606,11 +596,22 @@ export default class Portals
                     continue
                 }
 
+                // Choose render target based on distance (LOD)
+                const useLowRes = distanceSq > lodDistanceSq
+                const target = useLowRes ? portal.renderTargetLow : portal.renderTarget
+
+                // Swap the material texture to match the active target
+                if(portal.mesh.material.map !== target.texture)
+                {
+                    portal.mesh.material.map = target.texture
+                    portal.mesh.material.needsUpdate = true
+                }
+
                 // Temporarily hide this portal to avoid recursive rendering
                 portal.group.visible = false
 
                 // Render to texture
-                this.renderer.setRenderTarget(portal.renderTarget)
+                this.renderer.setRenderTarget(target)
                 this.renderer.render(this.scene, portal.camera)
 
                 // Restore portal visibility
