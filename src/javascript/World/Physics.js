@@ -114,6 +114,9 @@ export default class Physics
         this.car.forwardSpeed = 0
         this.car.oldPosition = new CANNON.Vec3()
         this.car.goingForward = true
+        this.car.lastCollisionShakeAt = 0
+        this.car.minCollisionShakeImpact = 4
+        this.car.collisionShakeCooldown = 180
 
         /**
          * Options
@@ -197,9 +200,13 @@ export default class Physics
                     this.sounds.play('carHit', relativeVelocity)
 
                     // Trigger camera shake based on impact velocity
-                    if(this.camera && this.camera.shake)
+                    const impact = Math.abs(relativeVelocity)
+                    const now = this.time.elapsed
+                    const canShake = now - this.car.lastCollisionShakeAt > this.car.collisionShakeCooldown
+                    if(this.camera && this.camera.shake && impact > this.car.minCollisionShakeImpact && canShake)
                     {
-                        this.camera.shake.trigger(Math.abs(relativeVelocity))
+                        this.car.lastCollisionShakeAt = now
+                        this.camera.shake.trigger(impact)
                     }
                 }
             })

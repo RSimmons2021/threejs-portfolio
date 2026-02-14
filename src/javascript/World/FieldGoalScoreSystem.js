@@ -18,6 +18,7 @@ export default class FieldGoalScoreSystem
         this.bestDistance = 0
         this.totalJumps = 0
         this.totalScore = 0
+        this.active = false
 
         // Scoring thresholds (like Smash Bros Home Run Contest)
         this.scoringTiers = [
@@ -164,6 +165,7 @@ export default class FieldGoalScoreSystem
 
     detectJumpStart()
     {
+        if(!this.active) return
         if(!this.physics || !this.physics.car || !this.physics.car.chassis) return
 
         const carBody = this.physics.car.chassis.body
@@ -186,6 +188,7 @@ export default class FieldGoalScoreSystem
 
     detectJumpEnd()
     {
+        if(!this.active) return
         if(!this.physics || !this.physics.car || !this.physics.car.chassis) return
         if(!this.isJumping) return
 
@@ -223,6 +226,7 @@ export default class FieldGoalScoreSystem
 
     trackJumpDistance()
     {
+        if(!this.active) return
         if(!this.isJumping || !this.jumpStartPosition) return
         if(!this.physics || !this.physics.car || !this.physics.car.chassis) return
 
@@ -308,6 +312,7 @@ export default class FieldGoalScoreSystem
 
     showScoreboard()
     {
+        this.active = true
         this.scoreboardElement.style.display = 'block'
 
         gsap.to(this.scoreboardElement, {
@@ -320,6 +325,11 @@ export default class FieldGoalScoreSystem
 
     hideScoreboard()
     {
+        this.active = false
+        this.isJumping = false
+        this.jumpStartPosition = null
+        this.maxDistance = 0
+
         gsap.to(this.scoreboardElement, {
             x: -100,
             opacity: 0,
@@ -327,6 +337,15 @@ export default class FieldGoalScoreSystem
             ease: 'power2.in',
             onComplete: () => {
                 this.scoreboardElement.style.display = 'none'
+            }
+        })
+
+        gsap.to(this.jumpResultElement, {
+            scale: 0,
+            opacity: 0,
+            duration: 0.2,
+            onComplete: () => {
+                this.jumpResultElement.style.opacity = 1
             }
         })
     }
@@ -353,6 +372,11 @@ export default class FieldGoalScoreSystem
 
     update()
     {
+        if(!this.active)
+        {
+            return
+        }
+
         this.detectJumpStart()
         this.trackJumpDistance()
         this.detectJumpEnd()
