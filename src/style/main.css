@@ -330,7 +330,7 @@ html
 .experience-hud.is-mobile.is-avoid-scoreboards
 {
     left: 50%;
-    top: 66px;
+    top: var(--hud-mobile-avoid-top, 74px);
     transform: translateX(-50%);
 }
 
@@ -460,7 +460,7 @@ html
     .experience-hud.is-avoid-scoreboards
     {
         left: 50%;
-        top: 74px;
+        top: var(--hud-mobile-avoid-top, 74px);
         transform: translateX(-50%);
     }
 

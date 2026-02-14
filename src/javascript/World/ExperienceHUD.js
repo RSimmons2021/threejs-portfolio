@@ -31,6 +31,7 @@ export default class ExperienceHUD
                 this.isMobile = nextIsMobile
                 this.applyDeviceClass()
                 this.updateInstructionText()
+                this.updateMobileScoreboardClearance(this.lastScoreboardCollision)
             }
         })
 
@@ -51,6 +52,7 @@ export default class ExperienceHUD
     {
         this.$container = document.createElement('div')
         this.$container.className = 'experience-hud'
+        this.$container.style.setProperty('--hud-mobile-avoid-top', '74px')
         this.$container.innerHTML = `
             <div class="experience-hud__row">
                 <div class="experience-hud__pill">
@@ -114,6 +116,52 @@ export default class ExperienceHUD
         return isVisible(bowling) || isVisible(fieldGoal)
     }
 
+    updateMobileScoreboardClearance(_shouldAvoid)
+    {
+        if(!this.isMobile || !_shouldAvoid)
+        {
+            this.$container.style.removeProperty('--hud-mobile-avoid-top')
+            return
+        }
+
+        const scoreboards = [
+            document.querySelector('.bowling-scoreboard'),
+            document.querySelector('.fieldgoal-scoreboard')
+        ]
+
+        const visibleScoreboards = scoreboards.filter((_element) =>
+        {
+            if(!_element)
+            {
+                return false
+            }
+
+            return _element.style.display !== 'none' && _element.style.opacity !== '0'
+        })
+
+        if(visibleScoreboards.length === 0)
+        {
+            this.$container.style.setProperty('--hud-mobile-avoid-top', '74px')
+            return
+        }
+
+        let maxBottom = 0
+        for(const scoreboard of visibleScoreboards)
+        {
+            const rect = scoreboard.getBoundingClientRect()
+            if(rect.bottom > maxBottom)
+            {
+                maxBottom = rect.bottom
+            }
+        }
+
+        const minTop = 74
+        const maxTop = Math.max(Math.floor(window.innerHeight * 0.55), minTop)
+        const nextTop = Math.min(Math.max(Math.ceil(maxBottom + 10), minTop), maxTop)
+
+        this.$container.style.setProperty('--hud-mobile-avoid-top', `${nextTop}px`)
+    }
+
     update()
     {
         if(this.time.elapsed - this.lastUpdateAt < this.updateInterval)
@@ -123,6 +171,7 @@ export default class ExperienceHUD
         this.lastUpdateAt = this.time.elapsed
 
         const shouldAvoid = this.shouldAvoidScoreboards()
+        this.updateMobileScoreboardClearance(shouldAvoid)
         if(shouldAvoid !== this.lastScoreboardCollision)
         {
             this.lastScoreboardCollision = shouldAvoid
