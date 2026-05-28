@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="675" viewBox="0 0 1200 675">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#081c1d"/>
+      <stop offset="0.5" stop-color="#0e5b52"/>
+      <stop offset="1" stop-color="#f0c15d"/>
+    </linearGradient>
+    <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="18" stdDeviation="24" flood-color="#051012" flood-opacity="0.38"/>
+    </filter>
+  </defs>
+  <rect width="1200" height="675" fill="url(#bg)"/>
+  <g opacity="0.24" fill="#ffffff">
+    <circle cx="1046" cy="114" r="96"/>
+    <circle cx="164" cy="540" r="64"/>
+    <circle cx="944" cy="560" r="28"/>
+  </g>
+  <g filter="url(#softShadow)">
+    <rect x="92" y="94" width="660" height="486" rx="38" fill="#071416" opacity="0.88"/>
+    <text x="138" y="178" fill="#97ffe7" font-family="Amulya, Arial, sans-serif" font-size="34" font-weight="700" letter-spacing="5">AI STUDY PLATFORM</text>
+    <text x="132" y="310" fill="#ffffff" font-family="Amulya, Arial, sans-serif" font-size="106" font-weight="800">FocusFi</text>
+    <text x="140" y="390" fill="#ffe3a1" font-family="Amulya, Arial, sans-serif" font-size="40" font-weight="700">Master Your Focus</text>
+    <text x="140" y="468" fill="#d9fff6" font-family="Amulya, Arial, sans-serif" font-size="31">Flashcards, stakes, and</text>
+    <text x="140" y="510" fill="#d9fff6" font-family="Amulya, Arial, sans-serif" font-size="31">live study accountability.</text>
+  </g>
+  <g transform="translate(890 340)">
+    <rect x="-130" y="-170" width="260" height="340" rx="26" fill="#ffffff" opacity="0.95"/>
+    <rect x="-84" y="-112" width="168" height="28" rx="14" fill="#0d5e55"/>
+    <rect x="-84" y="-56" width="134" height="20" rx="10" fill="#86cfc1"/>
+    <rect x="-84" y="-12" width="176" height="20" rx="10" fill="#86cfc1"/>
+    <rect x="-84" y="32" width="106" height="20" rx="10" fill="#86cfc1"/>
+    <circle cx="0" cy="114" r="44" fill="#f0c15d"/>
+  </g>
+</svg>

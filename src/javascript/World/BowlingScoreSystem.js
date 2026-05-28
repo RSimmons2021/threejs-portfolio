@@ -1,6 +1,6 @@
 import * as THREE from 'three'
 import gsap from 'gsap'
-import resumePdfUrl from '../../../assets/Richard_Simmons_Resume.pdf'
+import resumePdfUrl from '../../../assets/Richard_Simmons__Resume.pdf'
 
 export default class BowlingScoreSystem
 {

@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="675" viewBox="0 0 1200 675">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#101827"/>
+      <stop offset="1" stop-color="#0fb6aa"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="675" fill="url(#bg)"/>
+  <rect x="150" y="96" width="900" height="484" rx="46" fill="#f8fbff" opacity="0.95"/>
+  <rect x="208" y="166" width="288" height="344" rx="32" fill="#14213a"/>
+  <rect x="552" y="166" width="442" height="72" rx="22" fill="#dfe9f7"/>
+  <rect x="552" y="278" width="360" height="34" rx="17" fill="#b7c9df"/>
+  <rect x="552" y="336" width="398" height="34" rx="17" fill="#b7c9df"/>
+  <rect x="552" y="394" width="290" height="34" rx="17" fill="#b7c9df"/>
+  <circle cx="352" cy="338" r="108" fill="#31d8c8"/>
+  <path d="M316 338 C340 284 365 284 388 338 S438 392 466 338" fill="none" stroke="#ffffff" stroke-width="14" stroke-linecap="round"/>
+  <text x="208" y="624" fill="#ffffff" font-family="Amulya, Arial, sans-serif" font-size="34" font-weight="700">Audio-first interface for intent-driven listening.</text>
+</svg>

@@ -14,10 +14,6 @@ import ProjectsSection from './Sections/ProjectsSection.js'
 import CrossroadsSection from './Sections/CrossroadsSection.js'
 import InformationSection from './Sections/InformationSection.js'
 import PlaygroundSection from './Sections/PlaygroundSection.js'
-// import DistinctionASection from './Sections/DistinctionASection.js'
-// import DistinctionBSection from './Sections/DistinctionBSection.js'
-// import DistinctionCSection from './Sections/DistinctionCSection.js'
-// import DistinctionDSection from './Sections/DistinctionDSection.js'
 import Controls from './Controls.js'
 import Sounds from './Sounds.js'
 import gsap from 'gsap'
@@ -26,8 +22,8 @@ import ParticleTrails from './ParticleTrails.js'
 import AdvancedLighting from './AdvancedLighting.js'
 import DayNightCycle from './DayNightCycle.js'
 import GhostCar from './GhostCar.js'
-import Portals from './Portals.js'
 import ExperienceHUD from './ExperienceHUD.js'
+import GuidedTour from './GuidedTour.js'
 
 export default class World
 {
@@ -86,7 +82,7 @@ export default class World
         this.setDayNightCycle()
         this.setExperienceHUD()
         this.setGhostCar()
-        this.setPortals()
+        this.setGuidedTour()
         this.setEasterEggs()
     }
 
@@ -430,38 +426,6 @@ export default class World
             debug: this.debugFolder
         }
 
-        // // Distinction A
-        // this.sections.distinctionA = new DistinctionASection({
-        //     ...options,
-        //     x: 0,
-        //     y: - 15
-        // })
-        // this.container.add(this.sections.distinctionA.container)
-
-        // // Distinction B
-        // this.sections.distinctionB = new DistinctionBSection({
-        //     ...options,
-        //     x: 0,
-        //     y: - 15
-        // })
-        // this.container.add(this.sections.distinctionB.container)
-
-        // // Distinction C
-        // this.sections.distinctionC = new DistinctionCSection({
-        //     ...options,
-        //     x: 0,
-        //     y: 0
-        // })
-        // this.container.add(this.sections.distinctionC.container)
-
-        // // Distinction D
-        // this.sections.distinctionD = new DistinctionDSection({
-        //     ...options,
-        //     x: 0,
-        //     y: 0
-        // })
-        // this.container.add(this.sections.distinctionD.container)
-
         // Intro
         this.sections.intro = new IntroSection({
             ...options,
@@ -571,19 +535,14 @@ export default class World
         this.container.add(this.ghostCar.container)
     }
 
-    setPortals()
+    setGuidedTour()
     {
-        this.portals = new Portals({
-            time: this.time,
-            scene: this.scene,
+        this.guidedTour = new GuidedTour({
             camera: this.camera,
-            renderer: this.renderer,
-            car: this.car,
             physics: this.physics,
-            sounds: this.sounds,
-            debug: this.debugFolder
+            controls: this.controls,
+            ghostCar: this.ghostCar
         })
-        this.container.add(this.portals.container)
     }
 
     setEasterEggs()

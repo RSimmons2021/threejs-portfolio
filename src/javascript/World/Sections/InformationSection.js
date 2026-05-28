@@ -161,16 +161,6 @@ export default class InformationSection
         canvas.height = 512
         const context = canvas.getContext('2d')
 
-        // Background
-        context.fillStyle = '#000000'
-        context.fillRect(0, 0, canvas.width, canvas.height)
-
-        // Text
-        context.fillStyle = '#ffffff'
-        context.font = 'bold 48px Arial, sans-serif'
-        context.textAlign = 'center'
-        context.textBaseline = 'middle'
-
         // Bio text - Your personal journey
         const lines = [
             'RICHARD SIMMONS',
@@ -185,25 +175,56 @@ export default class InformationSection
 
         const lineHeight = 56
         const startY = 30
+        let texture = null
 
-        context.font = 'bold 52px Arial, sans-serif'
-        context.fillText(lines[0], canvas.width / 2, startY)
+        const drawBio = () =>
+        {
+            context.clearRect(0, 0, canvas.width, canvas.height)
 
-        context.font = 'bold 38px Arial, sans-serif'
-        context.fillText(lines[1], canvas.width / 2, startY + lineHeight)
+            // Background
+            context.fillStyle = '#000000'
+            context.fillRect(0, 0, canvas.width, canvas.height)
 
-        context.font = '36px Arial, sans-serif'
-        for(let i = 2; i < lines.length; i++) {
-            context.fillText(lines[i], canvas.width / 2, startY + (i * lineHeight))
+            // Text
+            context.fillStyle = '#ffffff'
+            context.textAlign = 'center'
+            context.textBaseline = 'middle'
+
+            context.font = '700 52px Amulya, Arial, sans-serif'
+            context.fillText(lines[0], canvas.width / 2, startY)
+
+            context.font = '700 38px Amulya, Arial, sans-serif'
+            context.fillText(lines[1], canvas.width / 2, startY + lineHeight)
+
+            context.font = '400 36px Amulya, Arial, sans-serif'
+            for(let i = 2; i < lines.length; i++) {
+                context.fillText(lines[i], canvas.width / 2, startY + (i * lineHeight))
+            }
+
+            if(texture)
+            {
+                texture.needsUpdate = true
+            }
         }
+
+        drawBio()
 
         // Geometry
         this.bio.geometry = new THREE.PlaneGeometry(this.bio.width, this.bio.height, 1, 1)
 
         // Texture from canvas
-        this.bio.texture = new THREE.CanvasTexture(canvas)
+        texture = new THREE.CanvasTexture(canvas)
+        this.bio.texture = texture
         this.bio.texture.magFilter = THREE.NearestFilter
         this.bio.texture.minFilter = THREE.LinearFilter
+
+        if(document.fonts)
+        {
+            Promise.all([
+                document.fonts.load('700 52px Amulya'),
+                document.fonts.load('400 36px Amulya')
+            ]).then(drawBio).catch(() => {})
+        }
 
         // Material
         this.bio.material = new THREE.MeshBasicMaterial({

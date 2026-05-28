@@ -10,5 +10,9 @@
     ],
     "deny": [],
     "ask": []
-  }
+  },
+  "disabledMcpjsonServers": [
+    "supabase",
+    "connect-apps"
+  ]
 }

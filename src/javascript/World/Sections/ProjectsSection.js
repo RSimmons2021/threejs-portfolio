@@ -30,7 +30,7 @@ export default class ProjectsSection
         this.items = []
 
         this.interDistance = 24
-        this.positionRandomess = 5
+        this.positionRandomess = 0
         this.projectHalfWidth = 9
 
         this.container = new THREE.Object3D()
@@ -71,17 +71,17 @@ export default class ProjectsSection
     {
         this.list = [
             {
-                name: 'Zoan Collective - My Design Firm',
+                name: 'Lucid',
                 imageSources:
                 [
-                    './models/projects/vivy/slideA.jpg',
-                    './models/projects/vivy/slideB.jpg',
-                    './models/projects/vivy/slideC.jpg'
+                    './models/projects/lucid/slide-a.svg',
+                    './models/projects/lucid/slide-b.svg',
+                    './models/projects/lucid/slide-c.svg'
                 ],
                 floorTexture: null,
                 link:
                 {
-                    href: 'https://zoancollective.site',
+                    href: 'https://www.lucid-app.xyz/',
                     x: - 4.8,
                     y: - 3,
                     halfExtents:
@@ -90,58 +90,46 @@ export default class ProjectsSection
                         y: 1.5
                     }
                 },
-                distinctions: []
+                details:
+                {
+                    eyebrow: 'AI audio product',
+                    role: 'Product design + full-stack build',
+                    problem: 'People need a fast way to shift into sleep, focus, or reset states without building playlists from scratch.',
+                    built: 'A web app for binaural beats and personalized AI-generated soundscapes.',
+                    stack: 'Responsive web app, audio-first UX, AI soundscape generation',
+                    outcome: 'A focused wellness product with a direct, calming path from intent to listening.'
+                }
             },
-            // {
-            //     name: 'gleecChat',
-            //     imageSources:
-            //     [
-            //         './models/projects/gleecChat/slideA.jpg',
-            //         './models/projects/gleecChat/slideB.jpg',
-            //         './models/projects/gleecChat/slideC.jpg',
-            //         './models/projects/gleecChat/slideD.jpg'
-            //     ],
-            //     floorTexture: this.resources.items.projectsGleecChatFloorTexture,
-            //     link:
-            //     {
-            //         href: 'http://gleec.imm-g-prod.com',
-            //         x: - 4.8,
-            //         y: - 3.4,
-            //         halfExtents:
-            //         {
-            //             x: 3.2,
-            //             y: 1.5
-            //         }
-            //     },
-            //     distinctions:
-            //     [
-            //         { type: 'awwwards', x: 3.95, y: 4.15 },
-            //         { type: 'fwa', x: 5.6, y: 4.15 },
-            //         { type: 'cssda', x: 7.2, y: 4.15 }
-            //     ]
-            // },
-            // {
-            //     name: 'keppler',
-            //     imageSources:
-            //     [
-            //         './models/projects/keppler/slideA.jpg',
-            //         './models/projects/keppler/slideB.jpg',
-            //         './models/projects/keppler/slideC.jpg'
-            //     ],
-            //     floorTexture: this.resources.items.projectsKepplerFloorTexture,
-            //     link:
-            //     {
-            //         href: 'https://richard-simmons-portfolio.vercel.app/',
-            //         x: 2.75,
-            //         y: - 1.1,
-            //         halfExtents:
-            //         {
-            //             x: 3.2,
-            //             y: 1.5
-            //         }
-            //     },
-            //     distinctions: []
-            // }
+            {
+                name: 'FocusFi',
+                imageSources:
+                [
+                    './models/projects/focusfi/slide-a.svg',
+                    './models/projects/focusfi/slide-b.svg',
+                    './models/projects/focusfi/slide-c.svg'
+                ],
+                floorTexture: null,
+                link:
+                {
+                    href: 'https://www.focusfi.app/',
+                    x: - 4.8,
+                    y: - 3,
+                    halfExtents:
+                    {
+                        x: 3.2,
+                        y: 1.5
+                    }
+                },
+                details:
+                {
+                    eyebrow: 'AI study platform',
+                    role: 'Product design + full-stack build',
+                    problem: 'Students need study tools that turn material into practice and keep them accountable.',
+                    built: 'A focus app with instant AI flashcards, gamified stakes, and real-time ghost study sessions.',
+                    stack: 'Responsive web app, AI flashcards, gamified study loops, real-time study sessions',
+                    outcome: 'A more active study workflow built around practice, accountability, and momentum.'
+                }
+            }
         ]
     }
 

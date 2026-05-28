@@ -159,57 +159,32 @@ export default class IntroSection
 
     setTitles()
     {
-        // Title - SIM (3 letters, spacing ~2.5 units apart)
-        // S
-        this.objects.add({
-            base: this.resources.items.introSBase.scene,
-            collision: this.resources.items.introSCollision.scene,
-            offset: new THREE.Vector3(-2.5, 0, 0),
-            rotation: new THREE.Euler(0, 0, 0),
-            shadow: { sizeX: 1.5, sizeY: 1.5, offsetZ: - 0.6, alpha: 0.4 },
-            mass: 1.5,
-            soundName: 'brick'
-        })
-        // I
-        this.objects.add({
-            base: this.resources.items.introIBase.scene,
-            collision: this.resources.items.introICollision.scene,
-            offset: new THREE.Vector3(0, 0, 0),
-            rotation: new THREE.Euler(0, 0, 0),
-            shadow: { sizeX: 1.5, sizeY: 1.5, offsetZ: - 0.6, alpha: 0.4 },
-            mass: 1.5,
-            soundName: 'brick'
-        })
-        // M
-        this.objects.add({
-            base: this.resources.items.introMBase.scene,
-            collision: this.resources.items.introMCollision.scene,
-            offset: new THREE.Vector3(2.5, 0, 0),
-            rotation: new THREE.Euler(0, 0, 0),
-            shadow: { sizeX: 1.5, sizeY: 1.5, offsetZ: - 0.6, alpha: 0.4 },
-            mass: 1.5,
-            soundName: 'brick'
-        })
-        // Subtitle removed - you can add custom text models here later
-        // this.objects.add({
-        //     base: this.resources.items.introCreativeBase.scene,
-        //     collision: this.resources.items.introCreativeCollision.scene,
-        //     offset: new THREE.Vector3(0, 0, 0),
-        //     rotation: new THREE.Euler(0, 0, 0.25),
-        //     shadow: { sizeX: 5, sizeY: 1.5, offsetZ: - 0.6, alpha: 0.3 },
-        //     mass: 1.5,
-        //     sleep: false,
-        //     soundName: 'brick'
-        // })
-        // this.objects.add({
-        //     base: this.resources.items.introDevBase.scene,
-        //     collision: this.resources.items.introDevCollision.scene,
-        //     offset: new THREE.Vector3(0, 0, 0),
-        //     rotation: new THREE.Euler(0, 0, 0),
-        //     shadow: { sizeX: 2.5, sizeY: 1.5, offsetZ: - 0.6, alpha: 0.3 },
-        //     mass: 1.5,
-        //     soundName: 'brick'
-        // })
+        const letters = [
+            { base: this.resources.items.introSBase.scene, collision: this.resources.items.introSCollision.scene },
+            { base: this.resources.items.introIBase.scene, collision: this.resources.items.introICollision.scene },
+            { base: this.resources.items.introMBase.scene, collision: this.resources.items.introMCollision.scene },
+            { base: this.resources.items.introMBase.scene, collision: this.resources.items.introMCollision.scene },
+            { base: this.resources.items.introOBase.scene, collision: this.resources.items.introOCollision.scene },
+            { base: this.resources.items.introNBase.scene, collision: this.resources.items.introNCollision.scene },
+            { base: this.resources.items.introSBase.scene, collision: this.resources.items.introSCollision.scene }
+        ]
+        const spacing = 2.28
+        const startX = - (letters.length - 1) * spacing * 0.5
+
+        for(let i = 0; i < letters.length; i++)
+        {
+            this.objects.add({
+                base: letters[i].base,
+                collision: letters[i].collision,
+                offset: new THREE.Vector3(startX + i * spacing, 0, 0),
+                rotation: new THREE.Euler(0, 0, 0),
+                duplicated: true,
+                shadow: { sizeX: 1.5, sizeY: 1.5, offsetZ: - 0.6, alpha: 0.4 },
+                mass: 1.5,
+                soundName: 'brick'
+            })
+        }
+
     }
 
     setTiles()

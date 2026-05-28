@@ -16,13 +16,12 @@ export default class Project
         this.geometries = _options.geometries
         this.meshes = _options.meshes
         this.debug = _options.debug
-        this.name = _options.name
         this.x = _options.x
         this.y = _options.y
         this.imageSources = _options.imageSources
         this.floorTexture = _options.floorTexture
         this.link = _options.link
-        this.distinctions = _options.distinctions
+        this.details = _options.details || {}
 
         // Set up
         this.container = new THREE.Object3D()
@@ -143,53 +142,6 @@ export default class Project
             this.floor.container.add(this.floor.mesh)
         }
 
-        // Distinctions
-        if(this.distinctions)
-        {
-            for(const _distinction of this.distinctions)
-            {
-                let base = null
-                let collision = null
-                let shadowSizeX = null
-                let shadowSizeY = null
-
-                switch(_distinction.type)
-                {
-                    case 'awwwards':
-                        base = this.resources.items.projectsDistinctionsAwwwardsBase.scene
-                        collision = this.resources.items.projectsDistinctionsAwwwardsCollision.scene
-                        shadowSizeX = 1.5
-                        shadowSizeY = 1.5
-                        break
-
-                    case 'fwa':
-                        base = this.resources.items.projectsDistinctionsFWABase.scene
-                        collision = this.resources.items.projectsDistinctionsFWACollision.scene
-                        shadowSizeX = 2
-                        shadowSizeY = 1
-                        break
-
-                    case 'cssda':
-                        base = this.resources.items.projectsDistinctionsCSSDABase.scene
-                        collision = this.resources.items.projectsDistinctionsCSSDACollision.scene
-                        shadowSizeX = 1.2
-                        shadowSizeY = 1.2
-                        break
-                }
-
-                this.objects.add({
-                    base: base,
-                    collision: collision,
-                    offset: new THREE.Vector3(this.x + this.floor.x + _distinction.x, this.y + this.floor.y + _distinction.y, 0),
-                    rotation: new THREE.Euler(0, 0, 0),
-                    duplicated: true,
-                    shadow: { sizeX: shadowSizeX, sizeY: shadowSizeY, offsetZ: - 0.1, alpha: 0.5 },
-                    mass: 1.5,
-                    soundName: 'woodHit'
-                })
-            }
-        }
-
         // Area
         this.floor.area = this.areas.add({
             position: new THREE.Vector2(this.x + this.link.x, this.y + this.floor.y + this.link.y),
@@ -215,30 +167,118 @@ export default class Project
 
     setProjectDescription()
     {
-        // Create canvas for project description text
         const canvas = document.createElement('canvas')
-        canvas.width = 1024
-        canvas.height = 256
+        canvas.width = 1600
+        canvas.height = 900
         const context = canvas.getContext('2d')
+        let texture = null
 
-        // Background (transparent or black)
-        context.fillStyle = 'rgba(0, 0, 0, 0.7)'
-        context.fillRect(0, 0, canvas.width, canvas.height)
+        const details = {
+            eyebrow: 'Featured project',
+            role: 'Product design + engineering',
+            problem: '',
+            built: '',
+            stack: '',
+            outcome: '',
+            ...this.details
+        }
 
-        // Text
-        context.fillStyle = '#ffffff'
-        context.font = 'bold 60px Arial, sans-serif'
-        context.textAlign = 'center'
-        context.textBaseline = 'middle'
-        context.fillText(this.name, canvas.width / 2, canvas.height / 2)
+        const drawTag = (_text, _x, _y, _color) =>
+        {
+            const paddingX = 22
+            context.font = '600 27px Amulya, Arial, sans-serif'
+            const width = context.measureText(_text).width + paddingX * 2
+            context.fillStyle = 'rgba(255, 255, 255, 0.1)'
+            context.strokeStyle = _color
+            context.lineWidth = 2
+            context.beginPath()
+            this.roundRect(context, _x, _y, width, 48, 24)
+            context.fill()
+            context.stroke()
+            context.fillStyle = '#f8fbff'
+            context.fillText(_text, _x + paddingX, _y + 33)
+            return width
+        }
 
-        // Create texture from canvas
-        const texture = new THREE.CanvasTexture(canvas)
+        const drawSection = (_label, _text, _x, _y, _maxWidth, _maxLines = 3) =>
+        {
+            context.fillStyle = '#8ed4ff'
+            context.font = '700 27px Amulya, Arial, sans-serif'
+            context.fillText(_label.toUpperCase(), _x, _y)
+
+            context.fillStyle = '#eff8ff'
+            context.font = '400 34px Amulya, Arial, sans-serif'
+            this.wrapText(context, _text, _x, _y + 46, _maxWidth, 43, _maxLines)
+        }
+
+        const draw = () =>
+        {
+            context.clearRect(0, 0, canvas.width, canvas.height)
+
+            const background = context.createLinearGradient(0, 0, canvas.width, canvas.height)
+            background.addColorStop(0, '#101923')
+            background.addColorStop(0.52, '#182e3f')
+            background.addColorStop(1, '#0a1018')
+            context.fillStyle = background
+            context.fillRect(0, 0, canvas.width, canvas.height)
+
+            context.fillStyle = 'rgba(142, 212, 255, 0.12)'
+            context.beginPath()
+            context.arc(1320, 80, 420, 0, Math.PI * 2)
+            context.fill()
+
+            context.fillStyle = 'rgba(255, 255, 255, 0.06)'
+            context.fillRect(0, 0, canvas.width, 12)
+
+            context.textAlign = 'left'
+            context.textBaseline = 'alphabetic'
+
+            context.fillStyle = '#9adfff'
+            context.font = '700 31px Amulya, Arial, sans-serif'
+            context.fillText(details.eyebrow.toUpperCase(), 84, 96)
+
+            context.fillStyle = '#ffffff'
+            context.font = '700 104px Amulya, Arial, sans-serif'
+            context.fillText(this.name, 80, 212)
+
+            const roleWidth = drawTag(details.role, 88, 250, 'rgba(142, 212, 255, 0.72)')
+            drawTag('Open live project', 112 + roleWidth, 250, 'rgba(242, 204, 148, 0.76)')
+
+            const columnWidth = 650
+            drawSection('Problem', details.problem, 88, 390, columnWidth, 3)
+            drawSection('Built', details.built, 88, 620, columnWidth, 3)
+            drawSection('Stack', details.stack, 860, 390, 610, 4)
+            drawSection('Outcome', details.outcome, 860, 620, 610, 3)
+
+            context.fillStyle = 'rgba(242, 204, 148, 0.9)'
+            context.fillRect(88, 805, 300, 5)
+            context.fillStyle = 'rgba(142, 212, 255, 0.9)'
+            context.fillRect(398, 805, 118, 5)
+
+            if(texture)
+            {
+                texture.needsUpdate = true
+            }
+        }
+
+        draw()
+
+        texture = new THREE.CanvasTexture(canvas)
         texture.magFilter = THREE.NearestFilter
         texture.minFilter = THREE.LinearFilter
+        texture.colorSpace = THREE.SRGBColorSpace
+
+        if(document.fonts)
+        {
+            Promise.all([
+                document.fonts.load('700 104px Amulya'),
+                document.fonts.load('400 34px Amulya'),
+                document.fonts.load('600 27px Amulya')
+            ]).then(draw).catch(() => {})
+        }
 
         // Create plane geometry and material
-        const geometry = new THREE.PlaneGeometry(8, 2)
+        const geometry = new THREE.PlaneGeometry(12.8, 7.2)
         const material = new THREE.MeshBasicMaterial({
             map: texture,
             transparent: true,
@@ -248,10 +288,59 @@ export default class Project
         // Create mesh
         this.floor.descriptionMesh = new THREE.Mesh(geometry, material)
         this.floor.descriptionMesh.position.x = 0
-        this.floor.descriptionMesh.position.y = 5  // Position above the open link
+        this.floor.descriptionMesh.position.y = 0.75
         this.floor.descriptionMesh.position.z = 0.002
         this.floor.descriptionMesh.matrixAutoUpdate = false
         this.floor.descriptionMesh.updateMatrix()
         this.floor.container.add(this.floor.descriptionMesh)
+    }
+
+    wrapText(_context, _text, _x, _y, _maxWidth, _lineHeight, _maxLines = 4)
+    {
+        const words = `${_text}`.split(' ')
+        let line = ''
+        let lineCount = 0
+
+        for(let i = 0; i < words.length; i++)
+        {
+            const testLine = line ? `${line} ${words[i]}` : words[i]
+            const metrics = _context.measureText(testLine)
+
+            if(metrics.width > _maxWidth && line)
+            {
+                _context.fillText(line, _x, _y + lineCount * _lineHeight)
+                line = words[i]
+                lineCount++
+
+                if(lineCount >= _maxLines)
+                {
+                    return
+                }
+            }
+            else
+            {
+                line = testLine
+            }
+        }
+
+        if(line && lineCount < _maxLines)
+        {
+            _context.fillText(line, _x, _y + lineCount * _lineHeight)
+        }
+    }
+
+    roundRect(_context, _x, _y, _width, _height, _radius)
+    {
+        const radius = Math.min(_radius, _width * 0.5, _height * 0.5)
+        _context.moveTo(_x + radius, _y)
+        _context.lineTo(_x + _width - radius, _y)
+        _context.quadraticCurveTo(_x + _width, _y, _x + _width, _y + radius)
+        _context.lineTo(_x + _width, _y + _height - radius)
+        _context.quadraticCurveTo(_x + _width, _y + _height, _x + _width - radius, _y + _height)
+        _context.lineTo(_x + radius, _y + _height)
+        _context.quadraticCurveTo(_x, _y + _height, _x, _y + _height - radius)
+        _context.lineTo(_x, _y + radius)
+        _context.quadraticCurveTo(_x, _y, _x + radius, _y)
+        _context.closePath()
     }
 }

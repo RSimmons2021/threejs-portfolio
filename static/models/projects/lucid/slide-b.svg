@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="675" viewBox="0 0 1200 675">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0" stop-color="#0c1326"/>
+      <stop offset="0.5" stop-color="#142a59"/>
+      <stop offset="1" stop-color="#43e0c8"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="675" fill="url(#bg)"/>
+  <g transform="translate(600 320)">
+    <circle r="212" fill="#ffffff" opacity="0.08"/>
+    <circle r="156" fill="#ffffff" opacity="0.08"/>
+    <circle r="98" fill="#ffffff" opacity="0.12"/>
+    <circle r="38" fill="#fff2ac"/>
+  </g>
+  <g fill="none" stroke-linecap="round" stroke-width="18">
+    <path d="M160 330 C260 200 350 200 450 330 S640 460 740 330 930 200 1040 330" stroke="#eafcff" opacity="0.86"/>
+    <path d="M160 402 C260 272 350 272 450 402 S640 532 740 402 930 272 1040 402" stroke="#90fff0" opacity="0.42"/>
+  </g>
+  <text x="96" y="125" fill="#fff7c8" font-family="Amulya, Arial, sans-serif" font-size="34" font-weight="700" letter-spacing="4">PERSONALIZED SESSIONS</text>
+  <text x="96" y="214" fill="#ffffff" font-family="Amulya, Arial, sans-serif" font-size="72" font-weight="800">Sleep. Focus. Reset.</text>
+  <text x="96" y="548" fill="#d9fbff" font-family="Amulya, Arial, sans-serif" font-size="34" font-weight="500">AI-generated soundscapes shaped around the user's intent.</text>
+</svg>
