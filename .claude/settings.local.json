@@ -6,7 +6,9 @@
       "Bash(dir /s \"C:\\Users\\fowl_\\Documents\\GitHub\\threejs portfolio\\src\")",
       "Bash(find:*)",
       "Bash(wc:*)",
-      "Bash(npx vite build:*)"
+      "Bash(npx vite build:*)",
+      "Bash(wait)",
+      "Bash(tail -15 \"C:\\\\Users\\\\fowl_\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Users-fowl--Documents-GitHub-threejs-portfolio\\\\78a77456-45d9-4b06-a4a3-479d8b74079c\\\\tasks\\\\bfibqgdsn.output\")"
     ],
     "deny": [],
     "ask": []

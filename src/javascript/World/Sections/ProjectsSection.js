@@ -71,6 +71,36 @@ export default class ProjectsSection
     {
         this.list = [
             {
+                name: 'Zoan Collective',
+                imageSources:
+                [
+                    './models/projects/zoan/slide-a.svg',
+                    './models/projects/zoan/slide-b.svg',
+                    './models/projects/zoan/slide-c.svg'
+                ],
+                floorTexture: null,
+                link:
+                {
+                    href: 'https://zoancollective.site',
+                    x: - 4.8,
+                    y: - 3,
+                    halfExtents:
+                    {
+                        x: 3.2,
+                        y: 1.5
+                    }
+                },
+                details:
+                {
+                    eyebrow: 'Design studio',
+                    role: 'Founder + design operator',
+                    problem: 'Founders and teams need design that de-risks investment, not just decks — clarity investors trust and users love.',
+                    built: 'A boutique studio shipping brand and product design grounded in the seven principles of Zen design.',
+                    stack: 'Brand identity, product design, design systems, creative direction',
+                    outcome: 'A trusted design partner that turns clarity into funded products and measurable business outcomes.'
+                }
+            },
+            {
                 name: 'Lucid',
                 imageSources:
                 [
