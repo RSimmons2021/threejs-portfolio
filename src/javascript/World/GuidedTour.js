@@ -11,9 +11,9 @@ export default class GuidedTour
 
         this.targets = [
             { id: 'intro', label: 'Intro', x: 0, y: 2, z: 3, heading: - Math.PI * 0.5, cameraAngle: 'default', zoom: 0.42 },
-            { id: 'projects', label: 'Projects', x: 42, y: - 30, z: 3, heading: 0, cameraAngle: 'projects', zoom: 0.3 },
+            { id: 'projects', label: 'Projects', x: 30, y: - 30, z: 3, heading: 0, cameraAngle: 'projects', zoom: 0.3 },
             { id: 'about', label: 'About', x: 1.2, y: - 54, z: 3, heading: - Math.PI * 0.5, cameraAngle: 'default', zoom: 0.42 },
-            { id: 'play', label: 'Play', x: - 38, y: - 34, z: 3, heading: 0, cameraAngle: 'default', zoom: 0.5 }
+            { id: 'play', label: 'Play', x: - 22, y: - 36, z: 3, heading: 0, cameraAngle: 'default', zoom: 0.5 }
         ]
 
         this.setElement()

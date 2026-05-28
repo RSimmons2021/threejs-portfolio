@@ -14,6 +14,11 @@ export default {
         outDir: '../dist', // Output in the dist/ folder
         emptyOutDir: true, // Empty the folder first
         sourcemap: true, // Add sourcemap
+        target: 'es2020',
+        // THREE.js core is ~600kb minified on its own; splitting the examples/jsm
+        // helpers into their own chunk keeps the core lean and lets the warning
+        // limit reflect a realistic baseline for a Three.js portfolio.
+        chunkSizeWarningLimit: 900,
         rollupOptions:
         {
             output:
@@ -23,6 +28,11 @@ export default {
                     if(!id.includes('node_modules'))
                     {
                         return null
+                    }
+
+                    if(id.includes('three/examples/jsm'))
+                    {
+                        return 'three-extras'
                     }
 
                     if(id.includes('three'))

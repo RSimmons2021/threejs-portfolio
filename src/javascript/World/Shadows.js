@@ -58,6 +58,12 @@ export default class Shadows
         this.setGeometry()
         this.setHelper()
 
+        // Reusable temp vectors to avoid per-frame allocations in the tick loop
+        this._tmpSunOffset = new THREE.Vector3()
+        this._tmpRotationVector = new THREE.Vector3()
+        this._tmpProjectedRotationVector = new THREE.Vector3()
+        this._zAxis = new THREE.Vector3(0, 0, 1)
+
         // Time tick
         this.time.on('tick', () =>
         {
@@ -65,20 +71,18 @@ export default class Shadows
             {
                 // Position
                 const z = Math.max(_shadow.reference.position.z + _shadow.offsetZ, 0)
-                const sunOffset = this.sun.vector.clone().multiplyScalar(z)
+                const sunOffset = this._tmpSunOffset.copy(this.sun.vector).multiplyScalar(z)
 
                 _shadow.mesh.position.x = _shadow.reference.position.x + sunOffset.x
                 _shadow.mesh.position.y = _shadow.reference.position.y + sunOffset.y
 
                 // Angle
                 // Project the rotation as a vector on a plane and extract the angle
-                const rotationVector = new THREE.Vector3(1, 0, 0)
+                const rotationVector = this._tmpRotationVector.set(1, 0, 0)
                 rotationVector.applyQuaternion(_shadow.reference.quaternion)
-                // const planeVector = new THREE.Vector3(0, 0, 1)
-                // planeVector.normalize()
-                const projectedRotationVector = rotationVector.clone().projectOnPlane(new THREE.Vector3(0, 0, 1))
+                const projectedRotationVector = this._tmpProjectedRotationVector.copy(rotationVector).projectOnPlane(this._zAxis)
 
-                let orientationAlpha = Math.abs(rotationVector.angleTo(new THREE.Vector3(0, 0, 1)) - Math.PI * 0.5) / (Math.PI * 0.5)
+                let orientationAlpha = Math.abs(rotationVector.angleTo(this._zAxis) - Math.PI * 0.5) / (Math.PI * 0.5)
                 orientationAlpha /= 0.5
                 orientationAlpha -= 1 / 0.5
                 orientationAlpha = Math.abs(orientationAlpha)
