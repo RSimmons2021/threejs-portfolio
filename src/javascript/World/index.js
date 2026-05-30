@@ -516,8 +516,7 @@ export default class World
         this.experienceHUD = new ExperienceHUD({
             config: this.config,
             time: this.time,
-            physics: this.physics,
-            dayNightCycle: this.dayNightCycle
+            physics: this.physics
         })
     }
 

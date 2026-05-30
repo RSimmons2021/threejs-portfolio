@@ -5,7 +5,6 @@ export default class ExperienceHUD
         this.config = _options.config
         this.time = _options.time
         this.physics = _options.physics
-        this.dayNightCycle = _options.dayNightCycle
         this.isMobile = this.detectMobile()
 
         this.updateInterval = 120
@@ -56,10 +55,6 @@ export default class ExperienceHUD
         this.$container.innerHTML = `
             <div class="experience-hud__row">
                 <div class="experience-hud__pill">
-                    <span class="experience-hud__label">Cycle</span>
-                    <span class="experience-hud__value js-hud-cycle">Day</span>
-                </div>
-                <div class="experience-hud__pill">
                     <span class="experience-hud__label">Speed</span>
                     <span class="experience-hud__value js-hud-speed">0 mph</span>
                 </div>
@@ -72,7 +67,6 @@ export default class ExperienceHUD
 
         document.body.appendChild(this.$container)
 
-        this.$cycle = this.$container.querySelector('.js-hud-cycle')
         this.$speed = this.$container.querySelector('.js-hud-speed')
         this.$controlsTip = this.$container.querySelector('.js-hud-tip-controls')
     }
@@ -176,16 +170,6 @@ export default class ExperienceHUD
         {
             this.lastScoreboardCollision = shouldAvoid
             this.$container.classList.toggle('is-avoid-scoreboards', shouldAvoid)
-        }
-
-        if(this.dayNightCycle)
-        {
-            const t = this.dayNightCycle.settings.currentTime
-            let label = 'Day'
-            if(t < 0.15 || t > 0.9) label = 'Night'
-            else if(t < 0.35) label = 'Sunrise'
-            else if(t > 0.65) label = 'Sunset'
-            this.$cycle.textContent = label
         }
 
         if(this.physics && this.physics.car)
