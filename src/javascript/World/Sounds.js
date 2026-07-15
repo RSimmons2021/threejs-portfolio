@@ -225,6 +225,12 @@ export default class Sounds
     {
         // Set up
         this.engine = {}
+        this.engine.started = false
+        this.engine.ready = false
+        this.engine.failed = false
+        this.engine.soundId = null
+        this.engine.lastRate = null
+        this.engine.lastVolume = null
 
         this.engine.progress = 0
         this.engine.progressEasingUp = 0.3
@@ -246,26 +252,44 @@ export default class Sounds
 
         this.engine.sound = new Howl({
             src: ['./sounds/engines/1/low_off.mp3'],
-            loop: true
-        })
+            loop: true,
+            preload: false,
+            onload: () =>
+            {
+                if(!this.engine.started || this.engine.ready)
+                {
+                    return
+                }
 
-        this.engine.sound.play()
+                this.engine.ready = true
+                this.engine.soundId = this.engine.sound.play()
+                this.updateEngineSound(true)
+            },
+            onloaderror: (_id, _error) =>
+            {
+                this.engine.failed = true
+                console.warn('Engine audio could not be loaded.', _error)
+            },
+            onplayerror: (_id, _error) =>
+            {
+                this.engine.failed = true
+                console.warn('Engine audio could not be started.', _error)
+            }
+        })
 
         // Time tick
         this.time.on('tick', () =>
         {
+            if(!this.engine.ready || this.engine.failed)
+            {
+                return
+            }
+
             let progress = Math.abs(this.engine.speed) * this.engine.speedMultiplier + Math.max(this.engine.acceleration, 0) * this.engine.accelerationMultiplier
             progress = Math.min(Math.max(progress, 0), 1)
 
             this.engine.progress += (progress - this.engine.progress) * this.engine[progress > this.engine.progress ? 'progressEasingUp' : 'progressEasingDown']
-
-            // Rate
-            const rateAmplitude = this.engine.rate.max - this.engine.rate.min
-            this.engine.sound.rate(this.engine.rate.min + rateAmplitude * this.engine.progress)
-
-            // Volume
-            const volumeAmplitude = this.engine.volume.max - this.engine.volume.min
-            this.engine.sound.volume((this.engine.volume.min + volumeAmplitude * this.engine.progress) * this.engine.volume.master)
+            this.updateEngineSound()
         })
 
         // Debug
@@ -281,6 +305,51 @@ export default class Sounds
             folder.add(this.engine, 'speedMultiplier').step(0.01).min(0).max(5).name('speedMultiplier')
             folder.add(this.engine, 'accelerationMultiplier').step(0.01).min(0).max(100).name('accelerationMultiplier')
             folder.add(this.engine, 'progress').step(0.01).min(0).max(1).name('progress').listen()
+        }
+    }
+
+    startEngine()
+    {
+        if(this.engine.started || this.engine.failed)
+        {
+            return
+        }
+
+        this.engine.started = true
+
+        if(this.engine.sound.state() === 'loaded')
+        {
+            this.engine.ready = true
+            this.engine.soundId = this.engine.sound.play()
+            this.updateEngineSound(true)
+            return
+        }
+
+        this.engine.sound.load()
+    }
+
+    updateEngineSound(_force = false)
+    {
+        if(!this.engine.ready || this.engine.soundId === null)
+        {
+            return
+        }
+
+        const rateAmplitude = this.engine.rate.max - this.engine.rate.min
+        const nextRate = this.engine.rate.min + rateAmplitude * this.engine.progress
+        const volumeAmplitude = this.engine.volume.max - this.engine.volume.min
+        const nextVolume = (this.engine.volume.min + volumeAmplitude * this.engine.progress) * this.engine.volume.master
+
+        if(_force || this.engine.lastRate === null || Math.abs(nextRate - this.engine.lastRate) > 0.002)
+        {
+            this.engine.sound.rate(nextRate, this.engine.soundId)
+            this.engine.lastRate = nextRate
+        }
+
+        if(_force || this.engine.lastVolume === null || Math.abs(nextVolume - this.engine.lastVolume) > 0.002)
+        {
+            this.engine.sound.volume(nextVolume, this.engine.soundId)
+            this.engine.lastVolume = nextVolume
         }
     }
 
@@ -301,7 +370,14 @@ export default class Sounds
 
         for(const _sound of _options.sounds)
         {
-            const sound = new Howl({ src: [_sound] })
+            const sound = new Howl({
+                src: [_sound],
+                preload: false,
+                onloaderror: (_id, _error) =>
+                {
+                    console.warn(`Sound could not be loaded: ${_sound}`, _error)
+                }
+            })
 
             item.sounds.push(sound)
         }
@@ -320,20 +396,44 @@ export default class Sounds
             // Find random sound
             const sound = item.sounds[Math.floor(Math.random() * item.sounds.length)]
 
+            // Start the sound once; Howler safely queues these two settings while
+            // a lazily requested clip is loading.
+            const soundId = sound.play()
+
             // Update volume
             let volume = Math.min(Math.max((velocity - item.velocityMin) * item.velocityMultiplier, item.volumeMin), item.volumeMax)
             volume = Math.pow(volume, 2)
-            sound.volume(volume)
+            sound.volume(volume, soundId)
 
             // Update rate
             const rateAmplitude = item.rateMax - item.rateMin
-            sound.rate(item.rateMin + Math.random() * rateAmplitude)
-
-            // Play
-            sound.play()
+            sound.rate(item.rateMin + Math.random() * rateAmplitude, soundId)
 
             // Save last play time
             item.lastTime = time
         }
+    }
+
+    suspend()
+    {
+        Howler.mute(true)
+    }
+
+    resume()
+    {
+        Howler.mute(this.muted)
+    }
+
+    dispose()
+    {
+        for(const item of this.items)
+        {
+            for(const sound of item.sounds)
+            {
+                sound.unload()
+            }
+        }
+
+        this.engine.sound.unload()
     }
 }

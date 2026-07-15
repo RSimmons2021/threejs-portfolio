@@ -63,6 +63,14 @@ export default class World
 
     start()
     {
+        if(this.started)
+        {
+            return
+        }
+
+        this.started = true
+        this.sounds.startEngine()
+
         window.setTimeout(() =>
         {
             this.camera.pan.enable()
@@ -87,7 +95,7 @@ export default class World
         this.setExperienceHUD()
         this.setGhostCar()
         this.setGuidedTour()
-        this.setEasterEggs()
+        this.loadDeferredContent()
     }
 
     setReveal()
@@ -560,9 +568,7 @@ export default class World
             config: this.config,
             time: this.time,
             physics: this.physics,
-            sounds: this.sounds,
-            dayNightCycle: this.dayNightCycle,
-            weather: this.weather
+            sounds: this.sounds
         })
     }
 
@@ -588,6 +594,24 @@ export default class World
             controls: this.controls,
             ghostCar: this.ghostCar
         })
+    }
+
+    loadDeferredContent()
+    {
+        this.resources.loadDeferred()
+            .then(() =>
+            {
+                if(!this.easterEggs)
+                {
+                    this.setEasterEggs()
+                }
+            })
+            .catch((_error) =>
+            {
+                // Bonus interactions should never prevent the portfolio itself
+                // from being usable when one of their assets is unavailable.
+                console.warn('Optional portfolio content was skipped.', _error)
+            })
     }
 
     setEasterEggs()

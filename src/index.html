@@ -9,21 +9,21 @@
 
     <meta itemprop=name content="Richard Simmons | Product Designer &amp; Full-Stack Engineer">
     <meta itemprop="description" content="Product designer and full-stack engineer building thoughtful digital products, interactive experiences, and scalable web applications.">
-    <meta itemprop="image" content="https://richard-simmons-portfolio.vercel.app/social/share_richard.png">
+    <meta itemprop="image" content="https://richard-simmons-portfolio.vercel.app/social/share_richard.jpg">
 
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="Richard Simmons | Product Designer &amp; Full-Stack Engineer">
     <meta name="twitter:description" content="Product designer and full-stack engineer building thoughtful digital products, interactive experiences, and scalable web applications.">
-    <meta name="twitter:image" content="https://richard-simmons-portfolio.vercel.app/social/share_richard.png">
+    <meta name="twitter:image" content="https://richard-simmons-portfolio.vercel.app/social/share_richard.jpg">
 
     <meta property="og:site_name" content="Richard Simmons">
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://richard-simmons-portfolio.vercel.app">
     <meta property="og:title" content="Richard Simmons | Product Designer &amp; Full-Stack Engineer">
     <meta property="og:description" content="Product designer and full-stack engineer building thoughtful digital products, interactive experiences, and scalable web applications.">
-    <meta property="og:image" content="https://richard-simmons-portfolio.vercel.app/social/share_richard.png">
-    <meta property="og:image:width" content="1731">
-    <meta property="og:image:height" content="909">
+    <meta property="og:image" content="https://richard-simmons-portfolio.vercel.app/social/share_richard.jpg">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
@@ -32,8 +32,13 @@
     <meta name="msapplication-TileColor" content="#101716">
     <meta name="theme-color" content="#101716">
 
-    <!-- Critical inline style: keeps the page dark while the CSS/JS bundles load (no white flash) -->
-    <style>html, body { background: #08111a; margin: 0; height: 100%; overflow: hidden; }</style>
+    <!-- Critical inline style: keeps the page dark and the journey markup hidden
+         while the CSS/JS bundles load (no white flash, no unstyled text pop-up).
+         .journey.is-active in main.css out-specifies the .journey rule here. -->
+    <style>
+        html, body { background: #08111a; margin: 0; height: 100%; overflow: hidden; }
+        .journey { display: none; }
+    </style>
 
     <link rel="icon" href="/favicon/favicon.svg" type="image/svg+xml">
     <link rel="alternate icon" href="/favicon/favicon.ico">
@@ -53,6 +58,23 @@
     </noscript>
 
     <canvas class="canvas js-canvas"></canvas>
+
+    <div class="app-status js-app-status" role="status" aria-live="polite" hidden></div>
+
+    <section class="app-fallback js-app-fallback" role="alert" aria-labelledby="app-fallback-title" hidden>
+        <div class="app-fallback__panel">
+            <p class="app-fallback__eyebrow">Richard Simmons — Portfolio</p>
+            <h1 id="app-fallback-title">The 3D experience is unavailable.</h1>
+            <p class="app-fallback__message js-app-fallback-message">Your browser could not start the interactive portfolio.</p>
+            <div class="app-fallback__actions">
+                <button class="app-fallback__button js-app-fallback-retry" type="button">Reload 3D Experience</button>
+                <a class="app-fallback__link js-app-fallback-resume" href="#" download="Richard_Simmons_Resume.pdf">View Résumé</a>
+                <a class="app-fallback__link" href="https://github.com/RSimmons2021" target="_blank" rel="noopener">GitHub</a>
+                <a class="app-fallback__link" href="https://www.linkedin.com/in/richard-simmons-a3916958" target="_blank" rel="noopener">LinkedIn</a>
+                <a class="app-fallback__link" href="mailto:richard.simmons.dev@gmail.com">Email</a>
+            </div>
+        </div>
+    </section>
 
     <div class="journey is-hover-none js-journey">
         <div class="message js-message">

@@ -74,6 +74,143 @@ html
     cursor: pointer;
 }
 
+.app-status[hidden],
+.app-fallback[hidden]
+{
+    display: none;
+}
+
+.app-status
+{
+    position: fixed;
+    left: 50%;
+    bottom: max(22px, env(safe-area-inset-bottom));
+    z-index: 1200;
+    max-width: calc(100vw - 32px);
+    padding: 9px 13px;
+    transform: translateX(-50%);
+    border: 1px solid var(--ui-border);
+    border-radius: 10px;
+    color: var(--ui-text);
+    background: var(--ui-bg);
+    box-shadow: 0 10px 26px rgba(0, 0, 0, 0.28);
+    backdrop-filter: blur(8px);
+    font-size: 13px;
+    font-weight: 700;
+    pointer-events: none;
+}
+
+.app-fallback
+{
+    position: fixed;
+    inset: 0;
+    z-index: 5000;
+    display: grid;
+    place-items: center;
+    overflow-y: auto;
+    padding:
+        max(24px, env(safe-area-inset-top))
+        max(18px, env(safe-area-inset-right))
+        max(24px, env(safe-area-inset-bottom))
+        max(18px, env(safe-area-inset-left));
+    color: var(--ui-text);
+    background:
+        radial-gradient(800px 560px at 25% 10%, rgba(142, 212, 255, 0.18), transparent 70%),
+        #08111a;
+}
+
+.app-fallback__panel
+{
+    width: min(100%, 620px);
+    padding: clamp(24px, 5vw, 48px);
+    border: 1px solid var(--ui-border);
+    border-radius: 18px;
+    background: rgba(11, 20, 30, 0.88);
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
+}
+
+.app-fallback__eyebrow
+{
+    margin-bottom: 10px;
+    color: var(--ui-accent);
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.app-fallback h1
+{
+    max-width: 18ch;
+    margin-bottom: 14px;
+    font-size: clamp(30px, 6vw, 52px);
+    line-height: 1.05;
+    text-wrap: balance;
+}
+
+.app-fallback__message
+{
+    max-width: 58ch;
+    color: var(--ui-dim);
+    font-size: 16px;
+    line-height: 1.55;
+}
+
+.app-fallback__actions
+{
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 24px;
+}
+
+.app-fallback__button,
+.app-fallback__link
+{
+    display: inline-flex;
+    min-height: 44px;
+    align-items: center;
+    justify-content: center;
+    padding: 0 15px;
+    border: 1px solid rgba(173, 222, 255, 0.42);
+    border-radius: 10px;
+    color: var(--ui-text);
+    background: rgba(17, 32, 46, 0.76);
+    font: 800 13px/1 'Amulya', sans-serif;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background-color 0.16s ease, border-color 0.16s ease, color 0.16s ease, transform 0.16s ease;
+}
+
+.app-fallback__button:hover,
+.app-fallback__link:hover
+{
+    color: #142638;
+    border-color: rgba(255, 255, 255, 0.72);
+    background: #d9efff;
+}
+
+.app-fallback__button:active,
+.app-fallback__link:active
+{
+    transform: scale(0.97);
+}
+
+.app-fallback__button:focus-visible,
+.app-fallback__link:focus-visible
+{
+    outline: 3px solid var(--ui-accent);
+    outline-offset: 3px;
+}
+
+.has-app-fallback .canvas,
+.has-app-fallback .journey,
+.has-app-fallback .experience-hud,
+.has-app-fallback .guided-tour
+{
+    visibility: hidden;
+}
+
 .journey
 {
     display: none;

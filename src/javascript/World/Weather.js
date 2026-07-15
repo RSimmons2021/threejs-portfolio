@@ -30,7 +30,7 @@ export default class Weather
         this.states = {
             clear: { wetness: 0,    rain: 0,   fog: 0,   ambient: 1,    directional: 1,   spotlight: 1,    floorDarkness: 0,    indirect: 1 },
             rain:  { wetness: 0.75, rain: 0.7, fog: 0.1, ambient: 0.82, directional: 0.65, spotlight: 1.2, floorDarkness: 0.4,  indirect: 0.85 },
-            fog:   { wetness: 0.15, rain: 0,   fog: 1,   ambient: 0.88, directional: 0.7,  spotlight: 1.2, floorDarkness: 0.2,  indirect: 0.9 }
+            fog:   { wetness: 0.15, rain: 0,   fog: 1,   ambient: 0.88, directional: 0.7,  spotlight: 1,   floorDarkness: 0.2,  indirect: 0.9 }
         }
 
         // Settings
@@ -51,7 +51,7 @@ export default class Weather
 
         // Fog colors (blended by time of day)
         this.fogDayColor = new THREE.Color('#c3cad4')
-        this.fogNightColor = new THREE.Color('#232c3d')
+        this.fogNightColor = new THREE.Color('#46536e')
         this.fogColor = new THREE.Color()
 
         this.setRain()
@@ -116,22 +116,6 @@ export default class Weather
 
         this.state = _name
         this.stateTimeLeft = this.randomDuration()
-    }
-
-    // HUD button: manual control stops the auto cycle (skips rain during the day)
-    cycleWeather()
-    {
-        this.settings.autoCycle = false
-
-        let index = this.statesOrder.indexOf(this.state)
-        let next = this.statesOrder[(index + 1) % this.statesOrder.length]
-
-        if(next === 'rain' && !this.isNight())
-        {
-            next = this.statesOrder[(index + 2) % this.statesOrder.length]
-        }
-
-        this.setWeather(next)
     }
 
     setRain()
@@ -262,10 +246,11 @@ export default class Weather
         // Push into the lighting rig
         if(this.advancedLighting)
         {
+            // fogDensity stays 0: fog is pure mist, no headlight-cone stretching
             this.advancedLighting.setWeatherState({
                 spotlightBoost: this.values.spotlight,
                 ambientBoost: this.values.ambient,
-                fogDensity: this.values.fog * 0.02,
+                fogDensity: 0,
                 wetness: this.values.wetness,
                 flash: 0
             })

@@ -13,9 +13,10 @@ export default class Time extends EventEmitter
         this.current = this.start
         this.elapsed = 0
         this.delta = 16
+        this.running = false
 
         this.tick = this.tick.bind(this)
-        this.tick()
+        this.resume()
     }
 
     /**
@@ -23,6 +24,11 @@ export default class Time extends EventEmitter
      */
     tick()
     {
+        if(!this.running)
+        {
+            return
+        }
+
         this.ticker = window.requestAnimationFrame(this.tick)
 
         const current = performance.now()
@@ -44,6 +50,29 @@ export default class Time extends EventEmitter
      */
     stop()
     {
+        if(!this.running)
+        {
+            return
+        }
+
+        this.running = false
         window.cancelAnimationFrame(this.ticker)
+    }
+
+    /**
+     * Resume without including the paused duration in the next frame delta.
+     */
+    resume()
+    {
+        if(this.running)
+        {
+            return
+        }
+
+        const current = performance.now()
+        this.current = current
+        this.start = current - this.elapsed
+        this.running = true
+        this.ticker = window.requestAnimationFrame(this.tick)
     }
 }

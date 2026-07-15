@@ -3,142 +3,172 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js'
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js'
 
-export default class Resources extends EventEmitter
+export default class Loader extends EventEmitter
 {
-    /**
-     * Constructor
-     */
     constructor()
     {
         super()
 
         this.setLoaders()
-
-        this.toLoad = 0
-        this.loaded = 0
-        this.items = {}
     }
 
-    /**
-     * Set loaders
-     */
     setLoaders()
     {
-        this.loaders = []
+        const decoderBasePath = `${import.meta.env.BASE_URL || '/'}draco/gltf/`
 
-        // Images
-        this.loaders.push({
-            extensions: ['jpg', 'png', 'webp'],
-            action: (_resource) =>
+        this.dracoLoader = new DRACOLoader()
+        this.dracoLoader.setDecoderPath(decoderBasePath)
+        this.dracoLoader.setDecoderConfig({ type: 'wasm' })
+        this.dracoLoader.preload()
+
+        this.gltfLoader = new GLTFLoader()
+        this.gltfLoader.setDRACOLoader(this.dracoLoader)
+
+        this.fbxLoader = new FBXLoader()
+
+        this.loaders = [
             {
-                const image = new Image()
-
-                image.addEventListener('load', () =>
-                {
-                    this.fileLoadEnd(_resource, image)
-                })
-
-                image.addEventListener('error', () =>
-                {
-                    this.fileLoadEnd(_resource, image)
-                })
-
-                image.src = _resource.source
+                extensions: ['jpg', 'jpeg', 'png', 'webp'],
+                action: (_resource) => this.loadImage(_resource)
+            },
+            {
+                extensions: ['drc'],
+                action: (_resource) => this.loadDraco(_resource)
+            },
+            {
+                extensions: ['glb', 'gltf'],
+                action: (_resource) => this.loadGltf(_resource)
+            },
+            {
+                extensions: ['fbx'],
+                action: (_resource) => this.loadFbx(_resource)
             }
+        ]
+    }
+
+    load(_resources = [], _options = {})
+    {
+        const batch = _options.batch || 'default'
+        const total = _resources.length
+
+        if(total === 0)
+        {
+            return Promise.resolve({ batch, total, loaded: 0, failed: [] })
+        }
+
+        let settled = 0
+
+        const requests = _resources.map((_resource) =>
+        {
+            return this.loadResource(_resource)
+                .then((_data) =>
+                {
+                    this.trigger('fileEnd', [_resource, _data, batch])
+                    return { resource: _resource, data: _data }
+                })
+                .catch((_error) =>
+                {
+                    const error = this.createResourceError(_resource, _error)
+                    this.trigger('fileError', [_resource, error, batch])
+                    throw error
+                })
+                .finally(() =>
+                {
+                    settled++
+                    this.trigger('progress', [{
+                        batch,
+                        loaded: settled,
+                        total,
+                        ratio: settled / total,
+                        resource: _resource
+                    }])
+                })
         })
 
-        // Draco
-        const dracoLoader = new DRACOLoader()
-        dracoLoader.setDecoderPath('draco/')
-        dracoLoader.setDecoderConfig({ type: 'js' })
+        return Promise.allSettled(requests).then((_results) =>
+        {
+            const failed = _results
+                .filter((_result) => _result.status === 'rejected')
+                .map((_result) => _result.reason)
 
-        this.loaders.push({
-            extensions: ['drc'],
-            action: (_resource) =>
-            {
-                dracoLoader.load(_resource.source, (_data) =>
-                {
-                    this.fileLoadEnd(_resource, _data)
-
-                    DRACOLoader.releaseDecoderModule()
-                })
+            const summary = {
+                batch,
+                total,
+                loaded: total - failed.length,
+                failed
             }
-        })
 
-        // GLTF
-        const gltfLoader = new GLTFLoader()
-        gltfLoader.setDRACOLoader(dracoLoader)
-
-        this.loaders.push({
-            extensions: ['glb', 'gltf'],
-            action: (_resource) =>
+            if(failed.length > 0)
             {
-                gltfLoader.load(_resource.source, (_data) =>
-                {
-                    this.fileLoadEnd(_resource, _data)
-                })
+                throw new AggregateError(failed, `Failed to load ${failed.length} ${batch} asset${failed.length === 1 ? '' : 's'}`)
             }
-        })
 
-        // FBX
-        const fbxLoader = new FBXLoader()
-
-        this.loaders.push({
-            extensions: ['fbx'],
-            action: (_resource) =>
-            {
-                fbxLoader.load(_resource.source, (_data) =>
-                {
-                    this.fileLoadEnd(_resource, _data)
-                })
-            }
+            return summary
         })
     }
 
-    /**
-     * Load
-     */
-    load(_resources = [])
+    loadResource(_resource)
     {
-        for(const _resource of _resources)
+        const extensionMatch = _resource.source.match(/\.([a-z0-9]+)(?:[?#].*)?$/i)
+        const extension = extensionMatch ? extensionMatch[1].toLowerCase() : null
+        const loader = this.loaders.find((_loader) => _loader.extensions.includes(extension))
+
+        if(!loader)
         {
-            this.toLoad++
-            const extensionMatch = _resource.source.match(/\.([a-z]+)$/)
-
-            if(typeof extensionMatch[1] !== 'undefined')
-            {
-                const extension = extensionMatch[1]
-                const loader = this.loaders.find((_loader) => _loader.extensions.find((_extension) => _extension === extension))
-
-                if(loader)
-                {
-                    loader.action(_resource)
-                }
-                else
-                {
-                    console.warn(`Cannot found loader for ${_resource}`)
-                }
-            }
-            else
-            {
-                console.warn(`Cannot found extension of ${_resource}`)
-            }
+            return Promise.reject(new Error(`No loader is registered for ${_resource.source}`))
         }
+
+        return loader.action(_resource)
     }
 
-    /**
-     * File load end
-     */
-    fileLoadEnd(_resource, _data)
+    loadImage(_resource)
     {
-        this.loaded++
-        this.items[_resource.name] = _data
-
-        this.trigger('fileEnd', [_resource, _data])
-
-        if(this.loaded === this.toLoad)
+        return new Promise((_resolve, _reject) =>
         {
-            this.trigger('end')
-        }
+            const image = new Image()
+            image.decoding = 'async'
+            image.addEventListener('load', () => _resolve(image), { once: true })
+            image.addEventListener('error', () => _reject(new Error('Image request failed')), { once: true })
+            image.src = _resource.source
+        })
+    }
+
+    loadDraco(_resource)
+    {
+        return new Promise((_resolve, _reject) =>
+        {
+            this.dracoLoader.load(_resource.source, _resolve, undefined, _reject)
+        })
+    }
+
+    loadGltf(_resource)
+    {
+        return new Promise((_resolve, _reject) =>
+        {
+            this.gltfLoader.load(_resource.source, _resolve, undefined, _reject)
+        })
+    }
+
+    loadFbx(_resource)
+    {
+        return new Promise((_resolve, _reject) =>
+        {
+            this.fbxLoader.load(_resource.source, _resolve, undefined, _reject)
+        })
+    }
+
+    createResourceError(_resource, _error)
+    {
+        const reason = _error instanceof Error ? _error.message : `${_error}`
+        const error = new Error(`Unable to load ${_resource.name} (${_resource.source}): ${reason}`)
+        error.cause = _error
+        error.resource = _resource
+        return error
+    }
+
+    dispose()
+    {
+        this.dracoLoader.dispose()
+        this.off('fileEnd fileError progress')
     }
 }

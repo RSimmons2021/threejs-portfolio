@@ -16,8 +16,9 @@ export default class DayNightCycle
         // Settings
         this.settings = {}
         this.settings.enabled = true
-        this.settings.cycleDuration = 300 // seconds for full day/night cycle (slow enough to read project boards)
-        this.settings.autoPlay = true
+        this.settings.realTime = true // sync with the visitor's actual clock (midnight = 0, noon = 0.5)
+        this.settings.cycleDuration = 300 // seconds for a full cycle when realTime is off (debug)
+        this.settings.autoPlay = false
         this.settings.currentTime = 0.5 // 0 = night, 0.5 = day, 1 = night
         this.settings.transitionSpeed = 0.5
 
@@ -165,6 +166,7 @@ export default class DayNightCycle
             this.debugFolder = this.debug.addFolder('dayNightCycle')
             this.debugFolder.open()
             this.debugFolder.add(this.settings, 'enabled').name('enabled')
+            this.debugFolder.add(this.settings, 'realTime').name('realTime')
             this.debugFolder.add(this.settings, 'autoPlay').name('autoPlay')
             this.debugFolder.add(this.settings, 'currentTime').min(0).max(1).step(0.01).name('time').listen()
             this.debugFolder.add(this.settings, 'cycleDuration').min(10).max(300).step(10).name('cycleDuration(s)')
@@ -277,7 +279,14 @@ export default class DayNightCycle
             return
         }
 
-        if(this.settings.autoPlay)
+        if(this.settings.realTime)
+        {
+            // Map the visitor's local clock onto the cycle: midnight = 0, noon = 0.5.
+            // With the timeline below that puts sunrise ~5:30am and sunset ~6:30pm.
+            const now = new Date()
+            this.settings.currentTime = (now.getHours() + now.getMinutes() / 60 + now.getSeconds() / 3600) / 24
+        }
+        else if(this.settings.autoPlay)
         {
             const delta = this.time.delta / 1000
             const increment = delta / this.settings.cycleDuration
@@ -389,21 +398,6 @@ export default class DayNightCycle
 
             const vignetteIntensity = from.vignetteIntensity + (to.vignetteIntensity - from.vignetteIntensity) * t
             this.passes.screenFxPass.material.uniforms.uVignetteIntensity.value = vignetteIntensity
-        }
-    }
-
-    // Used by the HUD sun/moon button: user takes control of the time of day
-    toggleDayNight()
-    {
-        this.settings.autoPlay = false
-
-        if(this.nightFactor < 0.5)
-        {
-            this.transitionToNight()
-        }
-        else
-        {
-            this.transitionToDay()
         }
     }
 

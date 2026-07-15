@@ -122,11 +122,11 @@ export default class Fireflies
     {
         const nightFactor = this.dayNightCycle ? this.dayNightCycle.nightFactor : 0
 
-        // Fireflies hide in the rain
-        const rainValue = this.weather ? this.weather.values.rain : 0
+        // Fireflies hide in rain and fog (fog should be pure mist, no glowing particles)
+        const weatherFade = this.weather ? Math.max(this.weather.values.rain, this.weather.values.fog) : 0
 
         // Fully invisible during the day: skip all work
-        const targetOpacity = Math.max((nightFactor - 0.35) / 0.65, 0) * (1 - rainValue)
+        const targetOpacity = Math.max((nightFactor - 0.35) / 0.65, 0) * (1 - weatherFade)
         this.material.opacity += (targetOpacity - this.material.opacity) * 0.05
 
         const visible = this.material.opacity > 0.01

@@ -23,13 +23,17 @@ export default class Application
     {
         // Options
         this.$canvas = _options.$canvas
+        this.$status = document.querySelector('.js-app-status')
+        this.$fallback = document.querySelector('.js-app-fallback')
+        this.$fallbackMessage = document.querySelector('.js-app-fallback-message')
+        this.$fallbackRetry = document.querySelector('.js-app-fallback-retry')
 
         // Set up
         this.time = new Time()
         this.sizes = new Sizes()
-        this.resources = new Resources()
-
         this.setConfig()
+        this.resources = new Resources({ config: this.config })
+        this.setApplicationState()
         this.setPerformanceProfile()
         this.setDebug()
         this.setRenderer()
@@ -37,6 +41,8 @@ export default class Application
         this.setPasses()
         this.setWorld()
         this.setJourney()
+        this.setLifecycle()
+        this.startLoading()
     }
 
     /**
@@ -60,6 +66,101 @@ export default class Application
             this.passes.verticalBlurPass.strength = 1
             this.passes.verticalBlurPass.material.uniforms.uStrength.value = new THREE.Vector2(0, this.passes.verticalBlurPass.strength)
         }, { once: true })
+    }
+
+    setApplicationState()
+    {
+        this.fatalError = false
+        this.webglContextLost = false
+
+        this.onFallbackRetry = () => window.location.reload()
+        this.$fallbackRetry?.addEventListener('click', this.onFallbackRetry)
+
+        this.resources.on('progress', (_progress) =>
+        {
+            this.showStatus(`Loading 3D portfolio… ${Math.round(_progress * 100)}%`)
+        })
+
+        this.resources.on('ready', () =>
+        {
+            this.showStatus('Portfolio ready. Select START to enter.')
+            this.statusHideTimeout = window.setTimeout(() => this.hideStatus(), 2500)
+        })
+
+        this.resources.on('error', (_details) =>
+        {
+            if(_details.fatal)
+            {
+                console.error('Core portfolio assets failed to load.', _details.error)
+                this.showFallback('Some 3D assets could not be loaded. You can reload the experience or use the portfolio links below.')
+            }
+        })
+    }
+
+    startLoading()
+    {
+        this.showStatus('Loading 3D portfolio… 0%')
+        this.resources.loadCore().catch(() =>
+        {
+            // The resource error event owns the user-facing fallback state.
+        })
+    }
+
+    showStatus(_message)
+    {
+        if(!this.$status)
+        {
+            return
+        }
+
+        this.$status.textContent = _message
+        this.$status.hidden = false
+    }
+
+    hideStatus()
+    {
+        if(this.$status)
+        {
+            this.$status.hidden = true
+        }
+    }
+
+    showFallback(_message, _options = {})
+    {
+        if(_options.fatal !== false)
+        {
+            this.fatalError = true
+        }
+
+        this.hideStatus()
+        this.pause()
+
+        if(this.$fallbackMessage)
+        {
+            this.$fallbackMessage.textContent = _message
+        }
+
+        if(this.$fallback)
+        {
+            this.$fallback.hidden = false
+        }
+
+        document.body.classList.add('has-app-fallback')
+    }
+
+    hideFallback()
+    {
+        if(this.fatalError)
+        {
+            return
+        }
+
+        if(this.$fallback)
+        {
+            this.$fallback.hidden = true
+        }
+
+        document.body.classList.remove('has-app-fallback')
     }
 
     /**
@@ -108,6 +209,23 @@ export default class Application
         this.renderer.setPixelRatio(this.performance.currentDpr)
         this.renderer.setSize(this.sizes.viewport.width, this.sizes.viewport.height)
         this.renderer.autoClear = false
+
+        this.onWebglContextLost = (_event) =>
+        {
+            _event.preventDefault()
+            this.webglContextLost = true
+            this.showFallback('The 3D graphics context was interrupted. Reload the experience, or use the portfolio links below.', { fatal: false })
+        }
+
+        this.onWebglContextRestored = () =>
+        {
+            this.webglContextLost = false
+            this.hideFallback()
+            this.resume()
+        }
+
+        this.$canvas.addEventListener('webglcontextlost', this.onWebglContextLost, false)
+        this.$canvas.addEventListener('webglcontextrestored', this.onWebglContextRestored, false)
 
         // Resize event
         this.sizes.on('resize', () =>
@@ -212,6 +330,8 @@ export default class Application
         this.passes.screenFxPass.material.uniforms.uVignetteSmoothness.value = 0.65
         this.passes.screenFxPass.material.uniforms.uFogColor.value = new THREE.Color('#c3cad4')
         this.passes.screenFxPass.material.uniforms.uFogIntensity.value = 0
+        this.passes.screenFxPass.material.uniforms.uCameraPosition.value = new THREE.Vector3()
+        this.passes.screenFxPass.material.uniforms.uInverseViewProjection.value = new THREE.Matrix4()
 
         // Debug
         if(this.debug)
@@ -270,6 +390,12 @@ export default class Application
             this.passes.horizontalBlurPass.enabled = this.passes.horizontalBlurPass.material.uniforms.uStrength.value.x > 0
             this.passes.verticalBlurPass.enabled = this.passes.verticalBlurPass.material.uniforms.uStrength.value.y > 0
 
+            // Ground-mist reconstruction uniforms (world-anchored fog in ScreenFx)
+            const screenFxUniforms = this.passes.screenFxPass.material.uniforms
+            screenFxUniforms.uTime.value = this.time.elapsed
+            screenFxUniforms.uCameraPosition.value.setFromMatrixPosition(this.camera.instance.matrixWorld)
+            screenFxUniforms.uInverseViewProjection.value.multiplyMatrices(this.camera.instance.matrixWorld, this.camera.instance.projectionMatrixInverse)
+
             // Renderer
             this.passes.composer.render()
             // this.renderer.domElement.style.background = 'black'
@@ -320,15 +446,65 @@ export default class Application
         })
     }
 
+    setLifecycle()
+    {
+        this.onVisibilityChange = () =>
+        {
+            if(document.hidden)
+            {
+                this.pause()
+            }
+            else
+            {
+                this.resume()
+            }
+        }
+
+        document.addEventListener('visibilitychange', this.onVisibilityChange)
+
+        if(document.hidden)
+        {
+            this.pause()
+        }
+    }
+
+    pause()
+    {
+        this.time.stop()
+        this.world?.sounds?.suspend()
+    }
+
+    resume()
+    {
+        if(document.hidden || this.webglContextLost || this.fatalError)
+        {
+            return
+        }
+
+        this.performance.samples.length = 0
+        this.world?.sounds?.resume()
+        this.time.resume()
+    }
+
     /**
      * Destructor
      */
     destructor()
     {
+        window.clearTimeout(this.statusHideTimeout)
+        document.removeEventListener('visibilitychange', this.onVisibilityChange)
+        this.$canvas.removeEventListener('webglcontextlost', this.onWebglContextLost, false)
+        this.$canvas.removeEventListener('webglcontextrestored', this.onWebglContextRestored, false)
+        this.$fallbackRetry?.removeEventListener('click', this.onFallbackRetry)
+
+        this.time.stop()
         this.time.off('tick')
         this.sizes.off('resize')
 
+        this.world?.sounds?.dispose()
+        this.resources.dispose()
         this.camera.dispose()
+        this.passes.composer.dispose()
         this.renderer.dispose()
 
         if(this.debug)

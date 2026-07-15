@@ -12,7 +12,10 @@ export default {
         uVignetteIntensity: { type: 'f', value: null },
         uVignetteSmoothness: { type: 'f', value: null },
         uFogColor: { type: 'v3', value: null },
-        uFogIntensity: { type: 'f', value: 0 }
+        uFogIntensity: { type: 'f', value: 0 },
+        uTime: { type: 'f', value: 0 },
+        uCameraPosition: { type: 'v3', value: null },
+        uInverseViewProjection: { type: 'm4', value: null }
     },
     vertexShader: shaderVertex,
     fragmentShader: shaderFragment
