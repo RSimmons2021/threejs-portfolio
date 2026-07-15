@@ -1,5 +1,15 @@
 import * as THREE from 'three'
 
+/**
+ * Virtual lighting rig.
+ *
+ * Every object in the world uses matcap ShaderMaterials which ignore real
+ * Three.js lights, so instead of THREE.SpotLight/AmbientLight this drives
+ * shared shader uniforms: a fake spotlight (cone falloff computed in the
+ * matcap fragment shader) plus a light pool projected on the ground in the
+ * background shader. The ambient/directional "lights" are kept as plain
+ * data objects consumed by the DayNightCycle.
+ */
 export default class AdvancedLighting
 {
     constructor(_options)
@@ -9,6 +19,10 @@ export default class AdvancedLighting
         this.scene = _options.scene
         this.car = _options.car
         this.physics = _options.physics
+        this.materials = _options.materials
+        this.floor = _options.floor
+        this.camera = _options.camera
+        this.config = _options.config
         this.debug = _options.debug
 
         // Container
@@ -18,27 +32,30 @@ export default class AdvancedLighting
         // Settings
         this.settings = {}
         this.settings.spotlightEnabled = true
-        this.settings.spotlightIntensity = 3.0
+        this.settings.spotlightIntensity = 1.5
         this.settings.spotlightDistance = 30
         this.settings.spotlightAngle = Math.PI * 0.25
         this.settings.spotlightPenumbra = 0.3
         this.settings.spotlightColor = '#ffffff'
         this.settings.spotlightHeight = 6
         this.settings.spotlightOffsetForward = 2
+        this.settings.floorPoolStrength = 0.16
         this.settings.headlightConesEnabled = false
+        this.settings.headlightConesAutoNight = true
         this.settings.ambientIntensity = 0.4
         this.settings.ambientColor = '#6B7F3F'
         this.settings.directionalIntensity = 0.6
         this.settings.directionalColor = '#ffffff'
-        this.settings.directionalShadows = false
-        this.settings.spotlightShadows = true
 
         // Dynamic lighting settings
         this.settings.dynamicEnabled = true
         this.settings.speedColorShift = true
         this.settings.driftEffect = true
-        this.settings.pulseEffect = true
+        this.settings.pulseEffect = !(this.config && this.config.reducedMotion)
         this.settings.collisionFlash = true
+
+        // How much of the day/night cycle is "night" right now (written by DayNightCycle)
+        this.nightFactor = 0
 
         // Dynamic state
         this.dynamicState = {
@@ -65,6 +82,10 @@ export default class AdvancedLighting
         this.tempQuaternion = new THREE.Quaternion()
         this.upVector = new THREE.Vector3(0, 0, 1)
         this.lookTarget = new THREE.Vector3()
+        this.spotWorldPosition = new THREE.Vector3()
+        this.spotTargetPosition = new THREE.Vector3()
+        this.spotDirection = new THREE.Vector3()
+        this.cameraWorldPosition = new THREE.Vector3()
 
         this.baseColor = new THREE.Color(1, 1, 1)
         this.speedColor = new THREE.Color(0.7, 0.9, 1.0)
@@ -73,9 +94,7 @@ export default class AdvancedLighting
         this.flashColor = new THREE.Color(1.75, 1.8, 2.0)
         this.finalSpotColor = new THREE.Color(1, 1, 1)
 
-        this.setAmbientLight()
-        this.setDirectionalLight()
-        this.setSpotlight()
+        this.setVirtualLights()
         this.setHeadlightCones()
 
         // Time tick
@@ -99,56 +118,20 @@ export default class AdvancedLighting
             dynamicFolder.add(this.settings, 'collisionFlash').name('collisionFlash')
 
             const spotlightFolder = this.debugFolder.addFolder('spotlight')
-            spotlightFolder.add(this.settings, 'spotlightEnabled').name('enabled').onChange((value) =>
-            {
-                this.spotlight.visible = value
-                if(this.headlightCones && this.headlightCones.group)
-                {
-                    this.headlightCones.group.visible = value && this.settings.headlightConesEnabled
-                }
-            })
-            spotlightFolder.add(this.settings, 'spotlightIntensity').min(0).max(5).step(0.1).name('intensity').onChange((value) =>
-            {
-                this.spotlight.intensity = value
-            })
-            spotlightFolder.add(this.settings, 'spotlightDistance').min(5).max(50).step(1).name('distance').onChange((value) =>
-            {
-                this.spotlight.distance = value
-            })
-            spotlightFolder.add(this.settings, 'spotlightAngle').min(0).max(Math.PI * 0.5).step(0.01).name('angle').onChange((value) =>
-            {
-                this.spotlight.angle = value
-            })
-            spotlightFolder.add(this.settings, 'spotlightPenumbra').min(0).max(1).step(0.1).name('penumbra').onChange((value) =>
-            {
-                this.spotlight.penumbra = value
-            })
+            spotlightFolder.open()
+            spotlightFolder.add(this.settings, 'spotlightEnabled').name('enabled')
+            spotlightFolder.add(this.settings, 'spotlightIntensity').min(0).max(5).step(0.1).name('intensity').listen()
+            spotlightFolder.add(this.settings, 'spotlightDistance').min(5).max(50).step(1).name('distance')
+            spotlightFolder.add(this.settings, 'spotlightAngle').min(0).max(Math.PI * 0.5).step(0.01).name('angle')
+            spotlightFolder.add(this.settings, 'spotlightPenumbra').min(0).max(1).step(0.1).name('penumbra')
             spotlightFolder.add(this.settings, 'spotlightHeight').min(3).max(20).step(0.5).name('height')
-            spotlightFolder.add(this.settings, 'spotlightOffsetForward').min(-5).max(10).step(0.5).name('offsetForward')
-            spotlightFolder.addColor(this.settings, 'spotlightColor').name('color').onChange((value) =>
-            {
-                this.spotlight.color.set(value)
-            })
+            spotlightFolder.add(this.settings, 'spotlightOffsetForward').min(- 5).max(10).step(0.5).name('offsetForward')
+            spotlightFolder.add(this.settings, 'floorPoolStrength').min(0).max(1).step(0.01).name('floorPool')
+            spotlightFolder.add(this, 'nightFactor').min(0).max(1).step(0.01).name('nightFactor').listen()
 
-            const ambientFolder = this.debugFolder.addFolder('ambient')
-            ambientFolder.add(this.settings, 'ambientIntensity').min(0).max(2).step(0.1).name('intensity').onChange((value) =>
-            {
-                this.ambientLight.intensity = value
-            })
-            ambientFolder.addColor(this.settings, 'ambientColor').name('color').onChange((value) =>
-            {
-                this.ambientLight.color.set(value)
-            })
-
-            const directionalFolder = this.debugFolder.addFolder('directional')
-            directionalFolder.add(this.settings, 'directionalIntensity').min(0).max(2).step(0.1).name('intensity').onChange((value) =>
-            {
-                this.directionalLight.intensity = value
-            })
-            directionalFolder.addColor(this.settings, 'directionalColor').name('color').onChange((value) =>
-            {
-                this.directionalLight.color.set(value)
-            })
+            const conesFolder = this.debugFolder.addFolder('headlightCones')
+            conesFolder.add(this.settings, 'headlightConesEnabled').name('alwaysOn')
+            conesFolder.add(this.settings, 'headlightConesAutoNight').name('autoAtNight')
         }
     }
 
@@ -161,61 +144,22 @@ export default class AdvancedLighting
         if(typeof _state.flash === 'number') this.weatherState.flash = _state.flash
     }
 
-    setAmbientLight()
+    setVirtualLights()
     {
-        this.ambientLight = new THREE.AmbientLight(
-            this.settings.ambientColor,
-            this.settings.ambientIntensity
-        )
-        this.container.add(this.ambientLight)
-    }
-
-    setDirectionalLight()
-    {
-        this.directionalLight = new THREE.DirectionalLight(
-            this.settings.directionalColor,
-            this.settings.directionalIntensity
-        )
-        this.directionalLight.position.set(10, 10, 15)
-        this.directionalLight.castShadow = this.settings.directionalShadows
-        this.container.add(this.directionalLight)
-    }
-
-    setSpotlight()
-    {
-        this.spotlight = new THREE.SpotLight(
-            this.settings.spotlightColor,
-            this.settings.spotlightIntensity,
-            this.settings.spotlightDistance,
-            this.settings.spotlightAngle,
-            this.settings.spotlightPenumbra,
-            1
-        )
-
-        this.spotlight.position.set(0, 0, this.settings.spotlightHeight)
-        this.spotlight.castShadow = this.settings.spotlightShadows
-
-        if(this.settings.spotlightShadows)
-        {
-            this.spotlight.shadow.mapSize.width = 1024
-            this.spotlight.shadow.mapSize.height = 1024
-            this.spotlight.shadow.camera.near = 0.35
-            this.spotlight.shadow.camera.far = this.settings.spotlightDistance
-            this.spotlight.shadow.camera.fov = 48
-            this.spotlight.shadow.bias = -0.00015
+        // Plain data objects: the DayNightCycle writes to these, the matcap night
+        // tint and spotlight uniforms are what actually reach the screen
+        this.ambientLight = {
+            color: new THREE.Color(this.settings.ambientColor),
+            intensity: this.settings.ambientIntensity
         }
 
-        this.spotlightTarget = new THREE.Object3D()
-        this.spotlightTarget.position.set(0, 0, 0)
-        this.spotlight.target = this.spotlightTarget
+        this.directionalLight = {
+            color: new THREE.Color(this.settings.directionalColor),
+            intensity: this.settings.directionalIntensity
+        }
 
-        this.container.add(this.spotlight)
-        this.container.add(this.spotlightTarget)
-
-        if(this.debug)
-        {
-            this.spotlightHelper = new THREE.SpotLightHelper(this.spotlight)
-            this.container.add(this.spotlightHelper)
+        this.spotlight = {
+            color: new THREE.Color(this.settings.spotlightColor)
         }
     }
 
@@ -224,9 +168,11 @@ export default class AdvancedLighting
         this.headlightCones = {}
         this.headlightCones.group = new THREE.Group()
 
+        // Apex at the origin, body extending along +Z so lookAt() aims the beam
+        // at the target (lookAt points local +Z toward the target)
         const geometry = new THREE.ConeGeometry(0.95, 6.5, 18, 1, true)
-        geometry.translate(0, -3.25, 0)
-        geometry.rotateX(Math.PI * 0.5)
+        geometry.translate(0, - 3.25, 0)
+        geometry.rotateX(- Math.PI * 0.5)
 
         const material = new THREE.MeshBasicMaterial({
             color: '#cfe5ff',
@@ -241,21 +187,29 @@ export default class AdvancedLighting
         this.headlightCones.right = new THREE.Mesh(geometry, material.clone())
         this.headlightCones.group.add(this.headlightCones.left)
         this.headlightCones.group.add(this.headlightCones.right)
-        this.headlightCones.group.visible = this.settings.headlightConesEnabled
+        this.headlightCones.group.visible = false
 
         this.container.add(this.headlightCones.group)
     }
 
     update()
     {
-        if(!this.car || !this.car.chassis || !this.car.chassis.body || !this.settings.spotlightEnabled)
+        // The physics body lives on physics.car (world.car.chassis only has the visual object)
+        const chassisBody = this.physics && this.physics.car && this.physics.car.chassis ? this.physics.car.chassis.body : null
+        if(!chassisBody || !this.settings.spotlightEnabled)
         {
             return
         }
 
-        const carPosition = this.car.chassis.body.position
-        const carQuaternion = this.car.chassis.body.quaternion
-        const carVelocity = this.car.chassis.body.velocity
+        const lightUniforms = this.materials && this.materials.shades ? this.materials.shades.lightUniforms : null
+        if(!lightUniforms)
+        {
+            return
+        }
+
+        const carPosition = chassisBody.position
+        const carQuaternion = chassisBody.quaternion
+        const carVelocity = chassisBody.velocity
         const carSpeed = Math.abs(this.physics.car.speed)
 
         this.tempQuaternion.set(carQuaternion.x, carQuaternion.y, carQuaternion.z, carQuaternion.w)
@@ -294,7 +248,9 @@ export default class AdvancedLighting
         {
             this.dynamicState.collisionIntensity *= 0.9
         }
-        this.dynamicState.previousVelocity = { x: carVelocity.x, y: carVelocity.y, z: carVelocity.z }
+        this.dynamicState.previousVelocity.x = carVelocity.x
+        this.dynamicState.previousVelocity.y = carVelocity.y
+        this.dynamicState.previousVelocity.z = carVelocity.z
 
         this.dynamicState.pulseTime += this.time.delta * 0.001
         const pulseValue = this.settings.pulseEffect ? Math.sin(this.dynamicState.pulseTime * 2) * 0.5 + 0.5 : 0.5
@@ -303,17 +259,19 @@ export default class AdvancedLighting
         const dynamicHeight = this.settings.spotlightHeight - (this.dynamicState.speedFactor * 2)
         const dynamicOffset = this.settings.spotlightOffsetForward + (this.dynamicState.speedFactor * 3)
 
-        this.spotlight.position.set(
+        this.spotWorldPosition.set(
             carPosition.x + this.forwardVector.x * dynamicOffset,
             carPosition.y + this.forwardVector.y * dynamicOffset,
             carPosition.z + dynamicHeight
         )
 
-        this.spotlightTarget.position.set(
+        this.spotTargetPosition.set(
             carPosition.x + this.forwardVector.x * (2 + this.dynamicState.speedFactor * 2),
             carPosition.y + this.forwardVector.y * (2 + this.dynamicState.speedFactor * 2),
             carPosition.z
         )
+
+        this.spotDirection.subVectors(this.spotTargetPosition, this.spotWorldPosition).normalize()
 
         // Dynamic intensity
         let intensityMultiplier = 1.0
@@ -329,12 +287,15 @@ export default class AdvancedLighting
         intensityMultiplier *= this.weatherState.spotlightBoost
         intensityMultiplier += this.weatherState.flash * 0.3
 
-        this.spotlight.intensity = this.settings.spotlightIntensity * intensityMultiplier
+        // Subtle during the day, strong at night
+        const nightBlend = 0.12 + this.nightFactor * 0.88
+        const effectiveIntensity = this.settings.spotlightIntensity * intensityMultiplier * nightBlend
 
-        // Dynamic color
+        // Dynamic color (base color comes from the day/night cycle)
+        this.finalSpotColor.copy(this.spotlight.color)
+
         if(this.settings.speedColorShift && this.settings.dynamicEnabled)
         {
-            this.finalSpotColor.copy(this.baseColor)
             this.finalSpotColor.lerp(this.speedColor, this.dynamicState.speedFactor * 0.3)
 
             if(this.dynamicState.driftFactor > 0.3)
@@ -351,46 +312,60 @@ export default class AdvancedLighting
             {
                 this.finalSpotColor.lerp(this.flashColor, this.weatherState.flash * 0.7)
             }
-
-            this.spotlight.color.copy(this.finalSpotColor)
         }
 
         // Widen cone while drifting
-        const baseAngle = this.settings.spotlightAngle
-        const dynamicAngle = baseAngle + (this.dynamicState.driftFactor * 0.3)
-        this.spotlight.angle = dynamicAngle
+        const dynamicAngle = this.settings.spotlightAngle + (this.dynamicState.driftFactor * 0.3)
+        const penumbraAngle = dynamicAngle * (1 - this.settings.spotlightPenumbra)
 
-        // Ambient dynamics
-        if(this.settings.dynamicEnabled)
-        {
-            const ambientMultiplier = (1.0 + (this.dynamicState.speedFactor * 0.2) + (pulseValue * 0.05)) * this.weatherState.ambientBoost
-            this.ambientLight.intensity = this.settings.ambientIntensity * ambientMultiplier + this.weatherState.flash * 0.08
-        }
+        // Push everything into the shared matcap uniforms
+        lightUniforms.uSpotPosition.value.copy(this.spotWorldPosition)
+        lightUniforms.uSpotDirection.value.copy(this.spotDirection)
+        lightUniforms.uSpotColor.value.copy(this.finalSpotColor)
+        lightUniforms.uSpotIntensity.value = effectiveIntensity
+        lightUniforms.uSpotAngleCos.value = Math.cos(dynamicAngle)
+        lightUniforms.uSpotPenumbraCos.value = Math.cos(penumbraAngle)
+        lightUniforms.uSpotDistance.value = this.settings.spotlightDistance
 
-        // Keep shadows focused around the active zone
-        if(this.spotlight.castShadow)
+        // And into the floor light pool
+        if(this.floor && this.floor.material && this.camera)
         {
-            this.spotlight.shadow.camera.far = this.settings.spotlightDistance + this.dynamicState.speedFactor * 8
-            this.spotlight.shadow.camera.updateProjectionMatrix()
+            const floorUniforms = this.floor.material.uniforms
+            const cameraInstance = this.camera.instance
+
+            this.cameraWorldPosition.setFromMatrixPosition(cameraInstance.matrixWorld)
+            floorUniforms.uCameraPosition.value.copy(this.cameraWorldPosition)
+            floorUniforms.uInverseViewProjection.value.multiplyMatrices(cameraInstance.matrixWorld, cameraInstance.projectionMatrixInverse)
+
+            floorUniforms.uSpotPosition.value.set(this.spotTargetPosition.x, this.spotTargetPosition.y)
+            floorUniforms.uSpotColor.value.copy(this.finalSpotColor)
+            floorUniforms.uSpotIntensity.value = effectiveIntensity * this.settings.floorPoolStrength
+            floorUniforms.uSpotRadius.value = Math.tan(dynamicAngle) * dynamicHeight + 2
         }
 
         this.updateHeadlightCones(carPosition)
-
-        if(this.spotlightHelper)
-        {
-            this.spotlightHelper.update()
-        }
     }
 
     updateHeadlightCones(_carPosition)
     {
-        if(!this.settings.headlightConesEnabled || !this.headlightCones || !this.headlightCones.group.visible)
+        if(!this.headlightCones)
         {
             return
         }
 
+        // Cones show when forced on, or automatically once night falls
+        const autoNight = this.settings.headlightConesAutoNight && this.nightFactor > 0.4
+        const visible = this.settings.headlightConesEnabled || autoNight
+        this.headlightCones.group.visible = visible
+
+        if(!visible)
+        {
+            return
+        }
+
+        const nightOpacity = this.settings.headlightConesEnabled ? 1 : Math.min((this.nightFactor - 0.4) / 0.35, 1)
         const coneLengthScale = 0.95 + this.dynamicState.speedFactor * 1.35 + this.weatherState.fogDensity * 40
-        const coneOpacity = 0.12 + this.dynamicState.speedFactor * 0.08 + this.weatherState.wetness * 0.1
+        const coneOpacity = (0.12 + this.dynamicState.speedFactor * 0.08 + this.weatherState.wetness * 0.1) * nightOpacity
 
         const frontOffset = 1.25
         const sideOffset = 0.42
@@ -409,7 +384,7 @@ export default class AdvancedLighting
             _carPosition.z + zOffset
         )
         left.lookAt(this.lookTarget)
-        left.scale.set(1, coneLengthScale, 1)
+        left.scale.set(1, 1, coneLengthScale)
         left.material.opacity = coneOpacity
 
         const right = this.headlightCones.right
@@ -419,7 +394,7 @@ export default class AdvancedLighting
             _carPosition.z + zOffset
         )
         right.lookAt(this.lookTarget)
-        right.scale.set(1, coneLengthScale, 1)
+        right.scale.set(1, 1, coneLengthScale)
         right.material.opacity = coneOpacity
     }
 }

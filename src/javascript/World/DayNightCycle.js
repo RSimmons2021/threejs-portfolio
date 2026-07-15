@@ -10,12 +10,13 @@ export default class DayNightCycle
         this.floor = _options.floor
         this.materials = _options.materials
         this.advancedLighting = _options.advancedLighting
+        this.passes = _options.passes
         this.debug = _options.debug
 
         // Settings
         this.settings = {}
         this.settings.enabled = true
-        this.settings.cycleDuration = 120 // seconds for full day/night cycle
+        this.settings.cycleDuration = 300 // seconds for full day/night cycle (slow enough to read project boards)
         this.settings.autoPlay = true
         this.settings.currentTime = 0.5 // 0 = night, 0.5 = day, 1 = night
         this.settings.transitionSpeed = 0.5
@@ -44,7 +45,11 @@ export default class DayNightCycle
                 directionalIntensity: 0.5,
                 spotlight: '#ffffff',
                 spotlightIntensity: 1.5,
-                materialIndirect: '#800020'
+                materialIndirect: '#800020',
+                matcapTint: '#ffffff',
+                glow: '#ffcfe0',
+                vignetteIntensity: 0.35,
+                nightFactor: 0
             },
             sunrise: {
                 floor: {
@@ -59,7 +64,11 @@ export default class DayNightCycle
                 directionalIntensity: 0.4,
                 spotlight: '#FFE2BF',
                 spotlightIntensity: 1.8,
-                materialIndirect: '#92503A'
+                materialIndirect: '#92503A',
+                matcapTint: '#f2e0cc',
+                glow: '#ffd9b0',
+                vignetteIntensity: 0.38,
+                nightFactor: 0.35
             },
             sunset: {
                 floor: {
@@ -74,7 +83,11 @@ export default class DayNightCycle
                 directionalIntensity: 0.35,
                 spotlight: '#FFD7C2',
                 spotlightIntensity: 2.1,
-                materialIndirect: '#6A3F56'
+                materialIndirect: '#6A3F56',
+                matcapTint: '#e0c0ae',
+                glow: '#ff9d7a',
+                vignetteIntensity: 0.42,
+                nightFactor: 0.55
             },
             night: {
                 floor: {
@@ -89,7 +102,11 @@ export default class DayNightCycle
                 directionalIntensity: 0.2,
                 spotlight: '#B4C7E7',
                 spotlightIntensity: 2.5,
-                materialIndirect: '#4A5568'
+                materialIndirect: '#4A5568',
+                matcapTint: '#5d6d8e',
+                glow: '#16203a',
+                vignetteIntensity: 0.5,
+                nightFactor: 1
             }
         }
 
@@ -116,8 +133,13 @@ export default class DayNightCycle
             directionalIntensity: 0,
             spotlight: new THREE.Color(),
             spotlightIntensity: 0,
-            materialIndirect: new THREE.Color()
+            materialIndirect: new THREE.Color(),
+            matcapTint: new THREE.Color(),
+            glow: new THREE.Color()
         }
+
+        // Blended 0-1 "how night is it" value, readable by other systems
+        this.nightFactor = 0
 
         this.floorColorOutput = {
             topLeft: new THREE.Color(),
@@ -174,7 +196,11 @@ export default class DayNightCycle
                 directionalIntensity: source.directionalIntensity,
                 spotlight: new THREE.Color(source.spotlight),
                 spotlightIntensity: source.spotlightIntensity,
-                materialIndirect: new THREE.Color(source.materialIndirect)
+                materialIndirect: new THREE.Color(source.materialIndirect),
+                matcapTint: new THREE.Color(source.matcapTint),
+                glow: new THREE.Color(source.glow),
+                vignetteIntensity: source.vignetteIntensity,
+                nightFactor: source.nightFactor
             }
         }
 
@@ -292,11 +318,20 @@ export default class DayNightCycle
 
         if(this.floor)
         {
-            this.floor.colors.topLeft = '#' + this.floorColorOutput.topLeft.getHexString()
-            this.floor.colors.topRight = '#' + this.floorColorOutput.topRight.getHexString()
-            this.floor.colors.bottomRight = '#' + this.floorColorOutput.bottomRight.getHexString()
-            this.floor.colors.bottomLeft = '#' + this.floorColorOutput.bottomLeft.getHexString()
-            this.floor.updateMaterial()
+            // Pass Color objects directly (no hex-string round-trip)
+            this.floor.setColors(
+                this.floorColorOutput.topLeft,
+                this.floorColorOutput.topRight,
+                this.floorColorOutput.bottomRight,
+                this.floorColorOutput.bottomLeft
+            )
+        }
+
+        // Night factor drives the spotlight strength, headlight cones and fireflies
+        this.nightFactor = from.nightFactor + (to.nightFactor - from.nightFactor) * t
+        if(this.advancedLighting)
+        {
+            this.advancedLighting.nightFactor = this.nightFactor
         }
 
         // Interpolate lighting colors and intensities
@@ -334,6 +369,41 @@ export default class DayNightCycle
                     material.uniforms.uIndirectColor.value.copy(this.currentColors.materialIndirect)
                 }
             }
+
+            // Global matcap tint: objects actually darken at night (shared uniform,
+            // one write updates every shade material)
+            if(this.materials.shades.lightUniforms)
+            {
+                this.currentColors.matcapTint.lerpColors(from.matcapTint, to.matcapTint, t)
+                this.currentColors.matcapTint.lerp(this.tempFlashColor, Math.min(this.weatherInfluence.flash * 0.4, 0.35))
+                this.materials.shades.lightUniforms.uNightTint.value.copy(this.currentColors.matcapTint)
+            }
+        }
+
+        // Post-processing follows the time of day (warm glow at sunset, dark blue at
+        // night, stronger vignette after dark)
+        if(this.passes && this.passes.screenFxPass)
+        {
+            this.currentColors.glow.lerpColors(from.glow, to.glow, t)
+            this.passes.screenFxPass.material.uniforms.uGlowColor.value.copy(this.currentColors.glow).convertLinearToSRGB()
+
+            const vignetteIntensity = from.vignetteIntensity + (to.vignetteIntensity - from.vignetteIntensity) * t
+            this.passes.screenFxPass.material.uniforms.uVignetteIntensity.value = vignetteIntensity
+        }
+    }
+
+    // Used by the HUD sun/moon button: user takes control of the time of day
+    toggleDayNight()
+    {
+        this.settings.autoPlay = false
+
+        if(this.nightFactor < 0.5)
+        {
+            this.transitionToNight()
+        }
+        else
+        {
+            this.transitionToDay()
         }
     }
 

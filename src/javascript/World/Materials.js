@@ -134,6 +134,28 @@ export default class Materials
         this.shades.items.metal.uniforms.matcap.value = this.resources.items.matcapMetalTexture
         this.items.metal = this.shades.items.metal
 
+        // Shared lighting uniforms: every shade material points at the same uniform
+        // records, so mutating these once per frame updates all materials at once.
+        this.shades.lightUniforms = {
+            uNightTint: { value: new THREE.Color(1, 1, 1) },
+            uSpotPosition: { value: new THREE.Vector3(0, 0, 6) },
+            uSpotDirection: { value: new THREE.Vector3(0, 0, - 1) },
+            uSpotColor: { value: new THREE.Color(1, 1, 1) },
+            uSpotIntensity: { value: 0 },
+            uSpotAngleCos: { value: Math.cos(Math.PI * 0.25) },
+            uSpotPenumbraCos: { value: Math.cos(Math.PI * 0.18) },
+            uSpotDistance: { value: 30 }
+        }
+
+        for(const _materialKey in this.shades.items)
+        {
+            const material = this.shades.items[_materialKey]
+            for(const _uniformName in this.shades.lightUniforms)
+            {
+                material.uniforms[_uniformName] = this.shades.lightUniforms[_uniformName]
+            }
+        }
+
         // Update materials uniforms
         this.shades.updateMaterials = () =>
         {

@@ -12,8 +12,7 @@ import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js'
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js'
 import BlurPass from './Passes/Blur.js'
-import GlowsPass from './Passes/Glows.js'
-import VignettePass from './Passes/Vignette.js'
+import ScreenFxPass from './Passes/ScreenFx.js'
 
 export default class Application
 {
@@ -49,6 +48,7 @@ export default class Application
         this.config.debug = window.location.hash === '#debug'
         this.config.cyberTruck = window.location.hash === '#cybertruck'
         this.config.touch = false
+        this.config.reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
         window.addEventListener('touchstart', () =>
         {
@@ -139,6 +139,14 @@ export default class Application
             {
                 this.camera.target.x = this.world.car.chassis.object.position.x
                 this.camera.target.y = this.world.car.chassis.object.position.y
+
+                // Feed normalized speed into the FOV kick (boost max speed ≈ 0.017
+                // units/ms, so full kick is only reached while boosting)
+                if(this.world.physics && this.world.physics.car)
+                {
+                    const carSpeed = Math.abs(this.world.physics.car.speed)
+                    this.camera.fovKick.target = Math.min(carSpeed * 60, 1)
+                }
             }
         })
     }
@@ -154,7 +162,19 @@ export default class Application
             // this.passes.debugFolder.open()
         }
 
-        this.passes.composer = new EffectComposer(this.renderer)
+        // MSAA render target (WebGL2): smooths the aliased matcap edges cheaply.
+        // Fewer samples on touch devices to keep fill-rate cost down.
+        const touchDevice = window.matchMedia('(pointer: coarse)').matches || navigator.maxTouchPoints > 0
+        const composerTarget = new THREE.WebGLRenderTarget(
+            this.sizes.viewport.width,
+            this.sizes.viewport.height,
+            {
+                type: THREE.HalfFloatType,
+                samples: this.renderer.capabilities.isWebGL2 ? (touchDevice ? 2 : 4) : 0
+            }
+        )
+
+        this.passes.composer = new EffectComposer(this.renderer, composerTarget)
         this.passes.composer.setPixelRatio(this.performance.currentDpr)
 
         // Create passes
@@ -180,48 +200,42 @@ export default class Application
             folder.add(this.passes.verticalBlurPass.material.uniforms.uStrength.value, 'y').step(0.001).min(0).max(10)
         }
 
-        this.passes.glowsPass = new ShaderPass(GlowsPass)
-        this.passes.glowsPass.color = '#ffcfe0'
-        this.passes.glowsPass.material.uniforms.uPosition.value = new THREE.Vector2(0, 0.25)
-        this.passes.glowsPass.material.uniforms.uRadius.value = 0.7
-        this.passes.glowsPass.material.uniforms.uColor.value = new THREE.Color(this.passes.glowsPass.color)
-        this.passes.glowsPass.material.uniforms.uColor.value.convertLinearToSRGB()
-        this.passes.glowsPass.material.uniforms.uAlpha.value = 0.55
+        // Combined glow + vignette pass (one fullscreen pass instead of two)
+        this.passes.screenFxPass = new ShaderPass(ScreenFxPass)
+        this.passes.screenFxPass.color = '#ffcfe0'
+        this.passes.screenFxPass.material.uniforms.uGlowPosition.value = new THREE.Vector2(0, 0.25)
+        this.passes.screenFxPass.material.uniforms.uGlowRadius.value = 0.7
+        this.passes.screenFxPass.material.uniforms.uGlowColor.value = new THREE.Color(this.passes.screenFxPass.color)
+        this.passes.screenFxPass.material.uniforms.uGlowColor.value.convertLinearToSRGB()
+        this.passes.screenFxPass.material.uniforms.uGlowAlpha.value = 0.55
+        this.passes.screenFxPass.material.uniforms.uVignetteIntensity.value = 0.35
+        this.passes.screenFxPass.material.uniforms.uVignetteSmoothness.value = 0.65
+        this.passes.screenFxPass.material.uniforms.uFogColor.value = new THREE.Color('#c3cad4')
+        this.passes.screenFxPass.material.uniforms.uFogIntensity.value = 0
 
         // Debug
         if(this.debug)
         {
-            const folder = this.passes.debugFolder.addFolder('glows')
+            const folder = this.passes.debugFolder.addFolder('screenFx')
             folder.open()
 
-            folder.add(this.passes.glowsPass.material.uniforms.uPosition.value, 'x').step(0.001).min(- 1).max(2).name('positionX')
-            folder.add(this.passes.glowsPass.material.uniforms.uPosition.value, 'y').step(0.001).min(- 1).max(2).name('positionY')
-            folder.add(this.passes.glowsPass.material.uniforms.uRadius, 'value').step(0.001).min(0).max(2).name('radius')
-            folder.addColor(this.passes.glowsPass, 'color').name('color').onChange(() =>
+            folder.add(this.passes.screenFxPass.material.uniforms.uGlowPosition.value, 'x').step(0.001).min(- 1).max(2).name('glowPositionX')
+            folder.add(this.passes.screenFxPass.material.uniforms.uGlowPosition.value, 'y').step(0.001).min(- 1).max(2).name('glowPositionY')
+            folder.add(this.passes.screenFxPass.material.uniforms.uGlowRadius, 'value').step(0.001).min(0).max(2).name('glowRadius')
+            folder.addColor(this.passes.screenFxPass, 'color').name('glowColor').onChange(() =>
             {
-                this.passes.glowsPass.material.uniforms.uColor.value = new THREE.Color(this.passes.glowsPass.color)
+                this.passes.screenFxPass.material.uniforms.uGlowColor.value.set(this.passes.screenFxPass.color)
             })
-            folder.add(this.passes.glowsPass.material.uniforms.uAlpha, 'value').step(0.001).min(0).max(1).name('alpha')
-        }
-
-        this.passes.vignettePass = new ShaderPass(VignettePass)
-        this.passes.vignettePass.material.uniforms.uIntensity.value = 0.35
-        this.passes.vignettePass.material.uniforms.uSmoothness.value = 0.65
-
-        // Debug
-        if(this.debug)
-        {
-            const folder = this.passes.debugFolder.addFolder('vignette')
-            folder.add(this.passes.vignettePass.material.uniforms.uIntensity, 'value').step(0.01).min(0).max(1).name('intensity')
-            folder.add(this.passes.vignettePass.material.uniforms.uSmoothness, 'value').step(0.01).min(0.1).max(1).name('smoothness')
+            folder.add(this.passes.screenFxPass.material.uniforms.uGlowAlpha, 'value').step(0.001).min(0).max(1).name('glowAlpha')
+            folder.add(this.passes.screenFxPass.material.uniforms.uVignetteIntensity, 'value').step(0.01).min(0).max(1).name('vignetteIntensity')
+            folder.add(this.passes.screenFxPass.material.uniforms.uVignetteSmoothness, 'value').step(0.01).min(0.1).max(1).name('vignetteSmoothness')
         }
 
         // Add passes
         this.passes.composer.addPass(this.passes.renderPass)
         this.passes.composer.addPass(this.passes.horizontalBlurPass)
         this.passes.composer.addPass(this.passes.verticalBlurPass)
-        this.passes.composer.addPass(this.passes.glowsPass)
-        this.passes.composer.addPass(this.passes.vignettePass)
+        this.passes.composer.addPass(this.passes.screenFxPass)
 
         // Time tick
         this.time.on('tick', () =>

@@ -18,6 +18,18 @@ uniform float uIndirectAngleOffset;
 uniform float uIndirectAnglePower;
 uniform vec3 uIndirectColor;
 
+// Day/night tint (white during the day, dark blue at night)
+uniform vec3 uNightTint;
+
+// Fake spotlight (matcaps ignore real Three.js lights, so the cone falloff is computed here)
+uniform vec3 uSpotPosition;
+uniform vec3 uSpotDirection;
+uniform vec3 uSpotColor;
+uniform float uSpotIntensity;
+uniform float uSpotAngleCos;
+uniform float uSpotPenumbraCos;
+uniform float uSpotDistance;
+
 varying vec3 vWorldPosition;
 // Custom end
 
@@ -89,10 +101,30 @@ void main() {
     float indirectStrength = indirectDistanceStrength * indirectAngleStrength;
     // float indirectStrength = indirectAngleStrength;
 
-    // gl_FragColor = vec4(vec3(worldNormal), 1.0);
-    // gl_FragColor = vec4(outgoingLight, diffuseColor.a);
-    // gl_FragColor = vec4(vec3(indirectStrength), diffuseColor.a);
-    gl_FragColor = vec4(mix(outgoingLight, uIndirectColor, indirectStrength), diffuseColor.a);
+    vec3 color = mix(outgoingLight, uIndirectColor, indirectStrength);
+
+    // Day/night tint
+    color *= uNightTint;
+
+    // Fake spotlight: distance + cone + lambert-ish falloff in world space
+    if(uSpotIntensity > 0.001)
+    {
+        vec3 toFragment = vWorldPosition - uSpotPosition;
+        float spotFragmentDistance = length(toFragment);
+        vec3 spotRayDirection = toFragment / max(spotFragmentDistance, 0.0001);
+
+        float coneCos = dot(spotRayDirection, uSpotDirection);
+        float coneFalloff = smoothstep(uSpotAngleCos, uSpotPenumbraCos, coneCos);
+
+        float distanceFalloff = clamp(1.0 - spotFragmentDistance / uSpotDistance, 0.0, 1.0);
+        distanceFalloff *= distanceFalloff;
+
+        float diffuseTerm = max(dot(normalize(worldNormal), - spotRayDirection), 0.0) * 0.7 + 0.3;
+
+        color += outgoingLight * uSpotColor * (uSpotIntensity * coneFalloff * distanceFalloff * diffuseTerm);
+    }
+
+    gl_FragColor = vec4(color, diffuseColor.a);
     // Custom end
 
 	#include <opaque_fragment>

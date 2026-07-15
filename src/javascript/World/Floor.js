@@ -39,12 +39,33 @@ export default class Floor
         this.backgroundTexture.needsUpdate = true
         this.material.uniforms.tBackground.value = this.backgroundTexture
 
+        // Direct Color-object path (no hex-string round-trip) used by the day/night cycle
+        this.setColors = (_topLeft, _topRight, _bottomRight, _bottomLeft) =>
+        {
+            this.tempTopLeft.copy(_topLeft)
+            this.tempTopRight.copy(_topRight)
+            this.tempBottomRight.copy(_bottomRight)
+            this.tempBottomLeft.copy(_bottomLeft)
+
+            this.writeColors()
+        }
+
         this.updateMaterial = () =>
         {
-            const topLeft = this.tempTopLeft.set(this.colors.topLeft)
-            const topRight = this.tempTopRight.set(this.colors.topRight)
-            const bottomRight = this.tempBottomRight.set(this.colors.bottomRight)
-            const bottomLeft = this.tempBottomLeft.set(this.colors.bottomLeft)
+            this.tempTopLeft.set(this.colors.topLeft)
+            this.tempTopRight.set(this.colors.topRight)
+            this.tempBottomRight.set(this.colors.bottomRight)
+            this.tempBottomLeft.set(this.colors.bottomLeft)
+
+            this.writeColors()
+        }
+
+        this.writeColors = () =>
+        {
+            const topLeft = this.tempTopLeft
+            const topRight = this.tempTopRight
+            const bottomRight = this.tempBottomRight
+            const bottomLeft = this.tempBottomLeft
 
             topLeft.convertLinearToSRGB()
             topRight.convertLinearToSRGB()

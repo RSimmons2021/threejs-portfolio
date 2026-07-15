@@ -28,7 +28,8 @@ export default class Physics
 
         this.time.on('tick', () =>
         {
-            this.world.step(this.time.delta / 1000)
+            // Fixed timestep with interpolation so car handling is identical at 60Hz, 120Hz or on a lagging device
+            this.world.step(1 / 60, this.time.delta / 1000, 3)
         })
     }
 
@@ -368,7 +369,10 @@ export default class Physics
             positionDelta = positionDelta.vsub(this.car.oldPosition)
 
             this.car.oldPosition.copy(this.car.chassis.body.position)
-            this.car.speed = positionDelta.length() / this.time.delta
+            // postStep fires once per fixed physics step, so divide by the step
+            // duration (in ms), not the render-frame delta — otherwise the speed
+            // reads ~2x too high on 120/144Hz displays
+            this.car.speed = positionDelta.length() / (1000 / 60)
 
             // Update forward
             const localForward = new CANNON.Vec3(1, 0, 0)

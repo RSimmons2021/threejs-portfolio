@@ -32,6 +32,9 @@
     <meta name="msapplication-TileColor" content="#101716">
     <meta name="theme-color" content="#101716">
 
+    <!-- Critical inline style: keeps the page dark while the CSS/JS bundles load (no white flash) -->
+    <style>html, body { background: #08111a; margin: 0; height: 100%; overflow: hidden; }</style>
+
     <link rel="icon" href="/favicon/favicon.svg" type="image/svg+xml">
     <link rel="alternate icon" href="/favicon/favicon.ico">
     <link rel="apple-touch-icon" href="/favicon/apple-touch-icon.png">
@@ -39,6 +42,15 @@
     
 </head>
 <body>
+
+    <noscript>
+        <style>.canvas, .journey { display: none; }</style>
+        <div style="max-width: 640px; margin: 60px auto; padding: 0 20px; color: #e8f1f8; font-family: sans-serif;">
+            <h1>Richard Simmons — Product Designer &amp; Full-Stack Engineer</h1>
+            <p>This portfolio is an interactive 3D experience that needs JavaScript. You can still reach me:</p>
+            <p><a style="color:#9fd2ff" href="https://github.com/RSimmons2021">GitHub</a> · <a style="color:#9fd2ff" href="https://www.linkedin.com/in/richard-simmons-a3916958">LinkedIn</a> · <a style="color:#9fd2ff" href="mailto:richard.simmons.dev@gmail.com">Email</a></p>
+        </div>
+    </noscript>
 
     <canvas class="canvas js-canvas"></canvas>
 

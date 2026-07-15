@@ -199,6 +199,30 @@ export default class Car
 
     setBackLights()
     {
+        // Soft radial glow sprite shown behind the lights at night
+        const createGlowSprite = (_innerColor, _outerColor) =>
+        {
+            const canvas = document.createElement('canvas')
+            canvas.width = 64
+            canvas.height = 64
+            const context = canvas.getContext('2d')
+            const gradient = context.createRadialGradient(32, 32, 0, 32, 32, 32)
+            gradient.addColorStop(0, _innerColor)
+            gradient.addColorStop(1, _outerColor)
+            context.fillStyle = gradient
+            context.fillRect(0, 0, 64, 64)
+
+            const material = new THREE.SpriteMaterial({
+                map: new THREE.CanvasTexture(canvas),
+                transparent: true,
+                opacity: 0,
+                depthWrite: false,
+                blending: THREE.AdditiveBlending
+            })
+
+            return new THREE.Sprite(material)
+        }
+
         this.backLightsBrake = {}
 
         this.backLightsBrake.material = this.materials.pures.items.red.clone()
@@ -211,9 +235,17 @@ export default class Car
             _child.material = this.backLightsBrake.material
         }
 
+        // Night glow anchored at the brake lights
+        const brakeBox = new THREE.Box3().setFromObject(this.backLightsBrake.object)
+        const brakeCenter = brakeBox.getCenter(new THREE.Vector3())
+        this.backLightsBrake.glow = createGlowSprite('rgba(255, 60, 40, 0.9)', 'rgba(255, 40, 20, 0)')
+        this.backLightsBrake.glow.position.copy(brakeCenter)
+        this.backLightsBrake.glow.scale.set(1.6, 1.6, 1.6)
+        this.backLightsBrake.object.add(this.backLightsBrake.glow)
+
         this.chassis.object.add(this.backLightsBrake.object)
 
-        // Back lights brake
+        // Back lights reverse
         this.backLightsReverse = {}
 
         this.backLightsReverse.material = this.materials.pures.items.yellow.clone()
@@ -226,13 +258,28 @@ export default class Car
             _child.material = this.backLightsReverse.material
         }
 
+        const reverseBox = new THREE.Box3().setFromObject(this.backLightsReverse.object)
+        const reverseCenter = reverseBox.getCenter(new THREE.Vector3())
+        this.backLightsReverse.glow = createGlowSprite('rgba(255, 236, 160, 0.9)', 'rgba(255, 220, 120, 0)')
+        this.backLightsReverse.glow.position.copy(reverseCenter)
+        this.backLightsReverse.glow.scale.set(1.3, 1.3, 1.3)
+        this.backLightsReverse.object.add(this.backLightsReverse.glow)
+
         this.chassis.object.add(this.backLightsReverse.object)
 
         // Time tick
         this.time.on('tick', () =>
         {
-            this.backLightsBrake.material.opacity = this.physics.controls.actions.brake ? 1 : 0.5
-            this.backLightsReverse.material.opacity = this.physics.controls.actions.down ? 1 : 0.5
+            const braking = this.physics.controls.actions.brake
+            const reversing = this.physics.controls.actions.down
+
+            this.backLightsBrake.material.opacity = braking ? 1 : 0.5
+            this.backLightsReverse.material.opacity = reversing ? 1 : 0.5
+
+            // Glows only appear once night falls (dayNightCycle is attached by World after creation)
+            const nightFactor = this.dayNightCycle ? this.dayNightCycle.nightFactor : 0
+            this.backLightsBrake.glow.material.opacity = nightFactor * (braking ? 0.85 : 0.25)
+            this.backLightsReverse.glow.material.opacity = nightFactor * (reversing ? 0.7 : 0.15)
         })
     }
 

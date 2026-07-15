@@ -5,11 +5,23 @@ export default class ExperienceHUD
         this.config = _options.config
         this.time = _options.time
         this.physics = _options.physics
+        this.sounds = _options.sounds
+        this.dayNightCycle = _options.dayNightCycle
+        this.weather = _options.weather
+        this.weatherIcons = { clear: '☀️', rain: '🌧️', fog: '🌫️' }
         this.isMobile = this.detectMobile()
 
         this.updateInterval = 120
         this.lastUpdateAt = 0
         this.lastScoreboardCollision = false
+
+        // Contextual tips state
+        this.drivingTime = 0
+        this.controlsTipHidden = false
+        this.goalTipVisible = false
+        this.playgroundCenter = { x: - 38, y: - 34 }
+        this.playgroundRadius = 30
+
         this.speedDisplay = {
             currentMph: 0,
             normalMaxMph: 10,
@@ -58,10 +70,13 @@ export default class ExperienceHUD
                     <span class="experience-hud__label">Speed</span>
                     <span class="experience-hud__value js-hud-speed">0 mph</span>
                 </div>
+                <button type="button" class="experience-hud__button js-hud-mute" aria-label="Toggle sound (M)" title="Toggle sound (M)">🔊</button>
+                <button type="button" class="experience-hud__button js-hud-daynight" aria-label="Toggle day / night" title="Toggle day / night">🌙</button>
+                <button type="button" class="experience-hud__button js-hud-weather" aria-label="Cycle weather" title="Cycle weather">☀️</button>
             </div>
             <div class="experience-hud__row experience-hud__row--secondary">
                 <div class="experience-hud__tip js-hud-tip-controls"></div>
-                <div class="experience-hud__tip js-hud-tip-goal">Goal: bowl a strike to unlock the resume download</div>
+                <div class="experience-hud__tip js-hud-tip-goal is-hidden">Goal: bowl a strike to unlock the resume download</div>
             </div>
         `
 
@@ -69,6 +84,63 @@ export default class ExperienceHUD
 
         this.$speed = this.$container.querySelector('.js-hud-speed')
         this.$controlsTip = this.$container.querySelector('.js-hud-tip-controls')
+        this.$goalTip = this.$container.querySelector('.js-hud-tip-goal')
+        this.$muteButton = this.$container.querySelector('.js-hud-mute')
+        this.$dayNightButton = this.$container.querySelector('.js-hud-daynight')
+
+        this.$muteButton.addEventListener('click', () =>
+        {
+            if(this.sounds)
+            {
+                this.sounds.toggleMute()
+                this.updateMuteButton()
+            }
+        })
+
+        this.$dayNightButton.addEventListener('click', () =>
+        {
+            if(this.dayNightCycle)
+            {
+                this.dayNightCycle.toggleDayNight()
+            }
+        })
+
+        this.$weatherButton = this.$container.querySelector('.js-hud-weather')
+        this.$weatherButton.addEventListener('click', () =>
+        {
+            if(this.weather)
+            {
+                this.weather.cycleWeather()
+                this.updateWeatherButton()
+            }
+        })
+
+        this.updateMuteButton()
+        this.updateWeatherButton()
+    }
+
+    updateWeatherButton()
+    {
+        if(!this.weather || !this.$weatherButton)
+        {
+            return
+        }
+
+        const icon = this.weatherIcons[this.weather.state] || '☀️'
+        if(this.$weatherButton.textContent !== icon)
+        {
+            this.$weatherButton.textContent = icon
+        }
+    }
+
+    updateMuteButton()
+    {
+        if(!this.sounds || !this.$muteButton)
+        {
+            return
+        }
+
+        this.$muteButton.textContent = this.sounds.muted ? '🔇' : '🔊'
     }
 
     applyDeviceClass()
@@ -172,8 +244,47 @@ export default class ExperienceHUD
             this.$container.classList.toggle('is-avoid-scoreboards', shouldAvoid)
         }
 
+        // Sync toggle buttons (mute can also change via the M key,
+        // weather can change on its own via the auto cycle)
+        this.updateMuteButton()
+        this.updateWeatherButton()
+        if(this.dayNightCycle && this.$dayNightButton)
+        {
+            const icon = this.dayNightCycle.nightFactor >= 0.5 ? '☀️' : '🌙'
+            if(this.$dayNightButton.textContent !== icon)
+            {
+                this.$dayNightButton.textContent = icon
+            }
+        }
+
         if(this.physics && this.physics.car)
         {
+            // Contextual tips: fade the controls tip once the visitor is clearly
+            // driving, and only surface the bowling goal near the playground
+            const carBody = this.physics.car.chassis && this.physics.car.chassis.body
+            if(!this.controlsTipHidden && Math.abs(this.physics.car.speed) > 0.003)
+            {
+                this.drivingTime += this.updateInterval
+                if(this.drivingTime > 6000)
+                {
+                    this.controlsTipHidden = true
+                    this.$controlsTip.classList.add('is-hidden')
+                }
+            }
+
+            if(carBody && this.$goalTip)
+            {
+                const deltaX = carBody.position.x - this.playgroundCenter.x
+                const deltaY = carBody.position.y - this.playgroundCenter.y
+                const nearPlayground = (deltaX * deltaX + deltaY * deltaY) < this.playgroundRadius * this.playgroundRadius
+
+                if(nearPlayground !== this.goalTipVisible)
+                {
+                    this.goalTipVisible = nearPlayground
+                    this.$goalTip.classList.toggle('is-hidden', !nearPlayground)
+                }
+            }
+
             const carSpeed = Math.abs(this.physics.car.speed)
             const controls = this.physics.controls?.actions
             const isBoosting = Boolean(controls?.boost)

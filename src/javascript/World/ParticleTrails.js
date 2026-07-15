@@ -11,6 +11,7 @@ export default class ParticleTrails
         this.car = _options.car
         this.physics = _options.physics
         this.camera = _options.camera
+        this.config = _options.config
         this.debug = _options.debug
 
         // Container
@@ -19,7 +20,7 @@ export default class ParticleTrails
 
         // Settings
         this.settings = {}
-        this.settings.enabled = true
+        this.settings.enabled = !(this.config && this.config.reducedMotion)
         this.settings.particlesPerSecond = 60
         this.settings.particleLifetime = 1.5 // seconds
         this.settings.particleSize = 0.3

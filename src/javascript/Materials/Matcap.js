@@ -19,7 +19,15 @@ export default function()
         uIndirectAngleStrength: { value: null },
         uIndirectAngleOffset: { value: null },
         uIndirectAnglePower: { value: null },
-        uIndirectColor: { value: null }
+        uIndirectColor: { value: null },
+        uNightTint: { value: new THREE.Color(1, 1, 1) },
+        uSpotPosition: { value: new THREE.Vector3(0, 0, 6) },
+        uSpotDirection: { value: new THREE.Vector3(0, 0, - 1) },
+        uSpotColor: { value: new THREE.Color(1, 1, 1) },
+        uSpotIntensity: { value: 0 },
+        uSpotAngleCos: { value: Math.cos(Math.PI * 0.25) },
+        uSpotPenumbraCos: { value: Math.cos(Math.PI * 0.18) },
+        uSpotDistance: { value: 30 }
     }
 
     const extensions = {

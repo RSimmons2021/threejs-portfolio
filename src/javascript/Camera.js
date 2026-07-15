@@ -36,6 +36,7 @@ export default class Camera
         this.setZoom()
         this.setPan()
         this.setCameraShake()
+        this.setFovKick()
         this.setOrbitControls()
     }
 
@@ -129,8 +130,8 @@ export default class Camera
         this.zoom.targetValue = this.zoom.value
         this.zoom.distance = this.zoom.minDistance + this.zoom.amplitude * this.zoom.value
 
-        // Listen to mousewheel event
-        this._addListener(document, 'mousewheel', (_event) =>
+        // Listen to wheel event ('mousewheel' is nonstandard and never fires in Firefox)
+        this._addListener(document, 'wheel', (_event) =>
         {
             this.zoom.targetValue += _event.deltaY * 0.001
             this.zoom.targetValue = Math.min(Math.max(this.zoom.targetValue, 0), 1)
@@ -145,7 +146,7 @@ export default class Camera
         {
             if(_event.touches.length === 2)
             {
-                this.zoom.touch.startDistance = Math.hypot(_event.touches[0].clientX - _event.touches[1].clientX, _event.touches[0].clientX - _event.touches[1].clientX)
+                this.zoom.touch.startDistance = Math.hypot(_event.touches[0].clientX - _event.touches[1].clientX, _event.touches[0].clientY - _event.touches[1].clientY)
                 this.zoom.touch.startValue = this.zoom.targetValue
             }
         })
@@ -156,7 +157,7 @@ export default class Camera
             {
                 _event.preventDefault()
 
-                const distance = Math.hypot(_event.touches[0].clientX - _event.touches[1].clientX, _event.touches[0].clientX - _event.touches[1].clientX)
+                const distance = Math.hypot(_event.touches[0].clientX - _event.touches[1].clientX, _event.touches[0].clientY - _event.touches[1].clientY)
                 const ratio = distance / this.zoom.touch.startDistance
 
                 this.zoom.targetValue = this.zoom.touch.startValue - (ratio - 1)
@@ -347,7 +348,7 @@ export default class Camera
         this.shake.intensity = 0
         this.shake.decay = 0.95
         this.shake.offset = new THREE.Vector3()
-        this.shake.enabled = true
+        this.shake.enabled = !this.config.reducedMotion
 
         // Method to trigger shake based on impact velocity
         this.shake.trigger = (impactVelocity) =>
@@ -389,6 +390,42 @@ export default class Camera
         {
             this.debugFolder.add(this.shake, 'enabled').name('shakeEnabled')
             this.debugFolder.add(this.shake, 'decay').min(0.8).max(0.99).step(0.01).name('shakeDecay')
+        }
+    }
+
+    setFovKick()
+    {
+        // Widen the FOV slightly with speed for a sense of acceleration
+        this.fovKick = {}
+        this.fovKick.enabled = !this.config.reducedMotion
+        this.fovKick.baseFov = this.instance.fov
+        this.fovKick.amplitude = 8
+        this.fovKick.easing = 0.06
+        this.fovKick.target = 0 // 0 to 1, fed from outside with normalized speed
+        this.fovKick.value = 0
+
+        this.time.on('tick', () =>
+        {
+            if(!this.fovKick.enabled)
+            {
+                return
+            }
+
+            this.fovKick.value += (this.fovKick.target - this.fovKick.value) * this.fovKick.easing
+
+            const fov = this.fovKick.baseFov + this.fovKick.value * this.fovKick.amplitude
+            if(Math.abs(fov - this.instance.fov) > 0.02)
+            {
+                this.instance.fov = fov
+                this.instance.updateProjectionMatrix()
+            }
+        })
+
+        // Debug
+        if(this.debug)
+        {
+            this.debugFolder.add(this.fovKick, 'enabled').name('fovKickEnabled')
+            this.debugFolder.add(this.fovKick, 'amplitude').min(0).max(20).step(0.5).name('fovKickAmplitude')
         }
     }
 

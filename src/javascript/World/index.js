@@ -22,6 +22,8 @@ import ParticleTrails from './ParticleTrails.js'
 import AdvancedLighting from './AdvancedLighting.js'
 import DayNightCycle from './DayNightCycle.js'
 import GhostCar from './GhostCar.js'
+import Fireflies from './Fireflies.js'
+import Weather from './Weather.js'
 import ExperienceHUD from './ExperienceHUD.js'
 import GuidedTour from './GuidedTour.js'
 
@@ -80,6 +82,8 @@ export default class World
         this.setParticleTrails()
         this.setAdvancedLighting()
         this.setDayNightCycle()
+        this.setWeather()
+        this.setFireflies()
         this.setExperienceHUD()
         this.setGhostCar()
         this.setGuidedTour()
@@ -483,6 +487,7 @@ export default class World
             car: this.car,
             physics: this.physics,
             camera: this.camera,
+            config: this.config,
             debug: this.debugFolder
         })
         this.container.add(this.particleTrails.container)
@@ -495,6 +500,10 @@ export default class World
             scene: this.scene,
             car: this.car,
             physics: this.physics,
+            materials: this.materials,
+            floor: this.floor,
+            camera: this.camera,
+            config: this.config,
             debug: this.debugFolder
         })
         this.scene.add(this.advancedLighting.container)
@@ -507,8 +516,42 @@ export default class World
             floor: this.floor,
             materials: this.materials,
             advancedLighting: this.advancedLighting,
+            passes: this.passes,
             debug: this.debugFolder
         })
+
+        // Let the car's brake/reverse glows react to the time of day
+        if(this.car)
+        {
+            this.car.dayNightCycle = this.dayNightCycle
+        }
+    }
+
+    setWeather()
+    {
+        this.weather = new Weather({
+            time: this.time,
+            config: this.config,
+            physics: this.physics,
+            floor: this.floor,
+            advancedLighting: this.advancedLighting,
+            dayNightCycle: this.dayNightCycle,
+            passes: this.passes,
+            debug: this.debugFolder
+        })
+        this.container.add(this.weather.container)
+    }
+
+    setFireflies()
+    {
+        this.fireflies = new Fireflies({
+            time: this.time,
+            config: this.config,
+            dayNightCycle: this.dayNightCycle,
+            weather: this.weather,
+            debug: this.debugFolder
+        })
+        this.container.add(this.fireflies.container)
     }
 
     setExperienceHUD()
@@ -516,7 +559,10 @@ export default class World
         this.experienceHUD = new ExperienceHUD({
             config: this.config,
             time: this.time,
-            physics: this.physics
+            physics: this.physics,
+            sounds: this.sounds,
+            dayNightCycle: this.dayNightCycle,
+            weather: this.weather
         })
     }
 
