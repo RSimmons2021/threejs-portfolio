@@ -32,6 +32,17 @@ export default class DayNightCycle
             flash: 0
         }
 
+        // Project zones can tint the existing day/night result without owning it.
+        // The cycle remains the source of truth; this is a reversible final blend.
+        this.experienceTheme = {
+            strength: 0,
+            floor: new THREE.Color('#ffffff'),
+            matcap: new THREE.Color('#ffffff'),
+            indirect: new THREE.Color('#ffffff'),
+            glow: new THREE.Color('#ffffff'),
+            vignette: 0.45
+        }
+
         // Color schemes
         this.colorSchemes = {
             day: {
@@ -161,6 +172,7 @@ export default class DayNightCycle
 
         this.lastAppliedTime = -1
         this.lastWeatherSignature = ''
+        this.lastExperienceThemeStrength = -1
 
         // Time tick
         this.time.on('tick', () =>
@@ -229,6 +241,33 @@ export default class DayNightCycle
         if(typeof _influence.floorDarkness === 'number') this.weatherInfluence.floorDarkness = _influence.floorDarkness
         if(typeof _influence.materialIndirectMultiplier === 'number') this.weatherInfluence.materialIndirectMultiplier = _influence.materialIndirectMultiplier
         if(typeof _influence.flash === 'number') this.weatherInfluence.flash = _influence.flash
+    }
+
+    setExperienceTheme(_theme = {}, _strength = 0.58)
+    {
+        this.experienceTheme.floor.set(_theme.floor || '#ffffff')
+        this.experienceTheme.matcap.set(_theme.matcap || _theme.accent || '#ffffff')
+        this.experienceTheme.indirect.set(_theme.indirect || _theme.accent || '#ffffff')
+        this.experienceTheme.glow.set(_theme.glow || _theme.accent || '#ffffff')
+        this.experienceTheme.vignette = typeof _theme.vignette === 'number' ? _theme.vignette : 0.44
+        this.lastExperienceThemeStrength = -1
+
+        gsap.killTweensOf(this.experienceTheme, 'strength')
+        gsap.to(this.experienceTheme, {
+            strength: Math.min(Math.max(_strength, 0), 1),
+            duration: 1.35,
+            ease: 'power3.out'
+        })
+    }
+
+    clearExperienceTheme()
+    {
+        gsap.killTweensOf(this.experienceTheme, 'strength')
+        gsap.to(this.experienceTheme, {
+            strength: 0,
+            duration: 1.1,
+            ease: 'power3.out'
+        })
     }
 
     transitionToDay()
@@ -339,14 +378,16 @@ export default class DayNightCycle
         const weatherSignature = `${this.weatherInfluence.ambientMultiplier.toFixed(3)}-${this.weatherInfluence.directionalMultiplier.toFixed(3)}-${this.weatherInfluence.spotlightMultiplier.toFixed(3)}-${this.weatherInfluence.floorDarkness.toFixed(3)}-${this.weatherInfluence.materialIndirectMultiplier.toFixed(3)}-${this.weatherInfluence.flash.toFixed(3)}`
         const timeChanged = Math.abs(this.settings.currentTime - this.lastAppliedTime) > 0.0008
         const weatherChanged = weatherSignature !== this.lastWeatherSignature
+        const experienceThemeChanged = Math.abs(this.experienceTheme.strength - this.lastExperienceThemeStrength) > 0.001
 
-        if(!timeChanged && !weatherChanged)
+        if(!timeChanged && !weatherChanged && !experienceThemeChanged)
         {
             return
         }
 
         this.lastAppliedTime = this.settings.currentTime
         this.lastWeatherSignature = weatherSignature
+        this.lastExperienceThemeStrength = this.experienceTheme.strength
 
         const blend = this.getTimelineBlend(this.settings.currentTime)
         const from = this.schemeColors[blend.from]
@@ -375,6 +416,16 @@ export default class DayNightCycle
             this.floorColorOutput.topRight.lerp(this.seasonFloorColor, this.seasonFloorStrength)
             this.floorColorOutput.bottomRight.lerp(this.seasonFloorColor, this.seasonFloorStrength)
             this.floorColorOutput.bottomLeft.lerp(this.seasonFloorColor, this.seasonFloorStrength)
+        }
+
+        const experienceStrength = this.experienceTheme.strength
+        if(experienceStrength > 0.001)
+        {
+            const floorThemeStrength = experienceStrength * 0.46
+            this.floorColorOutput.topLeft.lerp(this.experienceTheme.floor, floorThemeStrength)
+            this.floorColorOutput.topRight.lerp(this.experienceTheme.floor, floorThemeStrength * 0.82)
+            this.floorColorOutput.bottomRight.lerp(this.experienceTheme.floor, floorThemeStrength * 0.6)
+            this.floorColorOutput.bottomLeft.lerp(this.experienceTheme.floor, floorThemeStrength * 0.72)
         }
 
         if(this.floor)
@@ -437,6 +488,10 @@ export default class DayNightCycle
             this.currentColors.materialIndirect.lerpColors(from.materialIndirect, to.materialIndirect, t)
             this.currentColors.materialIndirect.multiplyScalar(this.weatherInfluence.materialIndirectMultiplier)
             this.currentColors.materialIndirect.lerp(this.tempFlashColor, Math.min(this.weatherInfluence.flash * 0.25, 0.2))
+            if(experienceStrength > 0.001)
+            {
+                this.currentColors.materialIndirect.lerp(this.experienceTheme.indirect, experienceStrength * 0.6)
+            }
 
             for(const materialKey in this.materials.shades.items)
             {
@@ -457,6 +512,10 @@ export default class DayNightCycle
                 {
                     this.currentColors.matcapTint.lerp(this.seasonMatcapColor, this.seasonMatcapStrength)
                 }
+                if(experienceStrength > 0.001)
+                {
+                    this.currentColors.matcapTint.lerp(this.experienceTheme.matcap, experienceStrength * 0.42)
+                }
                 this.materials.shades.lightUniforms.uNightTint.value.copy(this.currentColors.matcapTint)
             }
         }
@@ -466,10 +525,14 @@ export default class DayNightCycle
         if(this.passes && this.passes.screenFxPass)
         {
             this.currentColors.glow.lerpColors(from.glow, to.glow, t)
+            if(experienceStrength > 0.001)
+            {
+                this.currentColors.glow.lerp(this.experienceTheme.glow, experienceStrength * 0.82)
+            }
             this.passes.screenFxPass.material.uniforms.uGlowColor.value.copy(this.currentColors.glow).convertLinearToSRGB()
 
             const vignetteIntensity = from.vignetteIntensity + (to.vignetteIntensity - from.vignetteIntensity) * t
-            this.passes.screenFxPass.material.uniforms.uVignetteIntensity.value = vignetteIntensity
+            this.passes.screenFxPass.material.uniforms.uVignetteIntensity.value = vignetteIntensity + (this.experienceTheme.vignette - vignetteIntensity) * experienceStrength * 0.45
         }
     }
 

@@ -19,6 +19,7 @@ export default class Camera
 
         this.target = new THREE.Vector3(0, 0, 0)
         this.targetEased = new THREE.Vector3(0, 0, 0)
+        this.targetOverride = null
         this.easing = 0.15
 
         // Debug

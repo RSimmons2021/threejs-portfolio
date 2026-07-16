@@ -51,7 +51,6 @@ export default class AdvancedLighting
         this.settings.dynamicEnabled = true
         this.settings.speedColorShift = true
         this.settings.driftEffect = true
-        this.settings.collisionFlash = true
 
         // How much of the day/night cycle is "night" right now (written by DayNightCycle)
         this.nightFactor = 0
@@ -59,9 +58,7 @@ export default class AdvancedLighting
         // Dynamic state
         this.dynamicState = {
             speedFactor: 0,
-            driftFactor: 0,
-            collisionIntensity: 0,
-            previousVelocity: { x: 0, y: 0, z: 0 }
+            driftFactor: 0
         }
 
         // Spotlight intensity is smoothed over time so it never flickers
@@ -91,7 +88,6 @@ export default class AdvancedLighting
         this.baseColor = new THREE.Color(1, 1, 1)
         this.speedColor = new THREE.Color(0.7, 0.9, 1.0)
         this.driftColor = new THREE.Color(1.0, 0.6, 0.3)
-        this.collisionColor = new THREE.Color(1.5, 1.5, 1.5)
         this.flashColor = new THREE.Color(1.75, 1.8, 2.0)
         this.finalSpotColor = new THREE.Color(1, 1, 1)
 
@@ -115,7 +111,6 @@ export default class AdvancedLighting
             dynamicFolder.add(this.settings, 'dynamicEnabled').name('enabled')
             dynamicFolder.add(this.settings, 'speedColorShift').name('speedColorShift')
             dynamicFolder.add(this.settings, 'driftEffect').name('driftEffect')
-            dynamicFolder.add(this.settings, 'collisionFlash').name('collisionFlash')
 
             const spotlightFolder = this.debugFolder.addFolder('spotlight')
             spotlightFolder.open()
@@ -235,25 +230,6 @@ export default class AdvancedLighting
             this.dynamicState.driftFactor = 0
         }
 
-        // Acceleration detection for collision flash
-        const accelMagnitude = Math.sqrt(
-            Math.pow(carVelocity.x - this.dynamicState.previousVelocity.x, 2) +
-            Math.pow(carVelocity.y - this.dynamicState.previousVelocity.y, 2) +
-            Math.pow(carVelocity.z - this.dynamicState.previousVelocity.z, 2)
-        )
-        if(accelMagnitude > 0.5 && this.settings.collisionFlash)
-        {
-            this.dynamicState.collisionIntensity = Math.min(accelMagnitude * 0.3, 1)
-        }
-        else
-        {
-            this.dynamicState.collisionIntensity *= 0.9
-        }
-        this.dynamicState.previousVelocity.x = carVelocity.x
-        this.dynamicState.previousVelocity.y = carVelocity.y
-        this.dynamicState.previousVelocity.z = carVelocity.z
-
-
         // Dynamic spotlight placement
         const dynamicHeight = this.settings.spotlightHeight - (this.dynamicState.speedFactor * 2)
         const dynamicOffset = this.settings.spotlightOffsetForward + (this.dynamicState.speedFactor * 3)
@@ -281,7 +257,6 @@ export default class AdvancedLighting
             intensityMultiplier += this.dynamicState.driftFactor * 0.25
         }
 
-        intensityMultiplier += this.dynamicState.collisionIntensity * 0.6
         intensityMultiplier *= this.weatherState.spotlightBoost
         intensityMultiplier += this.weatherState.flash * 0.3
 
@@ -303,11 +278,6 @@ export default class AdvancedLighting
             if(this.dynamicState.driftFactor > 0.3)
             {
                 this.finalSpotColor.lerp(this.driftColor, this.dynamicState.driftFactor * 0.6)
-            }
-
-            if(this.dynamicState.collisionIntensity > 0.1)
-            {
-                this.finalSpotColor.lerp(this.collisionColor, this.dynamicState.collisionIntensity * 0.8)
             }
 
             if(this.weatherState.flash > 0.05)

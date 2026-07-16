@@ -299,8 +299,10 @@ export default class Area extends EventEmitter
 
         window.addEventListener('keydown', (_event) =>
         {
-            if((_event.key === 'f' || _event.key === 'e' || _event.key === 'Enter') && this.isIn)
+            const isInteractionKey = _event.key === 'f' || _event.key === 'e' || _event.key === 'Enter'
+            if(isInteractionKey && this.isIn && !_event.repeat && !document.querySelector('dialog[open]'))
             {
+                _event.preventDefault()
                 this.interact()
             }
         })

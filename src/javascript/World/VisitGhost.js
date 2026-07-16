@@ -3,7 +3,8 @@ import * as THREE from 'three'
 /**
  * "Echo of your last visit": records the visitor's drive (position + heading
  * at 8Hz, capped) into localStorage and, on the next visit, replays the
- * previous session's path as a translucent ghost car.
+ * previous session's path as a translucent ghost car. Version 2 adds
+ * playback controls, metadata and compact share links.
  */
 export default class VisitGhost
 {
@@ -25,16 +26,27 @@ export default class VisitGhost
         this.settings.maxSamples = 1440 // = 3 minutes of driving
         this.settings.minSamplesToReplay = 80 // ~10s of movement, or don't bother
         this.settings.storageKey = 'portfolio-last-visit-path'
+        this.settings.maxShareSamples = 180
 
         // Recording state
         this.recording = []
         this.timeSinceLastSample = 0
         this.timeSinceLastSave = 0
+        this.recordingDistance = 0
+        this.recordingTopSpeed = 0
+        this.lastRecordedPosition = null
 
         // Replay state
-        this.replayPath = this.loadPath()
+        this.replayData = this.loadReplay()
+        this.replayPath = this.replayData ? this.replayData.samples : null
         this.replayIndex = 0
         this.replayProgress = 0
+        this.playback = {
+            playing: true,
+            speed: 1,
+            visible: true,
+            watching: false
+        }
 
         if(this.replayPath)
         {
@@ -65,8 +77,35 @@ export default class VisitGhost
         }
     }
 
-    loadPath()
+    loadReplay()
     {
+        const shared = new URLSearchParams(window.location.search).get('ghost')
+        if(shared)
+        {
+            try
+            {
+                let base64 = shared.replace(/-/g, '+').replace(/_/g, '/')
+                base64 += '='.repeat((4 - base64.length % 4) % 4)
+                const decoded = JSON.parse(window.atob(base64))
+                if(decoded && Array.isArray(decoded.samples) && decoded.samples.length >= 2)
+                {
+                    return {
+                        version: 2,
+                        shared: true,
+                        recordedAt: decoded.recordedAt || null,
+                        duration: decoded.duration || decoded.samples.length * this.settings.sampleInterval,
+                        distance: decoded.distance || 0,
+                        topSpeed: decoded.topSpeed || 0,
+                        samples: decoded.samples
+                    }
+                }
+            }
+            catch(_error)
+            {
+                // Ignore invalid shared routes and fall back to the visitor's local replay.
+            }
+        }
+
         try
         {
             const raw = window.localStorage.getItem(this.settings.storageKey)
@@ -81,7 +120,15 @@ export default class VisitGhost
                 return null
             }
 
-            return parsed.samples
+            return {
+                version: parsed.version || 1,
+                shared: false,
+                recordedAt: parsed.recordedAt || null,
+                duration: parsed.duration || parsed.samples.length * this.settings.sampleInterval,
+                distance: parsed.distance || 0,
+                topSpeed: parsed.topSpeed || 0,
+                samples: parsed.samples
+            }
         }
         catch(_error)
         {
@@ -98,7 +145,14 @@ export default class VisitGhost
 
         try
         {
-            window.localStorage.setItem(this.settings.storageKey, JSON.stringify({ version: 1, samples: this.recording }))
+            window.localStorage.setItem(this.settings.storageKey, JSON.stringify({
+                version: 2,
+                recordedAt: new Date().toISOString(),
+                duration: this.recording.length * this.settings.sampleInterval,
+                distance: Math.round(this.recordingDistance * 10) / 10,
+                topSpeed: this.recordingTopSpeed,
+                samples: this.recording
+            }))
         }
         catch(_error)
         {
@@ -115,6 +169,116 @@ export default class VisitGhost
         catch(_error)
         {
             // ignore
+        }
+    }
+
+    hasReplay()
+    {
+        return Boolean(this.replayPath && this.model)
+    }
+
+    play()
+    {
+        if(this.hasReplay())
+        {
+            this.playback.playing = true
+            this.playback.visible = true
+            this.model.visible = true
+        }
+    }
+
+    pause()
+    {
+        this.playback.playing = false
+    }
+
+    restart()
+    {
+        this.replayIndex = 0
+        this.replayProgress = 0
+        this.play()
+    }
+
+    setPlaybackSpeed(_speed)
+    {
+        const allowed = [0.5, 1, 2]
+        this.playback.speed = allowed.includes(_speed) ? _speed : 1
+    }
+
+    setVisible(_visible)
+    {
+        this.playback.visible = Boolean(_visible)
+        if(this.model)
+        {
+            this.model.visible = this.playback.visible
+        }
+    }
+
+    getStatus()
+    {
+        const length = this.replayPath ? this.replayPath.length : 0
+        const progress = length > 1 ? (this.replayIndex + this.replayProgress) / (length - 1) : 0
+        return {
+            available: this.hasReplay(),
+            playing: this.playback.playing,
+            watching: this.playback.watching,
+            speed: this.playback.speed,
+            progress: Math.min(Math.max(progress, 0), 1),
+            duration: this.replayData ? this.replayData.duration : 0,
+            distance: this.replayData ? this.replayData.distance : 0,
+            shared: Boolean(this.replayData && this.replayData.shared)
+        }
+    }
+
+    getShareUrl()
+    {
+        if(!this.replayData || !this.replayPath)
+        {
+            return null
+        }
+
+        const stride = Math.max(Math.ceil(this.replayPath.length / this.settings.maxShareSamples), 1)
+        const samples = []
+        for(let i = 0; i < this.replayPath.length; i += stride)
+        {
+            samples.push(this.replayPath[i])
+        }
+        if(samples[samples.length - 1] !== this.replayPath[this.replayPath.length - 1])
+        {
+            samples.push(this.replayPath[this.replayPath.length - 1])
+        }
+
+        const payload = {
+            version: 2,
+            recordedAt: this.replayData.recordedAt,
+            duration: this.replayData.duration,
+            distance: this.replayData.distance,
+            topSpeed: this.replayData.topSpeed,
+            samples
+        }
+        const encoded = window.btoa(JSON.stringify(payload)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '')
+        const url = new URL(window.location.href)
+        url.searchParams.set('ghost', encoded)
+        url.hash = ''
+        return url.toString()
+    }
+
+    async copyShareUrl()
+    {
+        const url = this.getShareUrl()
+        if(!url || !navigator.clipboard)
+        {
+            return false
+        }
+
+        try
+        {
+            await navigator.clipboard.writeText(url)
+            return true
+        }
+        catch(_error)
+        {
+            return false
         }
     }
 
@@ -167,8 +331,26 @@ export default class VisitGhost
                 this.recording.push([
                     Math.round(chassisBody.position.x * 100) / 100,
                     Math.round(chassisBody.position.y * 100) / 100,
-                    Math.round((car.angle || 0) * 100) / 100
+                    Math.round((car.angle || 0) * 100) / 100,
+                    Math.round(Math.abs(car.speed || 0) * 10000) / 10000
                 ])
+
+                if(this.lastRecordedPosition)
+                {
+                    const deltaX = chassisBody.position.x - this.lastRecordedPosition.x
+                    const deltaY = chassisBody.position.y - this.lastRecordedPosition.y
+                    const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY)
+                    if(distance < 4)
+                    {
+                        this.recordingDistance += distance
+                    }
+                }
+                else
+                {
+                    this.lastRecordedPosition = new THREE.Vector2()
+                }
+                this.lastRecordedPosition.set(chassisBody.position.x, chassisBody.position.y)
+                this.recordingTopSpeed = Math.max(this.recordingTopSpeed, Math.abs(car.speed || 0))
             }
         }
 
@@ -186,7 +368,15 @@ export default class VisitGhost
             return
         }
 
-        this.replayProgress += delta / this.settings.sampleInterval
+        if(!this.playback.playing)
+        {
+            return
+        }
+
+        const replaySampleInterval = this.replayData && this.replayPath.length > 1
+            ? this.replayData.duration / (this.replayPath.length - 1)
+            : this.settings.sampleInterval
+        this.replayProgress += delta * this.playback.speed / Math.max(replaySampleInterval, 1)
         while(this.replayProgress >= 1)
         {
             this.replayProgress -= 1

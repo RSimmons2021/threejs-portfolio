@@ -22,6 +22,10 @@ export default class Project
         this.floorTexture = _options.floorTexture
         this.link = _options.link
         this.details = _options.details || {}
+        this.theme = _options.theme || {}
+        this.prototype = _options.prototype || null
+        this.story = _options.story || null
+        this.portalHandler = null
 
         // Set up
         this.container = new THREE.Object3D()
@@ -30,6 +34,7 @@ export default class Project
 
         this.setBoards()
         this.setFloor()
+        this.setPortalBeacon()
     }
 
     setBoards()
@@ -149,7 +154,13 @@ export default class Project
         })
         this.floor.area.on('interact', () =>
         {
-            window.open(this.link.href, '_blank')
+            if(this.portalHandler)
+            {
+                this.portalHandler(this)
+                return
+            }
+
+            window.open(this.link.href, '_blank', 'noopener')
         })
 
         // Area label
@@ -163,6 +174,43 @@ export default class Project
 
         // Project name/description text
         this.setProjectDescription()
+    }
+
+    setPortalHandler(_handler)
+    {
+        this.portalHandler = typeof _handler === 'function' ? _handler : null
+    }
+
+    setPortalBeacon()
+    {
+        const accent = this.theme.accent || '#8ed4ff'
+
+        this.portalBeacon = {}
+        this.portalBeacon.geometry = new THREE.RingGeometry(2.15, 2.5, 48)
+        this.portalBeacon.material = new THREE.MeshBasicMaterial({
+            color: accent,
+            transparent: true,
+            opacity: 0.22,
+            depthWrite: false,
+            blending: THREE.AdditiveBlending,
+            side: THREE.DoubleSide
+        })
+        this.portalBeacon.mesh = new THREE.Mesh(this.portalBeacon.geometry, this.portalBeacon.material)
+        this.portalBeacon.mesh.position.set(
+            this.x + this.floor.x + this.link.x,
+            this.y + this.floor.y + this.link.y,
+            0.025
+        )
+        this.portalBeacon.mesh.matrixAutoUpdate = true
+        this.container.add(this.portalBeacon.mesh)
+
+        this.time.on('tick', () =>
+        {
+            const pulse = 1 + Math.sin(this.time.elapsed * 0.0025) * 0.08
+            this.portalBeacon.mesh.scale.setScalar(pulse)
+            this.portalBeacon.mesh.rotation.z += this.time.delta * 0.00018
+            this.portalBeacon.material.opacity = this.floor.area.isIn ? 0.58 : 0.22
+        })
     }
 
     setProjectDescription()

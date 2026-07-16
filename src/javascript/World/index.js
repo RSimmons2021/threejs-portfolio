@@ -30,6 +30,8 @@ import Minimap from './Minimap.js'
 import VisitGhost from './VisitGhost.js'
 import ExperienceHUD from './ExperienceHUD.js'
 import GuidedTour from './GuidedTour.js'
+import WorldDiagnostics from './WorldDiagnostics.js'
+import ExperienceDirector from './ExperienceDirector.js'
 
 export default class World
 {
@@ -75,6 +77,16 @@ export default class World
         this.started = true
         this.sounds.startEngine()
 
+        // Remove data left by the retired reactive-world tracking feature.
+        try
+        {
+            window.localStorage.removeItem('portfolio-world-memory-v1')
+        }
+        catch(_error)
+        {
+            // Storage may be unavailable in privacy-restricted contexts.
+        }
+
         window.setTimeout(() =>
         {
             this.camera.pan.enable()
@@ -103,6 +115,8 @@ export default class World
         this.setGhostCar()
         this.setVisitGhost()
         this.setGuidedTour()
+        this.setDiagnostics()
+        this.setExperienceDirector()
         this.loadDeferredContent()
     }
 
@@ -523,6 +537,11 @@ export default class World
             debug: this.debugFolder
         })
         this.scene.add(this.advancedLighting.container)
+
+        this.sounds.setVehicleStateProvider(() => ({
+            speed: this.advancedLighting.dynamicState.speedFactor,
+            braking: this.controls.actions.brake ? 1 : 0
+        }))
     }
 
     setDayNightCycle()
@@ -643,6 +662,36 @@ export default class World
             physics: this.physics,
             controls: this.controls,
             ghostCar: this.ghostCar
+        })
+    }
+
+    setDiagnostics()
+    {
+        this.diagnostics = new WorldDiagnostics({
+            time: this.time,
+            scene: this.scene,
+            renderer: this.renderer,
+            physics: this.physics,
+            zones: this.zones,
+            areas: this.areas,
+            camera: this.camera
+        })
+        this.container.add(this.diagnostics.container)
+    }
+
+    setExperienceDirector()
+    {
+        this.experienceDirector = new ExperienceDirector({
+            config: this.config,
+            time: this.time,
+            camera: this.camera,
+            physics: this.physics,
+            controls: this.controls,
+            sounds: this.sounds,
+            dayNightCycle: this.dayNightCycle,
+            visitGhost: this.visitGhost,
+            diagnostics: this.diagnostics,
+            projects: this.sections.projects.items
         })
     }
 

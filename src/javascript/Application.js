@@ -255,15 +255,22 @@ export default class Application
         {
             if(this.world && this.world.car)
             {
-                this.camera.target.x = this.world.car.chassis.object.position.x
-                this.camera.target.y = this.world.car.chassis.object.position.y
+                if(this.camera.targetOverride)
+                {
+                    this.camera.target.copy(this.camera.targetOverride)
+                }
+                else
+                {
+                    this.camera.target.x = this.world.car.chassis.object.position.x
+                    this.camera.target.y = this.world.car.chassis.object.position.y
+                }
 
                 // Feed normalized speed into the FOV kick (boost max speed ≈ 0.017
                 // units/ms, so full kick is only reached while boosting)
                 if(this.world.physics && this.world.physics.car)
                 {
                     const carSpeed = Math.abs(this.world.physics.car.speed)
-                    this.camera.fovKick.target = Math.min(carSpeed * 60, 1)
+                    this.camera.fovKick.target = this.camera.targetOverride ? 0 : Math.min(carSpeed * 60, 1)
                 }
             }
         })

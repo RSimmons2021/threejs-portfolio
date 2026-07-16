@@ -223,12 +223,14 @@ export default class Sounds
 
     setEngine()
     {
-        // Set up
+        // Keep the original, softer engine character: one continuous low-off
+        // loop whose pitch and volume follow the car without clip switching.
         this.engine = {}
         this.engine.started = false
         this.engine.ready = false
         this.engine.failed = false
         this.engine.soundId = null
+        this.engine.vehicleStateProvider = null
 
         this.engine.progress = 0
         this.engine.progressEasingUp = 0.3
@@ -254,7 +256,6 @@ export default class Sounds
             onload: () =>
             {
                 this.engine.ready = true
-
                 if(!this.engine.started || this.engine.soundId !== null)
                 {
                     return
@@ -275,9 +276,44 @@ export default class Sounds
             }
         })
 
+        this.engine.tire = {
+            ready: false,
+            soundId: null,
+            currentVolume: 0,
+            spriteName: 'squeal'
+        }
+        this.engine.tire.sound = new Howl({
+            src: ['./sounds/screeches/screech-1.mp3'],
+            volume: 0,
+            // The source has about 39ms of trailing silence. Loop only its
+            // audible region so sustained slides do not pulse or hesitate.
+            sprite: {
+                squeal: [0, 272, true]
+            },
+            onload: () =>
+            {
+                this.engine.tire.ready = true
+                if(this.engine.started)
+                {
+                    this.startTireLayer()
+                }
+            },
+            onloaderror: (_id, _error) =>
+            {
+                console.warn('Tire audio could not be loaded.', _error)
+            }
+        })
+
+        this.setVehicleNoise()
+
         // Time tick
         this.time.on('tick', () =>
         {
+            if(this.engine.started)
+            {
+                this.updateVehicleAudio()
+            }
+
             if(!this.engine.ready || this.engine.failed)
             {
                 return
@@ -315,6 +351,16 @@ export default class Sounds
 
         this.engine.started = true
 
+        if(this.engine.tire.sound.state() === 'loaded')
+        {
+            this.engine.tire.ready = true
+            this.startTireLayer()
+        }
+        else
+        {
+            this.engine.tire.sound.load()
+        }
+
         if(this.engine.sound.state() === 'loaded')
         {
             this.engine.ready = true
@@ -324,6 +370,23 @@ export default class Sounds
         }
 
         this.engine.sound.load()
+    }
+
+    startTireLayer()
+    {
+        const tire = this.engine.tire
+        if(!tire.ready || tire.soundId !== null)
+        {
+            return
+        }
+
+        tire.soundId = tire.sound.play(tire.spriteName)
+        tire.sound.volume(0, tire.soundId)
+    }
+
+    setVehicleStateProvider(_provider)
+    {
+        this.engine.vehicleStateProvider = typeof _provider === 'function' ? _provider : null
     }
 
     updateEngineSound()
@@ -338,10 +401,113 @@ export default class Sounds
         const volumeAmplitude = this.engine.volume.max - this.engine.volume.min
         const nextVolume = (this.engine.volume.min + volumeAmplitude * this.engine.progress) * this.engine.volume.master
 
-        // Keep the original continuous modulation. Throttling these values makes
-        // the loop step between pitches, which is audible as clipping or pauses.
-        this.engine.sound.rate(nextRate)
-        this.engine.sound.volume(nextVolume)
+        this.engine.sound.rate(nextRate, this.engine.soundId)
+        this.engine.sound.volume(nextVolume, this.engine.soundId)
+    }
+
+    setVehicleNoise()
+    {
+        const context = Howler.ctx
+        const destination = Howler.masterGain
+        this.engine.noise = { ready: false }
+
+        if(!context || !destination)
+        {
+            return
+        }
+
+        const buffer = context.createBuffer(1, context.sampleRate * 2, context.sampleRate)
+        const data = buffer.getChannelData(0)
+        for(let i = 0; i < data.length; i++)
+        {
+            data[i] = Math.random() * 2 - 1
+        }
+
+        const createNoiseLayer = (_type, _frequency, _q = 0.8) =>
+        {
+            const source = context.createBufferSource()
+            source.buffer = buffer
+            source.loop = true
+            const filter = context.createBiquadFilter()
+            filter.type = _type
+            filter.frequency.value = _frequency
+            filter.Q.value = _q
+            const gain = context.createGain()
+            gain.gain.value = 0
+            source.connect(filter)
+            filter.connect(gain)
+            gain.connect(destination)
+            source.start()
+            return { source, filter, gain, value: 0 }
+        }
+
+        this.engine.noise.wind = createNoiseLayer('bandpass', 720, 0.65)
+        this.engine.noise.brake = createNoiseLayer('highpass', 1550, 0.9)
+        this.engine.noise.ready = true
+    }
+
+    updateVehicleAudio()
+    {
+        const state = this.engine.vehicleStateProvider ? this.engine.vehicleStateProvider() : null
+        const speed = Math.min(Math.max(state?.speed ?? this.engine.progress, 0), 1)
+        const braking = Math.min(Math.max(state?.braking ?? 0, 0), 1)
+
+        const tire = this.engine.tire
+        if(tire.soundId !== null)
+        {
+            // Steering and lateral slip must stay silent. The squeal is now a
+            // braking-only cue, with a low-speed dead zone to prevent chirps.
+            const brakingSpeed = Math.max((speed - 0.12) / 0.88, 0)
+            const tireTarget = braking * brakingSpeed * 0.12 * this.engine.volume.master
+            const response = tireTarget > tire.currentVolume ? 0.62 : 0.36
+            tire.currentVolume += (tireTarget - tire.currentVolume) * response
+            tire.sound.volume(tire.currentVolume, tire.soundId)
+            tire.sound.rate(0.88 + speed * 0.24, tire.soundId)
+        }
+
+        if(this.engine.noise.ready)
+        {
+            const windTarget = speed * speed * 0.035 * this.engine.volume.master
+            const brakeTarget = braking * speed * 0.018 * this.engine.volume.master
+            this.engine.noise.wind.value += (windTarget - this.engine.noise.wind.value) * 0.08
+            this.engine.noise.brake.value += (brakeTarget - this.engine.noise.brake.value) * 0.18
+            this.engine.noise.wind.gain.gain.value = this.engine.noise.wind.value
+            this.engine.noise.brake.gain.gain.value = this.engine.noise.brake.value
+            this.engine.noise.wind.filter.frequency.value = 480 + speed * 1100
+        }
+    }
+
+    playInterfaceTone(_preset = 'focus')
+    {
+        const context = Howler.ctx
+        const destination = Howler.masterGain
+        if(!context || !destination || this.muted)
+        {
+            return
+        }
+
+        const frequencies = {
+            focus: [220, 330],
+            reset: [196, 294],
+            sleep: [130.81, 196]
+        }
+        const notes = frequencies[_preset] || frequencies.focus
+        const now = context.currentTime
+
+        notes.forEach((_frequency, _index) =>
+        {
+            const oscillator = context.createOscillator()
+            const gain = context.createGain()
+            oscillator.type = _index === 0 ? 'sine' : 'triangle'
+            oscillator.frequency.value = _frequency
+            gain.gain.setValueAtTime(0, now)
+            gain.gain.linearRampToValueAtTime(0.035 / (_index + 1), now + 0.04)
+            gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.72)
+            oscillator.connect(gain)
+            gain.connect(destination)
+            oscillator.start(now)
+            oscillator.stop(now + 0.75)
+        })
     }
 
     add(_options)
@@ -424,5 +590,12 @@ export default class Sounds
         }
 
         this.engine.sound.unload()
+        this.engine.tire.sound.unload()
+
+        if(this.engine.noise.ready)
+        {
+            this.engine.noise.wind.source.stop()
+            this.engine.noise.brake.source.stop()
+        }
     }
 }
