@@ -87,6 +87,12 @@ export default class Weather
         return (this.dayNightCycle ? this.dayNightCycle.nightFactor : 0) >= 0.5
     }
 
+    // Winter turns precipitation into snow (and snow may fall day or night)
+    getPrecipitationType()
+    {
+        return this.dayNightCycle && this.dayNightCycle.season === 'winter' ? 'snow' : 'rain'
+    }
+
     pickNextState()
     {
         // Clear weather is the most common; rain only happens at night;
@@ -98,7 +104,7 @@ export default class Weather
             {
                 return false
             }
-            if(_name === 'rain' && !this.isNight())
+            if(_name === 'rain' && !this.isNight() && this.getPrecipitationType() !== 'snow')
             {
                 return false
             }
@@ -144,25 +150,42 @@ export default class Weather
         this.rain.geometry.setAttribute('position', this.rain.positionAttribute)
 
         // Small vertical streak sprite (rain falls straight down in this world)
-        const canvas = document.createElement('canvas')
-        canvas.width = 16
-        canvas.height = 64
-        const context = canvas.getContext('2d')
-        const gradient = context.createLinearGradient(0, 0, 0, 64)
-        gradient.addColorStop(0, 'rgba(200, 220, 255, 0)')
-        gradient.addColorStop(0.5, 'rgba(200, 220, 255, 0.9)')
-        gradient.addColorStop(1, 'rgba(200, 220, 255, 0)')
-        context.fillStyle = gradient
-        context.fillRect(6, 0, 4, 64)
+        const rainCanvas = document.createElement('canvas')
+        rainCanvas.width = 16
+        rainCanvas.height = 64
+        const rainContext = rainCanvas.getContext('2d')
+        const rainGradient = rainContext.createLinearGradient(0, 0, 0, 64)
+        rainGradient.addColorStop(0, 'rgba(200, 220, 255, 0)')
+        rainGradient.addColorStop(0.5, 'rgba(200, 220, 255, 0.9)')
+        rainGradient.addColorStop(1, 'rgba(200, 220, 255, 0)')
+        rainContext.fillStyle = rainGradient
+        rainContext.fillRect(6, 0, 4, 64)
+        this.rain.rainTexture = new THREE.CanvasTexture(rainCanvas)
+
+        // Soft round flake sprite for winter snow
+        const snowCanvas = document.createElement('canvas')
+        snowCanvas.width = 32
+        snowCanvas.height = 32
+        const snowContext = snowCanvas.getContext('2d')
+        const snowGradient = snowContext.createRadialGradient(16, 16, 0, 16, 16, 16)
+        snowGradient.addColorStop(0, 'rgba(255, 255, 255, 1)')
+        snowGradient.addColorStop(0.6, 'rgba(255, 255, 255, 0.7)')
+        snowGradient.addColorStop(1, 'rgba(255, 255, 255, 0)')
+        snowContext.fillStyle = snowGradient
+        snowContext.fillRect(0, 0, 32, 32)
+        this.rain.snowTexture = new THREE.CanvasTexture(snowCanvas)
 
         this.rain.material = new THREE.PointsMaterial({
             size: 0.7,
-            map: new THREE.CanvasTexture(canvas),
+            map: this.rain.rainTexture,
             transparent: true,
             opacity: 0,
             depthWrite: false,
             sizeAttenuation: true
         })
+
+        // Precipitation mode ('rain' or 'snow') — applied lazily in updateRain
+        this.rain.mode = 'rain'
 
         this.rain.points = new THREE.Points(this.rain.geometry, this.rain.material)
         this.rain.points.frustumCulled = false
@@ -172,7 +195,18 @@ export default class Weather
 
     updateRain(_rainValue)
     {
-        const targetOpacity = this.settings.rainEnabled ? _rainValue * 0.55 : 0
+        // Swap between rain streaks and snow flakes when the season demands it
+        const mode = this.getPrecipitationType()
+        if(mode !== this.rain.mode)
+        {
+            this.rain.mode = mode
+            this.rain.material.map = mode === 'snow' ? this.rain.snowTexture : this.rain.rainTexture
+            this.rain.material.size = mode === 'snow' ? 0.45 : 0.7
+            this.rain.material.needsUpdate = true
+        }
+
+        const isSnow = this.rain.mode === 'snow'
+        const targetOpacity = this.settings.rainEnabled ? _rainValue * (isSnow ? 0.8 : 0.55) : 0
         this.rain.material.opacity += (targetOpacity - this.rain.material.opacity) * 0.06
 
         const visible = this.rain.material.opacity > 0.01
@@ -191,13 +225,21 @@ export default class Weather
             this.rain.points.position.y = chassisBody.position.y
         }
 
-        // Fall and recycle
+        // Fall and recycle (snow drifts down slowly and sways sideways)
         const deltaSeconds = Math.min(this.time.delta, 60) / 1000
         const positions = this.rain.positionAttribute.array
+        const speedScale = isSnow ? 0.14 : 1
+        const elapsed = this.time.elapsed * 0.001
 
         for(let i = 0; i < this.rain.count; i++)
         {
-            positions[i * 3 + 2] -= this.rain.fallSpeeds[i] * deltaSeconds
+            positions[i * 3 + 2] -= this.rain.fallSpeeds[i] * speedScale * deltaSeconds
+
+            if(isSnow)
+            {
+                positions[i * 3 + 0] += Math.sin(elapsed * 1.2 + i * 1.7) * 0.35 * deltaSeconds
+                positions[i * 3 + 1] += Math.cos(elapsed * 0.9 + i * 2.3) * 0.3 * deltaSeconds
+            }
 
             if(positions[i * 3 + 2] < 0)
             {
@@ -214,8 +256,8 @@ export default class Weather
     {
         const deltaSeconds = Math.min(this.time.delta, 60) / 1000
 
-        // Rain is night-only: if day breaks while it rains, clear up
-        if(this.state === 'rain' && !this.isNight())
+        // Rain is night-only (snow may fall anytime): if day breaks while it rains, clear up
+        if(this.state === 'rain' && !this.isNight() && this.getPrecipitationType() !== 'snow')
         {
             this.setWeather('clear')
         }
@@ -269,10 +311,11 @@ export default class Weather
             })
         }
 
-        // Puddles and reflections on the floor
+        // Puddles and reflections on the floor (snow barely wets the ground)
         if(this.floor && this.floor.setWetness)
         {
-            this.floor.setWetness(this.values.wetness)
+            const wetnessScale = this.getPrecipitationType() === 'snow' ? 0.15 : 1
+            this.floor.setWetness(this.values.wetness * wetnessScale)
         }
 
         // Mist overlay, tinted by time of day

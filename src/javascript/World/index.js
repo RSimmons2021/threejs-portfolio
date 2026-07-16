@@ -24,6 +24,10 @@ import DayNightCycle from './DayNightCycle.js'
 import GhostCar from './GhostCar.js'
 import Fireflies from './Fireflies.js'
 import Weather from './Weather.js'
+import TireEffects from './TireEffects.js'
+import AmbientSounds from './AmbientSounds.js'
+import Minimap from './Minimap.js'
+import VisitGhost from './VisitGhost.js'
 import ExperienceHUD from './ExperienceHUD.js'
 import GuidedTour from './GuidedTour.js'
 
@@ -92,8 +96,12 @@ export default class World
         this.setDayNightCycle()
         this.setWeather()
         this.setFireflies()
+        this.setTireEffects()
+        this.setAmbientSounds()
         this.setExperienceHUD()
+        this.setMinimap()
         this.setGhostCar()
+        this.setVisitGhost()
         this.setGuidedTour()
         this.loadDeferredContent()
     }
@@ -525,6 +533,7 @@ export default class World
             materials: this.materials,
             advancedLighting: this.advancedLighting,
             passes: this.passes,
+            shadows: this.shadows,
             debug: this.debugFolder
         })
 
@@ -548,6 +557,47 @@ export default class World
             debug: this.debugFolder
         })
         this.container.add(this.weather.container)
+    }
+
+    setTireEffects()
+    {
+        this.tireEffects = new TireEffects({
+            time: this.time,
+            config: this.config,
+            physics: this.physics,
+            advancedLighting: this.advancedLighting,
+            debug: this.debugFolder
+        })
+        this.container.add(this.tireEffects.container)
+    }
+
+    setAmbientSounds()
+    {
+        this.ambientSounds = new AmbientSounds({
+            time: this.time,
+            weather: this.weather,
+            dayNightCycle: this.dayNightCycle,
+            debug: this.debugFolder
+        })
+    }
+
+    setMinimap()
+    {
+        this.minimap = new Minimap({
+            time: this.time,
+            config: this.config,
+            physics: this.physics
+        })
+    }
+
+    setVisitGhost()
+    {
+        this.visitGhost = new VisitGhost({
+            time: this.time,
+            physics: this.physics,
+            debug: this.debugFolder
+        })
+        this.container.add(this.visitGhost.container)
     }
 
     setFireflies()

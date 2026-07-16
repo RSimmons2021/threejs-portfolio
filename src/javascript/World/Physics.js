@@ -208,6 +208,12 @@ export default class Physics
                     {
                         this.car.lastCollisionShakeAt = now
                         this.camera.shake.trigger(impact)
+
+                        // Haptic tap on touch devices for hard impacts
+                        if(this.config && this.config.touch && navigator.vibrate)
+                        {
+                            navigator.vibrate(Math.min(Math.round(impact * 8), 40))
+                        }
                     }
                 }
             })

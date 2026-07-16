@@ -11,6 +11,7 @@ export default class DayNightCycle
         this.materials = _options.materials
         this.advancedLighting = _options.advancedLighting
         this.passes = _options.passes
+        this.shadows = _options.shadows
         this.debug = _options.debug
 
         // Settings
@@ -151,6 +152,13 @@ export default class DayNightCycle
 
         this.tempFlashColor = new THREE.Color(0xffffff)
 
+        // Sun path for the blob shadows (azimuth sweeps over the day, moon at night)
+        this.sunDayPosition = new THREE.Vector3()
+        this.sunMoonPosition = new THREE.Vector3(2.2, 2.4, 3.4)
+
+        // Season comes from the visitor's real calendar (northern hemisphere)
+        this.setSeason(this.getSeasonFromDate(new Date()))
+
         this.lastAppliedTime = -1
         this.lastWeatherSignature = ''
 
@@ -166,6 +174,10 @@ export default class DayNightCycle
             this.debugFolder = this.debug.addFolder('dayNightCycle')
             this.debugFolder.open()
             this.debugFolder.add(this.settings, 'enabled').name('enabled')
+            this.debugFolder.add(this, 'season', ['winter', 'spring', 'summer', 'fall']).name('season').onChange((value) =>
+            {
+                this.setSeason(value)
+            })
             this.debugFolder.add(this.settings, 'realTime').name('realTime')
             this.debugFolder.add(this.settings, 'autoPlay').name('autoPlay')
             this.debugFolder.add(this.settings, 'currentTime').min(0).max(1).step(0.01).name('time').listen()
@@ -255,6 +267,37 @@ export default class DayNightCycle
         })
     }
 
+    getSeasonFromDate(_date)
+    {
+        const month = _date.getMonth() // 0 = January
+        if(month === 11 || month <= 1) return 'winter'
+        if(month <= 4) return 'spring'
+        if(month <= 7) return 'summer'
+        return 'fall'
+    }
+
+    setSeason(_name)
+    {
+        // Each season tints the floor and matcaps toward a signature color
+        const seasonTints = {
+            winter: { color: '#dfe6ee', floorStrength: 0.3, matcapColor: '#dbe4f0', matcapStrength: 0.18 },
+            spring: { color: '#9fc27a', floorStrength: 0.12, matcapColor: '#ffffff', matcapStrength: 0 },
+            summer: { color: '#ffffff', floorStrength: 0, matcapColor: '#ffffff', matcapStrength: 0 },
+            fall:   { color: '#c07a45', floorStrength: 0.22, matcapColor: '#e0b58f', matcapStrength: 0.12 }
+        }
+
+        const tint = seasonTints[_name] || seasonTints.summer
+
+        this.season = _name
+        this.seasonFloorColor = new THREE.Color(tint.color)
+        this.seasonFloorStrength = tint.floorStrength
+        this.seasonMatcapColor = new THREE.Color(tint.matcapColor)
+        this.seasonMatcapStrength = tint.matcapStrength
+
+        // Force a re-apply on the next update
+        this.lastAppliedTime = - 1
+    }
+
     getTimelineBlend(_time)
     {
         for(let i = 0; i < this.timeline.length - 1; i++)
@@ -325,6 +368,15 @@ export default class DayNightCycle
         this.floorColorOutput.bottomRight.copy(this.currentColors.floor.bottomRight).multiplyScalar(1 - floorDarkness * 0.6).lerp(this.tempFlashColor, floorFlash)
         this.floorColorOutput.bottomLeft.copy(this.currentColors.floor.bottomLeft).multiplyScalar(1 - floorDarkness * 0.6).lerp(this.tempFlashColor, floorFlash)
 
+        // Seasonal tint (frosty in winter, warm in fall)
+        if(this.seasonFloorStrength > 0)
+        {
+            this.floorColorOutput.topLeft.lerp(this.seasonFloorColor, this.seasonFloorStrength)
+            this.floorColorOutput.topRight.lerp(this.seasonFloorColor, this.seasonFloorStrength)
+            this.floorColorOutput.bottomRight.lerp(this.seasonFloorColor, this.seasonFloorStrength)
+            this.floorColorOutput.bottomLeft.lerp(this.seasonFloorColor, this.seasonFloorStrength)
+        }
+
         if(this.floor)
         {
             // Pass Color objects directly (no hex-string round-trip)
@@ -341,6 +393,22 @@ export default class DayNightCycle
         if(this.advancedLighting)
         {
             this.advancedLighting.nightFactor = this.nightFactor
+        }
+
+        // Blob shadows follow the sun: azimuth sweeps ~180° over the day, the sun
+        // sits low at sunrise/sunset (long shadows) and high at noon (short ones);
+        // at night a fixed "moon" takes over and shadows fade
+        if(this.shadows && this.shadows.sun)
+        {
+            const dayProgress = Math.min(Math.max((this.settings.currentTime - 0.23) / 0.54, 0), 1)
+            const azimuth = (- 133 + (dayProgress - 0.5) * 180) * Math.PI / 180
+            const elevation = 1.1 + Math.sin(Math.PI * dayProgress) * 2.65
+
+            this.sunDayPosition.set(Math.cos(azimuth) * 3.6, Math.sin(azimuth) * 3.6, elevation)
+
+            this.shadows.sun.position.lerpVectors(this.sunDayPosition, this.sunMoonPosition, this.nightFactor)
+            this.shadows.sun.update()
+            this.shadows.timeOfDayAlpha = 1 - this.nightFactor * 0.6
         }
 
         // Interpolate lighting colors and intensities
@@ -385,6 +453,10 @@ export default class DayNightCycle
             {
                 this.currentColors.matcapTint.lerpColors(from.matcapTint, to.matcapTint, t)
                 this.currentColors.matcapTint.lerp(this.tempFlashColor, Math.min(this.weatherInfluence.flash * 0.4, 0.35))
+                if(this.seasonMatcapStrength > 0)
+                {
+                    this.currentColors.matcapTint.lerp(this.seasonMatcapColor, this.seasonMatcapStrength)
+                }
                 this.materials.shades.lightUniforms.uNightTint.value.copy(this.currentColors.matcapTint)
             }
         }

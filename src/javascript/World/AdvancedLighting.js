@@ -51,7 +51,6 @@ export default class AdvancedLighting
         this.settings.dynamicEnabled = true
         this.settings.speedColorShift = true
         this.settings.driftEffect = true
-        this.settings.pulseEffect = !(this.config && this.config.reducedMotion)
         this.settings.collisionFlash = true
 
         // How much of the day/night cycle is "night" right now (written by DayNightCycle)
@@ -61,10 +60,12 @@ export default class AdvancedLighting
         this.dynamicState = {
             speedFactor: 0,
             driftFactor: 0,
-            pulseTime: 0,
             collisionIntensity: 0,
             previousVelocity: { x: 0, y: 0, z: 0 }
         }
+
+        // Spotlight intensity is smoothed over time so it never flickers
+        this.smoothedIntensity = 0
 
         this.weatherState = {
             spotlightBoost: 1,
@@ -114,7 +115,6 @@ export default class AdvancedLighting
             dynamicFolder.add(this.settings, 'dynamicEnabled').name('enabled')
             dynamicFolder.add(this.settings, 'speedColorShift').name('speedColorShift')
             dynamicFolder.add(this.settings, 'driftEffect').name('driftEffect')
-            dynamicFolder.add(this.settings, 'pulseEffect').name('pulseEffect')
             dynamicFolder.add(this.settings, 'collisionFlash').name('collisionFlash')
 
             const spotlightFolder = this.debugFolder.addFolder('spotlight')
@@ -216,18 +216,19 @@ export default class AdvancedLighting
         this.forwardVector.set(1, 0, 0).applyQuaternion(this.tempQuaternion).normalize()
         this.sideVector.crossVectors(this.upVector, this.forwardVector).normalize()
 
-        // Speed factor (0 to 1)
-        this.dynamicState.speedFactor = Math.min(carSpeed * 15, 1)
+        // Speed factor (0 to 1) — car speed is in units/ms, boost max ≈ 0.017
+        this.dynamicState.speedFactor = Math.min(carSpeed * 70, 1)
 
-        // Drift detection
+        // Drift detection: lateral share of the velocity (sin of the slip angle),
+        // which grows linearly with slip instead of quadratically
         this.velocityVector.set(carVelocity.x, carVelocity.y, 0)
         const velocityLength = this.velocityVector.length()
-        if(velocityLength > 0.0001 && carSpeed > 0.02)
+        if(velocityLength > 0.0001 && carSpeed > 0.004)
         {
             this.velocityVector.multiplyScalar(1 / velocityLength)
             this.flatForwardVector.set(this.forwardVector.x, this.forwardVector.y, 0).normalize()
-            const alignment = this.velocityVector.dot(this.flatForwardVector)
-            this.dynamicState.driftFactor = Math.max(0, 1 - Math.abs(alignment))
+            const lateral = this.velocityVector.x * this.flatForwardVector.y - this.velocityVector.y * this.flatForwardVector.x
+            this.dynamicState.driftFactor = Math.min(Math.abs(lateral) * 2.2, 1)
         }
         else
         {
@@ -252,8 +253,6 @@ export default class AdvancedLighting
         this.dynamicState.previousVelocity.y = carVelocity.y
         this.dynamicState.previousVelocity.z = carVelocity.z
 
-        this.dynamicState.pulseTime += this.time.delta * 0.001
-        const pulseValue = this.settings.pulseEffect ? Math.sin(this.dynamicState.pulseTime * 2) * 0.5 + 0.5 : 0.5
 
         // Dynamic spotlight placement
         const dynamicHeight = this.settings.spotlightHeight - (this.dynamicState.speedFactor * 2)
@@ -273,23 +272,26 @@ export default class AdvancedLighting
 
         this.spotDirection.subVectors(this.spotTargetPosition, this.spotWorldPosition).normalize()
 
-        // Dynamic intensity
+        // Dynamic intensity (kept gentle and smoothed below so the light never flickers)
         let intensityMultiplier = 1.0
-        intensityMultiplier += this.dynamicState.speedFactor * 0.5
+        intensityMultiplier += this.dynamicState.speedFactor * 0.25
 
         if(this.settings.driftEffect)
         {
-            intensityMultiplier += this.dynamicState.driftFactor * 0.8
+            intensityMultiplier += this.dynamicState.driftFactor * 0.25
         }
 
-        intensityMultiplier += this.dynamicState.collisionIntensity * 1.5
-        intensityMultiplier *= (0.95 + pulseValue * 0.05)
+        intensityMultiplier += this.dynamicState.collisionIntensity * 0.6
         intensityMultiplier *= this.weatherState.spotlightBoost
         intensityMultiplier += this.weatherState.flash * 0.3
 
         // Subtle during the day, strong at night
         const nightBlend = 0.12 + this.nightFactor * 0.88
-        const effectiveIntensity = this.settings.spotlightIntensity * intensityMultiplier * nightBlend
+        const targetIntensity = this.settings.spotlightIntensity * intensityMultiplier * nightBlend
+
+        // Heavy smoothing: intensity drifts toward its target instead of jumping
+        this.smoothedIntensity += (targetIntensity - this.smoothedIntensity) * Math.min(this.time.delta / 400, 1)
+        const effectiveIntensity = this.smoothedIntensity
 
         // Dynamic color (base color comes from the day/night cycle)
         this.finalSpotColor.copy(this.spotlight.color)
@@ -339,7 +341,8 @@ export default class AdvancedLighting
 
             floorUniforms.uSpotPosition.value.set(this.spotTargetPosition.x, this.spotTargetPosition.y)
             floorUniforms.uSpotColor.value.copy(this.finalSpotColor)
-            floorUniforms.uSpotIntensity.value = effectiveIntensity * this.settings.floorPoolStrength
+            // The ground pool only exists at night (daytime pools read as a glitchy flash)
+            floorUniforms.uSpotIntensity.value = effectiveIntensity * this.settings.floorPoolStrength * this.nightFactor
             floorUniforms.uSpotRadius.value = Math.tan(dynamicAngle) * dynamicHeight + 2
         }
 

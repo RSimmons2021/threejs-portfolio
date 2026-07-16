@@ -14,6 +14,7 @@ export default class Shadows
 
         // Set up
         this.alpha = 0
+        this.timeOfDayAlpha = 1 // written by the DayNightCycle (shadows fade at night)
         this.maxDistance = 3
         this.distancePower = 2
         this.zFightingDistance = 0.001
@@ -96,7 +97,7 @@ export default class Shadows
                 alpha = Math.min(Math.max(alpha, 0), 1)
                 alpha = Math.pow(alpha, this.distancePower)
 
-                _shadow.material.uniforms.uAlpha.value = this.alpha * _shadow.alpha * orientationAlpha * alpha
+                _shadow.material.uniforms.uAlpha.value = this.alpha * this.timeOfDayAlpha * _shadow.alpha * orientationAlpha * alpha
             }
         })
     }
