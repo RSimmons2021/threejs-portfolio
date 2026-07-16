@@ -27,9 +27,15 @@ export default class ExperienceDirector
             cinematic: false,
             cinematicStage: 0,
             cinematicEnded: false,
-            cinematicTimer: null
+            cinematicPaused: false,
+            cinematicTimer: null,
+            sceneStartedAt: 0,
+            sceneTimeLeft: 0
         }
         this.actNumerals = ['I', 'II', 'III', 'IV', 'V']
+
+        // While any interaction lock is held, the car is pinned to this pose
+        this.lockedCarPose = null
         this.setElements()
         this.bindProjects()
         this.bindEvents()
@@ -92,12 +98,14 @@ export default class ExperienceDirector
             <div class="project-portal__body">
                 <figure class="project-portal__visual">
                     <img class="js-portal-image" alt="" />
+                    <img class="project-portal__frame-previous js-portal-image-previous" alt="" aria-hidden="true" />
                     <figcaption class="js-portal-caption">Project interface</figcaption>
                     <div class="project-portal__slides js-portal-slides" aria-label="Project slides"></div>
                 </figure>
                 <article class="project-portal__story">
+                    <span class="project-portal__act-numeral js-portal-numeral" aria-hidden="true"></span>
                     <p class="project-portal__kicker js-portal-kicker">The problem</p>
-                    <h2 class="js-portal-title"></h2>
+                    <h2 class="js-portal-title"><span></span></h2>
                     <p class="project-portal__lead js-portal-copy"></p>
                     <dl class="project-portal__facts">
                         <div><dt>Role</dt><dd class="js-portal-role"></dd></div>
@@ -122,6 +130,7 @@ export default class ExperienceDirector
                     <button type="button" data-portal-action="next">Next →</button>
                 </div>
                 <div>
+                    <button type="button" data-portal-action="pause" class="js-portal-pause" hidden>⏸ Pause</button>
                     <button type="button" data-portal-action="cinematic" class="project-portal__cinematic">Play cinematic story</button>
                     <a class="js-portal-live" href="#" target="_blank" rel="noopener">Open live project ↗</a>
                 </div>
@@ -158,6 +167,12 @@ export default class ExperienceDirector
         this.$portalVisual = this.$portal.querySelector('.project-portal__visual')
         this.$portalPrevious = this.$portal.querySelector('[data-portal-action="previous"]')
         this.$portalNext = this.$portal.querySelector('[data-portal-action="next"]')
+        this.$portalImagePrevious = this.$portal.querySelector('.js-portal-image-previous')
+        this.$portalNumeral = this.$portal.querySelector('.js-portal-numeral')
+        this.$portalTitleText = this.$portalTitle.querySelector('span')
+        this.$pauseButton = this.$portal.querySelector('.js-portal-pause')
+        this.currentImageSrc = null
+        this.closingTimeout = null
     }
 
     bindProjects()
@@ -206,6 +221,13 @@ export default class ExperienceDirector
             if(action === 'previous') this.changeSlide(-1)
             if(action === 'next') this.changeSlide(1)
             if(action === 'cinematic') this.toggleCinematic()
+            if(action === 'pause') this.togglePauseCinematic()
+
+            // Clicking the frame while the story plays pauses it (stories convention)
+            if(!action && this.portal.cinematic && !this.portal.cinematicEnded && _event.target.closest('.project-portal__visual'))
+            {
+                this.togglePauseCinematic()
+            }
 
             const slide = _event.target.closest('[data-portal-slide]')
             if(slide)
@@ -225,6 +247,16 @@ export default class ExperienceDirector
         {
             _event.preventDefault()
             this.closePortal()
+        })
+
+        // Space pauses/resumes the story while the portal has focus
+        this.$portal.addEventListener('keydown', (_event) =>
+        {
+            if(_event.key === ' ' && this.portal.cinematic && !this.portal.cinematicEnded)
+            {
+                _event.preventDefault()
+                this.togglePauseCinematic()
+            }
         })
 
         this.$root.addEventListener('click', (_event) =>
@@ -264,9 +296,18 @@ export default class ExperienceDirector
     {
         if(!_project) return
 
+        window.clearTimeout(this.closingTimeout)
+        this.$portal.classList.remove('is-closing')
+
         this.stopCinematic()
         this.portal.project = _project
         this.portal.slideIndex = 0
+
+        // Fresh session: no stale crossfade frame from the previous project
+        this.currentImageSrc = null
+        this.$portalImagePrevious.classList.remove('is-fading')
+        this.$portalImagePrevious.removeAttribute('src')
+
         this.activateProjectTheme(_project)
         this.renderProject()
         this.setInteractionLock('portal', true)
@@ -275,6 +316,7 @@ export default class ExperienceDirector
         {
             this.$portal.showModal()
         }
+        this.$portal.scrollTop = 0
         document.body.classList.add('has-project-portal')
 
         if(_options.cinematic)
@@ -286,10 +328,29 @@ export default class ExperienceDirector
     closePortal()
     {
         this.stopCinematic()
+
         if(this.$portal.open)
         {
-            this.$portal.close()
+            if(this.config.reducedMotion)
+            {
+                this.$portal.close()
+            }
+            else
+            {
+                // Let the exit animation play before the dialog actually closes
+                this.$portal.classList.add('is-closing')
+                window.clearTimeout(this.closingTimeout)
+                this.closingTimeout = window.setTimeout(() =>
+                {
+                    this.$portal.classList.remove('is-closing')
+                    if(this.$portal.open)
+                    {
+                        this.$portal.close()
+                    }
+                }, 260)
+            }
         }
+
         document.body.classList.remove('has-project-portal')
         this.setInteractionLock('portal', false)
 
@@ -299,6 +360,28 @@ export default class ExperienceDirector
         {
             this.clearProjectTheme()
         }
+    }
+
+    // Dissolve between frames instead of hard-cutting the src swap
+    setPortalImage(_src, _alt)
+    {
+        this.$portalImage.alt = _alt
+
+        if(_src === this.currentImageSrc)
+        {
+            return
+        }
+
+        if(this.currentImageSrc && !this.config.reducedMotion)
+        {
+            this.$portalImagePrevious.src = this.currentImageSrc
+            this.$portalImagePrevious.classList.remove('is-fading')
+            void this.$portalImagePrevious.offsetWidth
+            this.$portalImagePrevious.classList.add('is-fading')
+        }
+
+        this.$portalImage.src = _src
+        this.currentImageSrc = _src
     }
 
     getCinematicScenes(_project)
@@ -364,12 +447,17 @@ export default class ExperienceDirector
             this.$portalContext.textContent = project.details.eyebrow
         }
 
-        this.$portalImage.src = images[this.portal.cinematic ? stage % Math.max(images.length, 1) : slideIndex] || ''
-        this.$portalImage.alt = `${project.name} interface, view ${(this.portal.cinematic ? stage : slideIndex) + 1}`
+        this.setPortalImage(
+            images[this.portal.cinematic ? stage % Math.max(images.length, 1) : slideIndex] || '',
+            `${project.name} interface, view ${(this.portal.cinematic ? stage : slideIndex) + 1}`
+        )
         this.$portalCaption.textContent = this.portal.cinematic ? actLabel : `${project.name} · interface ${slideIndex + 1}`
 
+        // Ghosted chapter numeral behind the story text
+        this.$portalNumeral.textContent = this.portal.cinematic ? (this.actNumerals[stage] || `${stage + 1}`) : ''
+
         this.$portalKicker.textContent = scene ? actLabel : 'The short version'
-        this.$portalTitle.textContent = scene ? scene.title : project.details.problem
+        this.$portalTitleText.textContent = scene ? scene.title : project.details.problem
         this.$portalCopy.textContent = scene ? scene.copy : project.details.built
         this.$portalRole.textContent = project.details.role
         this.$portalStack.textContent = scene ? scene.supporting : project.details.stack
@@ -402,6 +490,7 @@ export default class ExperienceDirector
         else if(this.portal.cinematic) this.$cinematicButton.textContent = 'Stop the story'
         else this.$cinematicButton.textContent = '▶ Play the story'
 
+        this.updatePauseButton()
         this.renderPrototype(project)
     }
 
@@ -478,7 +567,19 @@ export default class ExperienceDirector
             this.portal.cinematicEnded = false
             this.renderProject()
             this.triggerSceneTransition()
-            this.scheduleCinematicAdvance()
+
+            // Manual stepping while paused stays paused on the new act
+            if(this.portal.cinematicPaused)
+            {
+                window.clearTimeout(this.portal.cinematicTimer)
+                this.portal.sceneTimeLeft = this.getSceneDuration()
+            }
+            else
+            {
+                this.scheduleCinematicAdvance()
+            }
+
+            this.sounds.playInterfaceTone('focus')
             return
         }
 
@@ -501,18 +602,23 @@ export default class ExperienceDirector
         this.stopCinematic()
         this.portal.cinematic = true
         this.portal.cinematicEnded = false
+        this.portal.cinematicPaused = false
         this.portal.cinematicStage = 0
         this.renderProject()
         this.triggerSceneTransition()
         this.scheduleCinematicAdvance()
+        this.sounds.playInterfaceTone('reset')
     }
 
-    scheduleCinematicAdvance()
+    scheduleCinematicAdvance(_remaining)
     {
         window.clearTimeout(this.portal.cinematicTimer)
+        this.portal.sceneTimeLeft = typeof _remaining === 'number' ? Math.max(_remaining, 350) : this.getSceneDuration()
+        this.portal.sceneStartedAt = performance.now()
+
         this.portal.cinematicTimer = window.setTimeout(() =>
         {
-            if(!this.portal.cinematic || this.portal.cinematicEnded) return
+            if(!this.portal.cinematic || this.portal.cinematicEnded || this.portal.cinematicPaused) return
 
             const scenes = this.getCinematicScenes(this.portal.project)
             if(this.portal.cinematicStage < scenes.length - 1)
@@ -521,12 +627,43 @@ export default class ExperienceDirector
                 this.renderProject()
                 this.triggerSceneTransition()
                 this.scheduleCinematicAdvance()
+                this.sounds.playInterfaceTone('focus')
             }
             else
             {
                 this.finishCinematic()
             }
-        }, this.getSceneDuration())
+        }, this.portal.sceneTimeLeft)
+    }
+
+    // Pause holds the act on screen so it can actually be read: the timer,
+    // the live progress bar, and the image drift all freeze together
+    togglePauseCinematic()
+    {
+        if(!this.portal.cinematic || this.portal.cinematicEnded) return
+
+        if(this.portal.cinematicPaused)
+        {
+            this.portal.cinematicPaused = false
+            this.scheduleCinematicAdvance(this.portal.sceneTimeLeft)
+        }
+        else
+        {
+            this.portal.cinematicPaused = true
+            window.clearTimeout(this.portal.cinematicTimer)
+            this.portal.cinematicTimer = null
+            this.portal.sceneTimeLeft = Math.max(this.portal.sceneTimeLeft - (performance.now() - this.portal.sceneStartedAt), 350)
+        }
+
+        this.$portal.classList.toggle('is-story-paused', this.portal.cinematicPaused)
+        this.updatePauseButton()
+    }
+
+    updatePauseButton()
+    {
+        const showPause = this.portal.cinematic && !this.portal.cinematicEnded
+        this.$pauseButton.hidden = !showPause
+        this.$pauseButton.textContent = this.portal.cinematicPaused ? '▶ Resume' : '⏸ Pause'
     }
 
     // The story stays on its closing act with a replay offer instead of
@@ -536,7 +673,11 @@ export default class ExperienceDirector
         window.clearTimeout(this.portal.cinematicTimer)
         this.portal.cinematicTimer = null
         this.portal.cinematicEnded = true
+        this.portal.cinematicPaused = false
+        this.$portal.classList.remove('is-story-paused')
         this.renderProject()
+        // Warmer closing tone
+        this.sounds.playInterfaceTone('sleep')
     }
 
     stopCinematic()
@@ -546,7 +687,9 @@ export default class ExperienceDirector
         const wasCinematic = this.portal.cinematic
         this.portal.cinematic = false
         this.portal.cinematicEnded = false
+        this.portal.cinematicPaused = false
         this.portal.cinematicStage = 0
+        this.$portal.classList.remove('is-story-paused')
         if(wasCinematic && this.portal.project)
         {
             this.renderProject()
@@ -640,13 +783,23 @@ export default class ExperienceDirector
 
         const locked = this.locks.size > 0
         document.body.classList.toggle('is-experience-locked', locked)
+
+        const body = this.physics?.car?.chassis?.body
+
         if(locked)
         {
             this.clearControls()
             this.camera.pan.disable()
-            const body = this.physics?.car?.chassis?.body
-            if(body)
+
+            // Capture the pose once; update() re-pins the body to it every tick,
+            // because the raycast-vehicle suspension keeps nudging even a sleeping
+            // chassis (the car used to creep away or teleport during long reads)
+            if(body && !this.lockedCarPose)
             {
+                this.lockedCarPose = {
+                    px: body.position.x, py: body.position.y, pz: body.position.z,
+                    qx: body.quaternion.x, qy: body.quaternion.y, qz: body.quaternion.z, qw: body.quaternion.w
+                }
                 body.velocity.set(0, 0, 0)
                 body.angularVelocity.set(0, 0, 0)
                 body.sleep()
@@ -655,8 +808,52 @@ export default class ExperienceDirector
         else
         {
             this.camera.pan.enable()
-            this.physics?.car?.chassis?.body?.wakeUp()
+
+            // Hand the car back exactly where the visitor left it, holding the
+            // brakes briefly so residual suspension/friction state can't roll it
+            if(body && this.lockedCarPose)
+            {
+                this.applyLockedCarPose(body)
+                this.holdBrakesBriefly()
+            }
+            this.lockedCarPose = null
+            body?.wakeUp()
         }
+    }
+
+    holdBrakesBriefly()
+    {
+        const car = this.physics?.car
+        if(!car || !car.vehicle) return
+
+        const brakeStrength = car.options?.controlsBrakeStrength || 0.45
+
+        for(let i = 0; i < car.vehicle.wheelInfos.length; i++)
+        {
+            car.vehicle.setBrake(brakeStrength, i)
+        }
+
+        window.clearTimeout(this.brakeReleaseTimeout)
+        this.brakeReleaseTimeout = window.setTimeout(() =>
+        {
+            // Only release if the visitor isn't actually braking
+            if(this.controls?.actions?.brake) return
+            for(let i = 0; i < car.vehicle.wheelInfos.length; i++)
+            {
+                car.vehicle.setBrake(0, i)
+            }
+        }, 450)
+    }
+
+    applyLockedCarPose(_body)
+    {
+        const pose = this.lockedCarPose
+        if(!pose) return
+
+        _body.position.set(pose.px, pose.py, pose.pz)
+        _body.quaternion.set(pose.qx, pose.qy, pose.qz, pose.qw)
+        _body.velocity.set(0, 0, 0)
+        _body.angularVelocity.set(0, 0, 0)
     }
 
     clearControls()
@@ -688,6 +885,17 @@ export default class ExperienceDirector
         if(this.locks.size > 0)
         {
             this.clearControls()
+
+            // Keep the car pinned for the whole lock, not just at lock time
+            const body = this.physics?.car?.chassis?.body
+            if(body && this.lockedCarPose)
+            {
+                this.applyLockedCarPose(body)
+                if(body.sleepState !== 2) // CANNON.Body.SLEEPING
+                {
+                    body.sleep()
+                }
+            }
         }
         this.updateReplayPanel()
     }
