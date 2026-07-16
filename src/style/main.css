@@ -637,12 +637,10 @@ html
     transform: scale(0.94);
 }
 
+/* The sound toggle is desktop-only (M key + button); mobile stays clean */
 .experience-hud.is-mobile .experience-hud__button
 {
-    min-width: 38px;
-    min-height: 38px;
-    border-radius: 9px;
-    font-size: 16px;
+    display: none;
 }
 
 .minimap
@@ -1721,29 +1719,13 @@ html
 
 @media (max-width: 768px)
 {
-    .experience-tools
+    /* Power-user tools (X-ray, Replay) and the sound toggle are desktop-only:
+       mobile keeps the screen clear for driving */
+    .experience-tools,
+    .replay-console,
+    .experience-hud__button
     {
-        top: auto;
-        right: 8px;
-        bottom: 8px;
-        left: 8px;
-        justify-content: center;
-        pointer-events: auto;
-    }
-
-    .experience-tools button
-    {
-        flex: 1 1 45%;
-        min-width: 0;
-        padding: 0 7px;
-        font-size: 11px;
-    }
-
-    .replay-console
-    {
-        right: 8px;
-        bottom: 60px;
-        width: calc(100vw - 16px);
+        display: none;
     }
 
     .world-diagnostics
