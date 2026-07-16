@@ -229,8 +229,6 @@ export default class Sounds
         this.engine.ready = false
         this.engine.failed = false
         this.engine.soundId = null
-        this.engine.lastRate = null
-        this.engine.lastVolume = null
 
         this.engine.progress = 0
         this.engine.progressEasingUp = 0.3
@@ -253,17 +251,17 @@ export default class Sounds
         this.engine.sound = new Howl({
             src: ['./sounds/engines/1/low_off.mp3'],
             loop: true,
-            preload: false,
             onload: () =>
             {
-                if(!this.engine.started || this.engine.ready)
+                this.engine.ready = true
+
+                if(!this.engine.started || this.engine.soundId !== null)
                 {
                     return
                 }
 
-                this.engine.ready = true
                 this.engine.soundId = this.engine.sound.play()
-                this.updateEngineSound(true)
+                this.updateEngineSound()
             },
             onloaderror: (_id, _error) =>
             {
@@ -321,14 +319,14 @@ export default class Sounds
         {
             this.engine.ready = true
             this.engine.soundId = this.engine.sound.play()
-            this.updateEngineSound(true)
+            this.updateEngineSound()
             return
         }
 
         this.engine.sound.load()
     }
 
-    updateEngineSound(_force = false)
+    updateEngineSound()
     {
         if(!this.engine.ready || this.engine.soundId === null)
         {
@@ -340,17 +338,10 @@ export default class Sounds
         const volumeAmplitude = this.engine.volume.max - this.engine.volume.min
         const nextVolume = (this.engine.volume.min + volumeAmplitude * this.engine.progress) * this.engine.volume.master
 
-        if(_force || this.engine.lastRate === null || Math.abs(nextRate - this.engine.lastRate) > 0.002)
-        {
-            this.engine.sound.rate(nextRate, this.engine.soundId)
-            this.engine.lastRate = nextRate
-        }
-
-        if(_force || this.engine.lastVolume === null || Math.abs(nextVolume - this.engine.lastVolume) > 0.002)
-        {
-            this.engine.sound.volume(nextVolume, this.engine.soundId)
-            this.engine.lastVolume = nextVolume
-        }
+        // Keep the original continuous modulation. Throttling these values makes
+        // the loop step between pitches, which is audible as clipping or pauses.
+        this.engine.sound.rate(nextRate)
+        this.engine.sound.volume(nextVolume)
     }
 
     add(_options)
@@ -372,7 +363,6 @@ export default class Sounds
         {
             const sound = new Howl({
                 src: [_sound],
-                preload: false,
                 onloaderror: (_id, _error) =>
                 {
                     console.warn(`Sound could not be loaded: ${_sound}`, _error)
@@ -396,18 +386,17 @@ export default class Sounds
             // Find random sound
             const sound = item.sounds[Math.floor(Math.random() * item.sounds.length)]
 
-            // Start the sound once; Howler safely queues these two settings while
-            // a lazily requested clip is loading.
-            const soundId = sound.play()
-
             // Update volume
             let volume = Math.min(Math.max((velocity - item.velocityMin) * item.velocityMultiplier, item.volumeMin), item.volumeMax)
             volume = Math.pow(volume, 2)
-            sound.volume(volume, soundId)
+            sound.volume(volume)
 
             // Update rate
             const rateAmplitude = item.rateMax - item.rateMin
-            sound.rate(item.rateMin + Math.random() * rateAmplitude, soundId)
+            sound.rate(item.rateMin + Math.random() * rateAmplitude)
+
+            // Play
+            sound.play()
 
             // Save last play time
             item.lastTime = time
