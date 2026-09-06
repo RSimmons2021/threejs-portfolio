@@ -1,7 +1,7 @@
 import * as THREE from 'three'
 import CANNON from 'cannon'
 import createGhostF1 from './createGhostF1.js'
-import { SPRINT_GATES, crossedGate, medalFor, readBest, writeBest } from './arcadeRules.js'
+import { SPRINT_GATES, crossedGate, isInsideArcade, medalFor, readBest, writeBest } from './arcadeRules.js'
 
 export default class Arcade
 {
@@ -106,7 +106,7 @@ export default class Arcade
         this.startPads = ['sprint', 'bowling'].map((game, i) =>
         {
             const area = w.areas.add({ position: new THREE.Vector2(-22, i ? -45 : -34), halfExtents: new THREE.Vector2(3, 1.5) })
-            area.on('interact', () => { if(this.state === 'idle') { this.game = game; this.dismissed = false; this.forceMenu = true; this.render(); this.$panel.querySelector(`[data-game="${game}"]`).focus() } })
+            area.on('interact', () => { if(this.state === 'idle') this.start(game) })
             return area
         })
     }
@@ -149,7 +149,7 @@ export default class Arcade
             if(button.dataset.action === 'retry') this.start(this.game)
             if(button.dataset.action === 'exit') this.exit()
             if(button.dataset.action === 'smash') this.world.sections.playground.resetBricks()
-            if(button.dataset.action === 'dismiss') { this.dismissed = true; this.forceMenu = false; this.$panel.hidden = true }
+            if(button.dataset.action === 'dismiss') { this.dismissed = true; this.$panel.hidden = true }
             if(button.dataset.action === 'continue')
             {
                 if(this.state === 'paused') this.beginCountdown()
@@ -233,7 +233,6 @@ export default class Arcade
         this.ghostIndex = 0
         this.lastSample = -1
         this.dismissed = false
-        this.forceMenu = false
         this.bestRun = false
         if(game === 'sprint') this.moveCar(-20, -29, 0)
         else this.prepareFrame()
@@ -295,13 +294,12 @@ export default class Arcade
 
     exit(returnToCourtyard = true)
     {
-        if(this.state === 'idle') { this.forceMenu = false; return }
+        if(this.state === 'idle') { this.$panel.hidden = true; return }
         this.releaseRound()
         this.state = 'idle'
         this.bowling.reset()
         if(returnToCourtyard) this.moveCar(-22, -43, Math.PI)
         this.render()
-        if(returnToCourtyard) this.$panel.querySelector(`[data-game="${this.game}"]`).focus({ preventScroll: true })
     }
 
     finish(success = true)
@@ -346,9 +344,9 @@ export default class Arcade
         this.lastTick = now
         if(this.state === 'idle')
         {
-            const near = this.body.position.x < -17 && this.body.position.x > -59 && this.body.position.y < -25 && this.body.position.y > -58
-            if(!near) this.dismissed = false
-            this.$panel.hidden = !(this.forceMenu || near && !this.dismissed)
+            const inArcade = isInsideArcade(this.body.position)
+            if(!inArcade) this.dismissed = false
+            this.$panel.hidden = !(inArcade && !this.dismissed)
             return
         }
         if(this.state === 'countdown')
@@ -384,8 +382,13 @@ export default class Arcade
                 this.frameTime += dt
                 for(const [i, pin] of this.bowling.pins.items.entries())
                 {
-                    const q = pin.collision.body.quaternion
-                    if(1 - 2 * (q.x * q.x + q.y * q.y) < 0.75) this.knocked.add(i)
+                    const body = pin.collision.body
+                    const q = body.quaternion
+                    const origin = pin.collision.origin.position
+                    const dx = body.position.x - origin.x
+                    const dy = body.position.y - origin.y
+                    // A visible lean counts; players do not need to flatten every pin.
+                    if(1 - 2 * (q.x * q.x + q.y * q.y) < 0.9 || dx * dx + dy * dy > 0.1225) this.knocked.add(i)
                 }
                 if(this.frameTime >= 8 || this.knocked.size === 10 && this.frameTime > 2)
                 {
@@ -404,7 +407,7 @@ export default class Arcade
     render()
     {
         const idle = this.state === 'idle'
-        this.$panel.hidden = false
+        this.$panel.hidden = idle ? !(isInsideArcade(this.body.position) && !this.dismissed) : false
         this.$menu.hidden = !idle
         this.$round.hidden = idle
         this.$panel.querySelector('.arcade-best').textContent = `LOCAL BESTS / Sprint: ${this.best.sprint ? this.best.sprint.toFixed(2) + 's' : 'set the first time'} · Bowling: ${this.best.bowling}/30`

@@ -6,7 +6,6 @@ import Time from './Utils/Time.js'
 import World from './World/index.js'
 import Resources from './Resources.js'
 import Camera from './Camera.js'
-import Journey from './ThreejsJourney.js'
 
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js'
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js'
@@ -40,7 +39,6 @@ export default class Application
         this.setCamera()
         this.setPasses()
         this.setWorld()
-        this.setJourney()
         this.setLifecycle()
         this.startLoading()
     }
@@ -442,18 +440,6 @@ export default class Application
             passes: this.passes
         })
         this.scene.add(this.world.container)
-    }
-
-    /**
-     * Set Journey
-     */
-    setJourney()
-    {
-        this.journey = new Journey({
-            config: this.config,
-            time: this.time,
-            world: this.world
-        })
     }
 
     setLifecycle()

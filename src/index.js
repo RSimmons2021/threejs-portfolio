@@ -1,9 +1,11 @@
+import '@fontsource/archivo-black/latin-400.css'
+import '@fontsource/jetbrains-mono/latin-400.css'
+import '@fontsource/jetbrains-mono/latin-700.css'
 import './style/main.css'
 import Application from './javascript/Application.js'
-import resumePdfUrl from '../assets/Richard_Simmons__Resume.pdf'
+import resumePdfUrl from '../docs/Richard_Simmons_Resume_AI.pdf'
 
-const resumeLink = document.querySelector('.js-app-fallback-resume')
-if(resumeLink)
+for(const resumeLink of document.querySelectorAll('.js-resume'))
 {
     resumeLink.href = resumePdfUrl
 }
@@ -46,9 +48,16 @@ try
     window.application.resources.on('ready', () =>
     {
         startButton.disabled = false
-        startButton.textContent = 'Start your engine ↗'
+        startButton.textContent = 'ENTER SITE'
     })
     startButton.addEventListener('click', () => window.application.world.startingScreen.area.interact())
+    document.addEventListener('keydown', (event) =>
+    {
+        if(event.key !== 'Enter' || event.repeat || startButton.disabled || document.body.classList.contains('has-started')) return
+        if(event.target instanceof Element && event.target.closest('a, button, input, select, textarea')) return
+        event.preventDefault()
+        startButton.click()
+    })
 }
 catch(error)
 {

@@ -5,6 +5,19 @@ export const SPRINT_GATES = [
     { x: 41, y: -35, direction: -1 }, { x: -20, y: -35, direction: -1 }
 ]
 
+export const ARCADE_BOUNDS = Object.freeze({
+    minX: -59,
+    maxX: -17,
+    minY: -58,
+    maxY: -25
+})
+
+export function isInsideArcade(position, bounds = ARCADE_BOUNDS)
+{
+    return position.x >= bounds.minX && position.x <= bounds.maxX &&
+        position.y >= bounds.minY && position.y <= bounds.maxY
+}
+
 // Swept crossing prevents fast cars from skipping a gate between frames.
 export function crossedGate(previous, current, gate)
 {

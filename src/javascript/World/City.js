@@ -2,6 +2,12 @@ import * as THREE from 'three'
 import CANNON from 'cannon'
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 
+const TREE_POSITIONS = [
+    [-6, 1], [6, 1], [-6, -11], [6, -11], [-6, -47], [6, -47],
+    [-6, -61], [25, -40], [49, -40], [73, -40], [97, -40], [121, -40],
+    [145, -40], [-22, -23], [-32, -23], [-44, -23], [-54, -23]
+]
+
 export default class City
 {
     constructor({ resources, materials, physics, time, lighting })
@@ -56,6 +62,19 @@ export default class City
             shape.closePath()
             shadowGeometries.push(new THREE.ShapeGeometry(shape))
         }
+
+        // The Blender trees are part of the merged city mesh, so their trunks
+        // need inexpensive standalone bodies to stop the car cleanly.
+        this.treeBodies = TREE_POSITIONS.map(([x, y]) =>
+        {
+            const body = new CANNON.Body({ mass: 0 })
+            body.addShape(new CANNON.Box(new CANNON.Vec3(0.62, 0.62, 1.3)))
+            body.position.set(x, y, 1.3)
+            body.collisionRole = 'city-tree'
+            physics.world.addBody(body)
+            return body
+        })
+
         if(shadowGeometries.length)
         {
             const shadows = new THREE.Mesh(mergeGeometries(shadowGeometries), new THREE.MeshBasicMaterial({
@@ -66,7 +85,6 @@ export default class City
             shadowGeometries.forEach((geometry) => geometry.dispose())
         }
 
-        this.addSign('MANHATTAN', 'RICHARD SIMMONS / CITY CIRCUIT', 0, 7, 4.2, '#f9cf68')
         for(let i = 0; i < 6; i++)
         {
             this.addSign(`0${i + 1} / PROJECT AVE`, 'PULL IN. TAKE A LOOK.', 30 + i * 24, -23, 4.5, '#97e1dc')

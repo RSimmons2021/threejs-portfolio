@@ -20,7 +20,6 @@ export default class InformationSection
         this.container.matrixAutoUpdate = false
 
         this.setLinks()
-        this.setBio()  // Replaced setActivities with custom bio
         this.setTiles()
     }
 
@@ -133,108 +132,6 @@ export default class InformationSection
 
             i++
         }
-    }
-
-    setBio()
-    {
-        // Set up
-        this.bio = {}
-        this.bio.x = this.x + 0
-        this.bio.y = this.y - 10
-        this.bio.width = 18  // Increased width for longer text
-        this.bio.height = 10  // Increased height for more lines
-
-        // Create canvas texture for bio text
-        const canvas = document.createElement('canvas')
-        canvas.width = 1024
-        canvas.height = 512
-        const context = canvas.getContext('2d')
-
-        // Bio text - Your personal journey
-        const lines = [
-            'RICHARD SIMMONS',
-            'Full-Stack Software Engineer',
-            '',
-            'Passionate about the intersection',
-            'of design and technology.',
-            '',
-            'From Wright State to Toyota to founding',
-            'Zoan Collective - building experiences that matter.'
-        ]
-
-        const lineHeight = 56
-        const startY = 30
-        let texture = null
-
-        const drawBio = () =>
-        {
-            context.clearRect(0, 0, canvas.width, canvas.height)
-
-            // Background
-            context.fillStyle = '#000000'
-            context.fillRect(0, 0, canvas.width, canvas.height)
-
-            // Text
-            context.fillStyle = '#ffffff'
-            context.textAlign = 'center'
-            context.textBaseline = 'middle'
-
-            context.font = '700 52px Amulya, Arial, sans-serif'
-            context.fillText(lines[0], canvas.width / 2, startY)
-
-            context.font = '700 38px Amulya, Arial, sans-serif'
-            context.fillText(lines[1], canvas.width / 2, startY + lineHeight)
-
-            context.font = '400 36px Amulya, Arial, sans-serif'
-            for(let i = 2; i < lines.length; i++) {
-                context.fillText(lines[i], canvas.width / 2, startY + (i * lineHeight))
-            }
-
-            if(texture)
-            {
-                texture.needsUpdate = true
-            }
-        }
-
-        drawBio()
-
-        // Geometry
-        this.bio.geometry = new THREE.PlaneGeometry(this.bio.width, this.bio.height, 1, 1)
-
-        // Texture from canvas
-        texture = new THREE.CanvasTexture(canvas)
-        this.bio.texture = texture
-        this.bio.texture.magFilter = THREE.NearestFilter
-        this.bio.texture.minFilter = THREE.LinearFilter
-
-        if(document.fonts)
-        {
-            Promise.all([
-                document.fonts.load('700 52px Amulya'),
-                document.fonts.load('400 36px Amulya')
-            ]).then(drawBio).catch(() => {})
-        }
-
-        // Material
-        this.bio.material = new THREE.MeshBasicMaterial({
-            wireframe: false,
-            color: 0xffffff,
-            map: this.bio.texture,
-            transparent: true
-        })
-
-        // Mesh
-        this.bio.mesh = new THREE.Mesh(this.bio.geometry, this.bio.material)
-        this.bio.mesh.position.x = this.bio.x
-        this.bio.mesh.position.y = this.bio.y
-        this.bio.mesh.matrixAutoUpdate = false
-        this.bio.mesh.updateMatrix()
-        this.container.add(this.bio.mesh)
-    }
-
-    setActivities()
-    {
-        // Removed - replaced with setBio()
     }
 
     setTiles()

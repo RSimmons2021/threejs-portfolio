@@ -1,6 +1,19 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { SPRINT_GATES, crossedGate, medalFor, readBest, writeBest } from '../src/javascript/World/arcadeRules.js'
+import { ARCADE_BOUNDS, SPRINT_GATES, crossedGate, isInsideArcade, medalFor, readBest, writeBest } from '../src/javascript/World/arcadeRules.js'
+
+test('arcade popup covers the full courtyard while leaving start pads independent', () => {
+    assert.ok(isInsideArcade({ x: -22, y: -34 }))
+    assert.ok(isInsideArcade({ x: -22, y: -45 }))
+    assert.ok(isInsideArcade({ x: -40, y: -30 }))
+    assert.ok(isInsideArcade({ x: -36, y: -55.5 }))
+    assert.ok(isInsideArcade({ x: ARCADE_BOUNDS.minX, y: ARCADE_BOUNDS.minY }))
+    assert.ok(isInsideArcade({ x: ARCADE_BOUNDS.maxX, y: ARCADE_BOUNDS.maxY }))
+    assert.ok(!isInsideArcade({ x: ARCADE_BOUNDS.minX - 0.01, y: -40 }))
+    assert.ok(!isInsideArcade({ x: ARCADE_BOUNDS.maxX + 0.01, y: -40 }))
+    assert.ok(!isInsideArcade({ x: -40, y: ARCADE_BOUNDS.minY - 0.01 }))
+    assert.ok(!isInsideArcade({ x: -40, y: ARCADE_BOUNDS.maxY + 0.01 }))
+})
 
 test('sprint gates require a swept crossing in order and in the correct lane/direction', () => {
     assert.equal(SPRINT_GATES.length, 8)

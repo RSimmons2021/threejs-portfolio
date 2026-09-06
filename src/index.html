@@ -32,12 +32,9 @@
     <meta name="msapplication-TileColor" content="#101716">
     <meta name="theme-color" content="#101716">
 
-    <!-- Critical inline style: keeps the page dark and the journey markup hidden
-         while the CSS/JS bundles load (no white flash, no unstyled text pop-up).
-         .journey.is-active in main.css out-specifies the .journey rule here. -->
+    <!-- Critical inline style prevents a white flash while the bundles load. -->
     <style>
-        html, body { background: #08111a; margin: 0; height: 100%; overflow: hidden; }
-        .journey { display: none; }
+        html, body { background: #16130e; margin: 0; height: 100%; overflow: hidden; }
     </style>
 
     <link rel="icon" href="/favicon/favicon.svg" type="image/svg+xml">
@@ -49,24 +46,28 @@
 <body>
 
     <noscript>
-        <style>.canvas, .journey { display: none; }</style>
-        <div style="max-width: 640px; margin: 60px auto; padding: 0 20px; color: #e8f1f8; font-family: sans-serif;">
+        <style>.canvas { display: none; }</style>
+        <div style="max-width: 640px; margin: 60px auto; padding: 0 20px; color: #e7c98c; font-family: ui-monospace, monospace;">
             <h1>Richard Simmons — Product Designer &amp; Full-Stack Engineer</h1>
             <p>This portfolio is an interactive 3D experience that needs JavaScript. You can still reach me:</p>
-            <p><a style="color:#9fd2ff" href="https://github.com/RSimmons2021">GitHub</a> · <a style="color:#9fd2ff" href="https://www.linkedin.com/in/richard-simmons-a3916958">LinkedIn</a> · <a style="color:#9fd2ff" href="mailto:richard.simmons.dev@gmail.com">Email</a></p>
+            <p><a style="color:#ffb627" href="https://github.com/RSimmons2021">GitHub</a> · <a style="color:#ffb627" href="https://www.linkedin.com/in/richard-simmons-a3916958">LinkedIn</a> · <a style="color:#ffb627" href="mailto:richard.simmons.dev@gmail.com">Email</a></p>
         </div>
     </noscript>
 
     <canvas class="canvas js-canvas"></canvas>
 
     <section class="city-welcome" aria-labelledby="city-welcome-title">
-        <p class="city-welcome__eyebrow">NEW YORK / PORTFOLIO CIRCUIT</p>
-        <h1 id="city-welcome-title">Richard<br>Simmons<span>↗</span></h1>
-        <p class="city-welcome__intro">Design, code, and a little horsepower.</p>
-        <p class="city-welcome__copy">Take an open-wheel ride through my world.<br>Six projects. A city of possibilities.</p>
-        <button class="city-welcome__start js-city-start" type="button" disabled>Building the city…</button>
-        <p class="city-welcome__hint">WASD / ARROWS TO DRIVE · OR TAKE THE TOUR</p>
-        <span class="city-welcome__edition" aria-hidden="true">01 — 06<br>SELECTED WORK</span>
+        <div class="city-welcome__content">
+            <div class="city-welcome__name">
+                <h1 id="city-welcome-title"><span>Richard</span><span>Simmons</span></h1>
+            </div>
+            <p class="city-welcome__copy">A portfolio you drive. Six projects parked around a city block — take a lap.</p>
+            <div class="city-welcome__actions">
+                <button class="city-welcome__start js-city-start" type="button" disabled>LOADING CITY…</button>
+                <a class="city-welcome__resume js-resume" href="#" download="Richard_Simmons_Resume_AI.pdf">RESUME · PDF</a>
+            </div>
+            <p class="city-welcome__hint"><span aria-hidden="true"></span>WASD / ARROW KEYS TO DRIVE</p>
+        </div>
     </section>
 
     <div class="app-status js-app-status" role="status" aria-live="polite" hidden></div>
@@ -78,60 +79,13 @@
             <p class="app-fallback__message js-app-fallback-message">Your browser could not start the interactive portfolio.</p>
             <div class="app-fallback__actions">
                 <button class="app-fallback__button js-app-fallback-retry" type="button">Reload 3D Experience</button>
-                <a class="app-fallback__link js-app-fallback-resume" href="#" download="Richard_Simmons_Resume.pdf">View Résumé</a>
+                <a class="app-fallback__link js-app-fallback-resume js-resume" href="#" download="Richard_Simmons_Resume_AI.pdf">Download Résumé</a>
                 <a class="app-fallback__link" href="https://github.com/RSimmons2021" target="_blank" rel="noopener">GitHub</a>
                 <a class="app-fallback__link" href="https://www.linkedin.com/in/richard-simmons-a3916958" target="_blank" rel="noopener">LinkedIn</a>
                 <a class="app-fallback__link" href="mailto:richard.simmons.dev@gmail.com">Email</a>
             </div>
         </div>
     </section>
-
-    <div class="journey is-hover-none js-journey">
-        <div class="message js-message">
-            <div class="boy">
-                <div class="variant is-hi">
-                    <div class="body"></div>
-                    <div class="arm js-boy-arm"></div>
-                </div>
-                <div class="variant is-yay"></div>
-                <div class="variant is-shrugging"></div>
-            </div>
-            <div class="bubble">
-                <div class="text">Hey there! Glad you stopped by.</div>
-                <div class="tip"></div>
-            </div>
-        </div>
-        <div class="message js-message">
-            <div class="bubble">
-                <div class="text">I got hooked on design and tech after reading Steve Jobs' autobiography. Been chasing that sweet spot where the two meet ever since.</div>
-                <div class="tip"></div>
-            </div>
-        </div>
-        <div class="message js-message">
-            <div class="bubble">
-                <div class="text">Went from Wright State to Toyota, then started Zoan Collective. Basically I just love building cool stuff that people actually want to use.</div>
-                <div class="tip"></div>
-            </div>
-        </div>
-        <div class="message js-message is-answers">
-            <a href="#" class="answer is-no js-no">
-                <span class="background"></span>
-                <span class="hover"></span>
-                <span class="label">Keep exploring</span>
-            </a>
-            <a href="https://github.com/RSimmons2021" target="_blank" rel="noopener" class="answer is-yes js-yes">
-                <span class="background"></span>
-                <span class="hover"></span>
-                <span class="label">View my work</span>
-            </a>
-        </div>
-        <div class="message js-message">
-            <div class="bubble">
-                <div class="text">Nice! Take it for a spin and check out my projects. Have fun!</div>
-                <div class="tip"></div>
-            </div>
-        </div>
-    </div>
 
     <script type="module" src="./index.js"></script>
 

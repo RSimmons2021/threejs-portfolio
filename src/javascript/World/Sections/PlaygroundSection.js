@@ -14,11 +14,13 @@ export default class PlaygroundSection
     setBowling()
     {
         this.bowling = { pins: { items: [] } }
-        // Compound collider matches the new 1.6-unit Blender pin, not the
-        // retired taller asset. A low center of mass keeps upright pins stable.
+        // Compound collider matches the new 1.6-unit Blender pin. Its slim
+        // midsection lets the ball catch high enough to create a clean topple.
         const pinCollision = new THREE.Group()
         for(const [name,x,y,z,sx,sy,sz] of [
-            ['center',0,0,.55,1,1,1], ['cylinder',0,0,.45,.34,.34,.9],
+            // The slim body lets the ball contact the pin's upper collider and
+            // create a satisfying topple instead of simply shoving its base.
+            ['center',0,0,.55,1,1,1], ['cylinder',0,0,.45,.22,.22,.9],
             ['sphere',0,0,1.35,.24,.24,.24]
         ])
         {
@@ -30,19 +32,22 @@ export default class PlaygroundSection
         }
         for(let row = 0; row < 4; row++) for(let col = 0; col <= row; col++)
         {
-            this.bowling.pins.items.push(this.objects.add({
+            const pin = this.objects.add({
                 base: this.resources.items.arcadePin.scene,
                 collision: pinCollision,
                 offset: new THREE.Vector3(-46 - row * 0.8, -45 + (col - row / 2) * 1.1, 0.1),
-                rotation: new THREE.Euler(), duplicated: true, mass: 0.1,
+                rotation: new THREE.Euler(), duplicated: true, mass: 0.035,
                 shadow: { sizeX: 1.4, sizeY: 1.4, offsetZ: -0.1, alpha: 0.35 }, soundName: 'bowlingPin'
-            }))
+            })
+            pin.collision.body.linearDamping = 0.01
+            pin.collision.body.angularDamping = 0.01
+            this.bowling.pins.items.push(pin)
         }
         this.bowling.ball = this.objects.add({
             base: this.resources.items.bowlingBallBase.scene,
             collision: this.resources.items.bowlingBallCollision.scene,
             offset: new THREE.Vector3(-29, -45, 0), rotation: new THREE.Euler(Math.PI / 2, 0, 0),
-            duplicated: true, mass: 1, soundName: 'bowlingBall',
+            duplicated: true, mass: 2, soundName: 'bowlingBall',
             shadow: { sizeX: 1.5, sizeY: 1.5, offsetZ: -0.1, alpha: 0.35 }
         })
         this.bowling.reset = () =>
