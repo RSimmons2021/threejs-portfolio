@@ -45,7 +45,7 @@ export default class Project
         this.boards.xStart = - 5
         this.boards.xInter = 5
         this.boards.y = 5
-        this.boards.color = '#8e7161'
+        this.boards.color = this.theme.accent || '#f8d665'
         this.boards.threeColor = new THREE.Color(this.boards.color)
 
         if(this.debug)
@@ -85,7 +85,7 @@ export default class Project
                 // board.texture.magFilter = THREE.NearestFilter
                 // board.texture.minFilter = THREE.LinearFilter
                 board.texture.anisotropy = 4
-                // board.texture.colorSpace = THREE.SRGBColorSpace
+                board.texture.colorSpace = THREE.SRGBColorSpace
                 board.texture.needsUpdate = true
 
                 board.planeMesh.material.uniforms.uTexture.value = board.texture
@@ -105,6 +105,17 @@ export default class Project
             board.planeMesh.material.uniforms.uColor.value = this.boards.threeColor
             board.planeMesh.material.uniforms.uTextureAlpha.value = 0
             this.container.add(board.planeMesh)
+
+            const frame = new THREE.LineSegments(
+                new THREE.EdgesGeometry(board.planeMesh.geometry),
+                new THREE.LineBasicMaterial({ color: this.boards.color })
+            )
+            frame.position.copy(board.planeMesh.position)
+            frame.quaternion.copy(board.planeMesh.quaternion)
+            frame.scale.copy(board.planeMesh.scale).multiplyScalar(1.015)
+            frame.updateMatrix()
+            frame.matrixAutoUpdate = false
+            this.container.add(frame)
 
             // Save
             this.boards.items.push(board)

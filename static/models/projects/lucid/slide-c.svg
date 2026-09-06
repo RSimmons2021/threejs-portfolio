@@ -1,18 +1,15 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="675" viewBox="0 0 1200 675">
-  <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#101827"/>
-      <stop offset="1" stop-color="#0fb6aa"/>
-    </linearGradient>
-  </defs>
-  <rect width="1200" height="675" fill="url(#bg)"/>
-  <rect x="150" y="96" width="900" height="484" rx="46" fill="#f8fbff" opacity="0.95"/>
-  <rect x="208" y="166" width="288" height="344" rx="32" fill="#14213a"/>
-  <rect x="552" y="166" width="442" height="72" rx="22" fill="#dfe9f7"/>
-  <rect x="552" y="278" width="360" height="34" rx="17" fill="#b7c9df"/>
-  <rect x="552" y="336" width="398" height="34" rx="17" fill="#b7c9df"/>
-  <rect x="552" y="394" width="290" height="34" rx="17" fill="#b7c9df"/>
-  <circle cx="352" cy="338" r="108" fill="#31d8c8"/>
-  <path d="M316 338 C340 284 365 284 388 338 S438 392 466 338" fill="none" stroke="#ffffff" stroke-width="14" stroke-linecap="round"/>
-  <text x="208" y="624" fill="#ffffff" font-family="Amulya, Arial, sans-serif" font-size="34" font-weight="700">Audio-first interface for intent-driven listening.</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="700" viewBox="0 0 1200 700">
+<title>Lucid — Your next listening ritual.</title>
+<defs><pattern id="dots" width="18" height="18" patternUnits="userSpaceOnUse"><circle cx="4" cy="4" r="2" fill="#172334" opacity=".13"/></pattern></defs>
+<rect width="1200" height="700" fill="#c9b6ff"/>
+<path d="M671 0h529v700H563z" fill="#80e3e5"/><path d="M690 0h510v700H582z" fill="url(#dots)"/>
+<rect x="18" y="18" width="1164" height="664" rx="6" fill="none" stroke="#172334" stroke-width="8"/>
+<rect x="52" y="49" width="281" height="49" rx="24" fill="#172334"/><text x="76" y="82" font-family="Arial, Helvetica, sans-serif" font-size="21" font-weight="900" fill="#c9b6ff" >SELECTED WORK / 05</text>
+<text x="1140" y="84" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="900" fill="#172334" text-anchor="end">03 — 03</text>
+<text x="64" y="166" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="900" fill="#172334" >AI AUDIO PRODUCT</text><text x="64" y="263" font-family="Arial, Helvetica, sans-serif" font-size="68.33333333333333" font-weight="900" fill="#172334" >LESS SCROLL.</text><text x="64" y="348" font-family="Arial, Helvetica, sans-serif" font-size="76" font-weight="900" fill="#172334" >MORE SOUL.</text>
+<text x="64" y="421" font-family="Arial, Helvetica, sans-serif" font-size="25" font-weight="900" fill="#172334" >LUCID</text>
+<circle cx="919" cy="324" r="146" fill="#172334"/><circle cx="901" cy="306" r="146" fill="#80e3e5" stroke="#172334" stroke-width="9" stroke-linejoin="round"/><path d="M957 184a120 120 0 1 0 83 180 126 126 0 0 1-83-180" fill="#fff6df" stroke="#172334" stroke-width="9" stroke-linejoin="round"/><path d="M763 395.1393749097051v99.72125018058976" stroke="#172334" stroke-width="13" stroke-linecap="round"/><path d="M791 425.4152825846519v39.169434830696176" stroke="#172334" stroke-width="13" stroke-linecap="round"/><path d="M819 430.9308410232209v28.13831795355821" stroke="#172334" stroke-width="13" stroke-linecap="round"/><path d="M847 402.5298607668799v84.94027846624022" stroke="#172334" stroke-width="13" stroke-linecap="round"/><path d="M875 387.359835388838v115.28032922232397" stroke="#172334" stroke-width="13" stroke-linecap="round"/><path d="M903 410.60400390271917v68.79199219456162" stroke="#172334" stroke-width="13" stroke-linecap="round"/><path d="M931 433.6755191035533v22.648961792893424" stroke="#172334" stroke-width="13" stroke-linecap="round"/><path d="M959 418.27414963180263v53.45170073639471" stroke="#172334" stroke-width="13" stroke-linecap="round"/><path d="M987 389.9671808992396v110.06563820152077" stroke="#172334" stroke-width="13" stroke-linecap="round"/><path d="M1015 395.7460411717099v98.50791765658015" stroke="#172334" stroke-width="13" stroke-linecap="round"/><path d="M1043 426.0174426437359v37.965114712528234" stroke="#172334" stroke-width="13" stroke-linecap="round"/><path d="M1020 142v70m-35-35h70M748 442v48m-24-24h48" stroke="#172334" stroke-width="8"/>
+<path d="M51 565h1098" stroke="#172334" stroke-width="5"/>
+<text x="64" y="612" font-family="Arial, Helvetica, sans-serif" font-size="25" font-weight="900" fill="#172334" >Your next listening ritual.</text><text x="64" y="650" font-family="Arial, Helvetica, sans-serif" font-size="17" font-weight="900" fill="#172334" >STEP INSIDE THE PROJECT ↗</text>
+<circle cx="1100" cy="620" r="32" fill="#172334"/><path d="M1087 633l27-27m-25 0h25v25" fill="none" stroke="#c9b6ff" stroke-width="6"/>
 </svg>

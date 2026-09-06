@@ -101,10 +101,21 @@ export default class PlaygroundSection
 
     setStatic()
     {
+        // Preserve the game's rails and goal; retire scenery and its colliders.
+        const base = this.resources.items.playgroundStaticBase.scene
+        const collision = this.resources.items.playgroundStaticCollision.scene
+        const keepMeshes = new Set(['shadeBeige', 'shadeRed_003', 'shadeRed_004', 'shadeBrown059'])
+        base.children.slice().forEach((mesh) =>
+        {
+            const size = new THREE.Box3().setFromObject(mesh).getSize(new THREE.Vector3())
+            const isRail = size.x > 20 && size.y < 1
+            if(!keepMeshes.has(mesh.name) && !isRail) base.remove(mesh)
+        })
+        const keepBodies = new Set(['Cube069', 'Cube070', 'Cube090', 'Cube091', 'Cube092', 'Cube093'])
+        collision.children.slice().forEach((body) => { if(!keepBodies.has(body.name)) collision.remove(body) })
         this.objects.add({
             base: this.resources.items.playgroundStaticBase.scene,
             collision: this.resources.items.playgroundStaticCollision.scene,
-            floorShadowTexture: this.resources.items.playgroundStaticFloorShadowTexture,
             offset: new THREE.Vector3(this.x, this.y, 0),
             mass: 0
         })

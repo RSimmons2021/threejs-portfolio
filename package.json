@@ -4,6 +4,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "assets:billboards": "node scripts/build-billboards.mjs",
+    "test:assets": "node --test scripts/assets.test.mjs",
     "build": "vite build"
   },
   "devDependencies": {

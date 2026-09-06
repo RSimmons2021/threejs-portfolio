@@ -1,4 +1,5 @@
 import CANNON from 'cannon'
+import projects from './Sections/projectCatalog.js'
 
 export default class GuidedTour
 {
@@ -10,7 +11,7 @@ export default class GuidedTour
         this.ghostCar = _options.ghostCar
 
         this.targets = [
-            { id: 'intro', label: 'Intro', x: 0, y: 2, z: 3, heading: - Math.PI * 0.5, cameraAngle: 'default', zoom: 0.42 },
+            { id: 'intro', label: 'Intro', x: 0, y: 2, z: 3, heading: - Math.PI * 0.5, cameraAngle: 'default', zoom: 0.8 },
             { id: 'projects', label: 'Projects', x: 30, y: - 30, z: 3, heading: 0, cameraAngle: 'projects', zoom: 0.3 },
             { id: 'about', label: 'About', x: 1.2, y: - 54, z: 3, heading: - Math.PI * 0.5, cameraAngle: 'default', zoom: 0.42 },
             { id: 'play', label: 'Play', x: - 22, y: - 36, z: 3, heading: 0, cameraAngle: 'default', zoom: 0.5 }
@@ -28,7 +29,17 @@ export default class GuidedTour
             <button class="guided-tour__button" type="button" data-tour-target="${_target.id}">
                 ${_target.label}
             </button>
-        `).join('')
+        `).join('') + `
+            <select class="guided-tour__project" aria-label="Jump to a project">
+                <option value="">Choose a project</option>
+                ${projects.map((project, index) => `<option value="${index}">0${index + 1} / ${project.name}</option>`).join('')}
+            </select>
+        `
+        this.$element.querySelector('select').addEventListener('change', (event) =>
+        {
+            if(event.target.value === '') return
+            this.goTo({ id: 'projects', x: 30 + Number(event.target.value) * 24, y: -30, z: 2, heading: 0, cameraAngle: 'projects', zoom: 0.3 })
+        })
 
         this.$element.addEventListener('click', (_event) =>
         {

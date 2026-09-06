@@ -18,11 +18,11 @@ export default class Minimap
         }
 
         // World bounds covering every section (world units)
-        this.bounds = { minX: - 58, maxX: 88, minY: - 68, maxY: 16 }
+        this.bounds = { minX: - 58, maxX: 170, minY: - 68, maxY: 24 }
 
         this.sections = [
             { x: 0, y: 0, label: 'Start' },
-            { x: 54, y: - 30, label: 'Projects' },
+            { x: 90, y: - 30, label: 'Projects 01–06' },
             { x: 1.2, y: - 55, label: 'About' },
             { x: - 38, y: - 34, label: 'Play' }
         ]

@@ -18,20 +18,9 @@ export default class CrossroadsSection
         this.container = new THREE.Object3D()
         this.container.matrixAutoUpdate = false
 
-        this.setStatic()
         this.setTiles()
     }
 
-    setStatic()
-    {
-        this.objects.add({
-            base: this.resources.items.crossroadsStaticBase.scene,
-            collision: this.resources.items.crossroadsStaticCollision.scene,
-            floorShadowTexture: this.resources.items.crossroadsStaticFloorShadowTexture,
-            offset: new THREE.Vector3(this.x, this.y, 0),
-            mass: 0
-        })
-    }
 
     setTiles()
     {

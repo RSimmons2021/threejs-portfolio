@@ -34,6 +34,7 @@ export default class Floor
         // Keep one texture and update bytes in place to avoid allocations
         this.backgroundData = new Uint8Array(2 * 2 * 4)
         this.backgroundTexture = new THREE.DataTexture(this.backgroundData, 2, 2)
+        this.backgroundTexture.colorSpace = THREE.SRGBColorSpace
         this.backgroundTexture.magFilter = THREE.LinearFilter
         this.backgroundTexture.minFilter = THREE.LinearFilter
         this.backgroundTexture.needsUpdate = true

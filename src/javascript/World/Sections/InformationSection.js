@@ -1,4 +1,5 @@
 import * as THREE from 'three'
+import CANNON from 'cannon'
 
 export default class InformationSection
 {
@@ -18,65 +19,23 @@ export default class InformationSection
         this.container = new THREE.Object3D()
         this.container.matrixAutoUpdate = false
 
-        this.setStatic()
-        this.setBaguettes()
         this.setLinks()
         this.setBio()  // Replaced setActivities with custom bio
         this.setTiles()
     }
 
-    setStatic()
-    {
-        this.objects.add({
-            base: this.resources.items.informationStaticBase.scene,
-            collision: this.resources.items.informationStaticCollision.scene,
-            floorShadowTexture: this.resources.items.informationStaticFloorShadowTexture,
-            offset: new THREE.Vector3(this.x, this.y, 0),
-            mass: 0
-        })
-    }
 
-    setBaguettes()
-    {
-        this.baguettes = {}
-
-        this.baguettes.x = - 4
-        this.baguettes.y = 6
-
-        this.baguettes.a = this.objects.add({
-            base: this.resources.items.informationBaguetteBase.scene,
-            collision: this.resources.items.informationBaguetteCollision.scene,
-            offset: new THREE.Vector3(this.x + this.baguettes.x - 0.56, this.y + this.baguettes.y - 0.666, 0.2),
-            rotation: new THREE.Euler(0, 0, - Math.PI * 37 / 180),
-            duplicated: true,
-            shadow: { sizeX: 0.6, sizeY: 3.5, offsetZ: - 0.15, alpha: 0.35 },
-            mass: 1.5,
-            // soundName: 'woodHit'
-        })
-
-        this.baguettes.b = this.objects.add({
-            base: this.resources.items.informationBaguetteBase.scene,
-            collision: this.resources.items.informationBaguetteCollision.scene,
-            offset: new THREE.Vector3(this.x + this.baguettes.x - 0.8, this.y + this.baguettes.y - 2, 0.5),
-            rotation: new THREE.Euler(0, - 0.5, Math.PI * 60 / 180),
-            duplicated: true,
-            shadow: { sizeX: 0.6, sizeY: 3.5, offsetZ: - 0.15, alpha: 0.35 },
-            mass: 1.5,
-            sleep: false,
-            // soundName: 'woodHit'
-        })
-    }
 
     setLinks()
     {
         // Set up
         this.links = {}
-        this.links.x = 1.95
+        this.links.x = 6.8
         this.links.y = - 1.5
         this.links.halfExtents = {}
         this.links.halfExtents.x = 1
         this.links.halfExtents.y = 1
-        this.links.distanceBetween = 2.4
+        this.links.distanceBetween = 4
         this.links.labelWidth = this.links.halfExtents.x * 2 + 1
         this.links.labelGeometry = new THREE.PlaneGeometry(this.links.labelWidth, this.links.labelWidth * 0.25, 1, 1)
         this.links.labelOffset = - 1.6
@@ -90,18 +49,22 @@ export default class InformationSection
         this.links.options = [
             {
                 href: 'https://github.com/RSimmons2021',
+                kind: 'github', label: 'GitHub',
                 labelTexture: this.resources.items.informationContactGithubLabelTexture
             },
             {
                 href: 'https://www.linkedin.com/in/richard-simmons-a3916958',
+                kind: 'linkedin', label: 'LinkedIn',
                 labelTexture: this.resources.items.informationContactLinkedinLabelTexture
             },
             {
                 href: 'mailto:richard.simmons.dev@gmail.com',
+                kind: 'email', label: 'Email',
                 labelTexture: this.resources.items.informationContactMailLabelTexture
             },
             {
                 href: 'https://richard-simmons-portfolio.vercel.app',
+                kind: 'portfolio', label: 'Portfolio',
                 labelTexture: this.resources.items.informationContactTwitterLabelTexture
             }
         ]
@@ -123,7 +86,7 @@ export default class InformationSection
             })
             item.area.on('interact', () =>
             {
-                window.open(_option.href, '_blank')
+                window.open(_option.href, '_blank', 'noopener')
             })
 
             // Texture
@@ -138,6 +101,32 @@ export default class InformationSection
             item.labelMesh.matrixAutoUpdate = false
             item.labelMesh.updateMatrix()
             this.links.container.add(item.labelMesh)
+
+            const landmark = this.objects.getConvertedMesh(this.resources.items[`link${_option.kind}`].scene.children, { duplicated: true })
+            landmark.name = `${_option.label} link landmark`
+            landmark.position.set(item.x, item.y + 2.8, 0)
+            this.links.container.add(landmark)
+            const body = new CANNON.Body({ mass: 0 })
+            body.addShape(new CANNON.Box(new CANNON.Vec3(0.95, 0.3, 1.15)))
+            body.position.set(item.x, item.y + 2.8, 1.15)
+            this.objects.physics.world.addBody(body)
+            const canvas = document.createElement('canvas')
+            canvas.width = 512
+            canvas.height = 128
+            const ctx = canvas.getContext('2d')
+            ctx.fillStyle = '#063e30'
+            ctx.fillRect(0, 0, 512, 128)
+            ctx.strokeStyle = '#f5faf3'
+            ctx.lineWidth = 5
+            ctx.strokeRect(7, 7, 498, 114)
+            ctx.fillStyle = '#f5faf3'
+            ctx.font = 'bold 58px sans-serif'
+            ctx.textAlign = 'center'
+            ctx.fillText(_option.label, 256, 84)
+            const texture = new THREE.CanvasTexture(canvas)
+            texture.colorSpace = THREE.SRGBColorSpace
+            item.labelMesh.material.dispose()
+            item.labelMesh.material = new THREE.MeshBasicMaterial({ map: texture, depthWrite: false })
 
             // Save
             this.links.items.push(item)

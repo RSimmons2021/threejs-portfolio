@@ -172,10 +172,12 @@ export default class Application
         const touchDevice = coarsePointer || navigator.maxTouchPoints > 0
 
         this.performance = {}
-        this.performance.minDpr = 1
-        this.performance.maxDpr = touchDevice ? 1.5 : 2
+        // Never supersample a standard-density display. Allow the 3D canvas
+        // to scale down on integrated GPUs; the DOM stays native-resolution.
+        this.performance.minDpr = 0.75
+        this.performance.maxDpr = Math.min(window.devicePixelRatio, touchDevice ? 1.25 : 1.5)
         this.performance.currentDpr = Math.min(window.devicePixelRatio, this.performance.maxDpr)
-        this.performance.sampleSize = 120
+        this.performance.sampleSize = 90
         this.performance.samples = []
     }
 
@@ -315,6 +317,10 @@ export default class Application
         this.passes.verticalBlurPass.material.uniforms.uResolution.value = new THREE.Vector2(this.sizes.viewport.width, this.sizes.viewport.height)
         this.passes.verticalBlurPass.material.uniforms.uStrength.value = new THREE.Vector2(0, this.passes.verticalBlurPass.strength)
 
+        // Crisp cel silhouettes, with two fewer fullscreen passes per frame.
+        this.passes.horizontalBlurPass.enabled = false
+        this.passes.verticalBlurPass.enabled = false
+
         // Debug
         if(this.debug)
         {
@@ -331,8 +337,7 @@ export default class Application
         this.passes.screenFxPass.material.uniforms.uGlowPosition.value = new THREE.Vector2(0, 0.25)
         this.passes.screenFxPass.material.uniforms.uGlowRadius.value = 0.7
         this.passes.screenFxPass.material.uniforms.uGlowColor.value = new THREE.Color(this.passes.screenFxPass.color)
-        this.passes.screenFxPass.material.uniforms.uGlowColor.value.convertLinearToSRGB()
-        this.passes.screenFxPass.material.uniforms.uGlowAlpha.value = 0.55
+        this.passes.screenFxPass.material.uniforms.uGlowAlpha.value = 0.2
         this.passes.screenFxPass.material.uniforms.uVignetteIntensity.value = 0.35
         this.passes.screenFxPass.material.uniforms.uVignetteSmoothness.value = 0.65
         this.passes.screenFxPass.material.uniforms.uFogColor.value = new THREE.Color('#c3cad4')
@@ -375,11 +380,11 @@ export default class Application
                 this.performance.samples.length = 0
 
                 let nextDpr = this.performance.currentDpr
-                if(averageDelta > 24)
+                if(averageDelta > 21)
                 {
                     nextDpr = Math.max(this.performance.minDpr, this.performance.currentDpr - 0.1)
                 }
-                else if(averageDelta < 18)
+                else if(averageDelta < 17)
                 {
                     nextDpr = Math.min(this.performance.maxDpr, this.performance.currentDpr + 0.1)
                 }
@@ -393,9 +398,6 @@ export default class Application
                     this.passes.composer.setSize(this.sizes.viewport.width, this.sizes.viewport.height)
                 }
             }
-
-            this.passes.horizontalBlurPass.enabled = this.passes.horizontalBlurPass.material.uniforms.uStrength.value.x > 0
-            this.passes.verticalBlurPass.enabled = this.passes.verticalBlurPass.material.uniforms.uStrength.value.y > 0
 
             // Ground-mist reconstruction uniforms (world-anchored fog in ScreenFx)
             const screenFxUniforms = this.passes.screenFxPass.material.uniforms

@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="700" viewBox="0 0 1200 700">
+<title>DeepSeek Harness Desktop — Connect the pieces. Extend the workspace.</title>
+<defs><pattern id="dots" width="18" height="18" patternUnits="userSpaceOnUse"><circle cx="4" cy="4" r="2" fill="#172334" opacity=".13"/></pattern></defs>
+<rect width="1200" height="700" fill="#a6baff"/>
+<path d="M671 0h529v700H563z" fill="#b5f0e6"/><path d="M690 0h510v700H582z" fill="url(#dots)"/>
+<rect x="18" y="18" width="1164" height="664" rx="6" fill="none" stroke="#172334" stroke-width="8"/>
+<rect x="52" y="49" width="281" height="49" rx="24" fill="#172334"/><text x="76" y="82" font-family="Arial, Helvetica, sans-serif" font-size="21" font-weight="900" fill="#a6baff" >SELECTED WORK / 03</text>
+<text x="1140" y="84" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="900" fill="#172334" text-anchor="end">02 — 03</text>
+<text x="64" y="166" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="900" fill="#172334" >OPEN-SOURCE AGENT WORKSPACE</text><text x="64" y="263" font-family="Arial, Helvetica, sans-serif" font-size="76" font-weight="900" fill="#172334" >EVERYTHING</text><text x="64" y="348" font-family="Arial, Helvetica, sans-serif" font-size="68.33333333333333" font-weight="900" fill="#172334" >IS A PLUGIN.</text>
+<text x="64" y="421" font-family="Arial, Helvetica, sans-serif" font-size="25" font-weight="900" fill="#172334" >DEEPSEEK HARNESS DESKTOP</text>
+<rect x="744" y="198" width="349" height="240" rx="22" fill="#172334"/><rect x="726" y="181" width="349" height="240" rx="22" fill="#fff6df" stroke="#172334" stroke-width="9" stroke-linejoin="round"/><path d="M726 231h349" stroke="#172334" stroke-width="9" stroke-linejoin="round"/><circle cx="753" cy="207" r="7" fill="#172334"/><circle cx="778" cy="207" r="7" fill="#172334"/><path d="M810 288l-33 28 33 28m77-56 33 28-33 28" fill="none" stroke="#172334" stroke-width="13"/><path d="M842 342l17-58" stroke="#172334" stroke-width="9"/><rect x="985" y="331" width="98" height="101" rx="12" fill="#b5f0e6" stroke="#172334" stroke-width="9" stroke-linejoin="round"/><path d="M1009 331v-28m45 28v-28M1034 432v48" stroke="#172334" stroke-width="10"/><path d="M859 427v52h116" fill="none" stroke="#172334" stroke-width="9" stroke-linejoin="round"/><path d="M1020 142v70m-35-35h70M748 442v48m-24-24h48" stroke="#172334" stroke-width="8"/>
+<path d="M51 565h1098" stroke="#172334" stroke-width="5"/>
+<text x="64" y="612" font-family="Arial, Helvetica, sans-serif" font-size="25" font-weight="900" fill="#172334" >Connect the pieces. Extend the workspace.</text><text x="64" y="650" font-family="Arial, Helvetica, sans-serif" font-size="17" font-weight="900" fill="#172334" >EXPLORE THE REPOSITORY ↗</text>
+<circle cx="1100" cy="620" r="32" fill="#172334"/><path d="M1087 633l27-27m-25 0h25v25" fill="none" stroke="#a6baff" stroke-width="6"/>
+</svg>

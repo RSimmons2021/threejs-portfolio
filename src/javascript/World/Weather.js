@@ -50,8 +50,8 @@ export default class Weather
         this.values = { ...this.states.clear }
 
         // Fog colors (blended by time of day)
-        this.fogDayColor = new THREE.Color('#c3cad4')
-        this.fogNightColor = new THREE.Color('#46536e')
+        this.fogDayColor = new THREE.Color('#91bdcd')
+        this.fogNightColor = new THREE.Color('#536b9a')
         this.fogColor = new THREE.Color()
 
         this.setRain()
@@ -191,6 +191,22 @@ export default class Weather
         this.rain.points.frustumCulled = false
         this.rain.points.visible = false
         this.container.add(this.rain.points)
+
+        // World-space streaks retain their direction as the camera moves.
+        this.rain.streakGeometry = new THREE.BufferGeometry()
+        this.rain.streakPositions = new Float32Array(this.rain.count * 6)
+        this.rain.streakGeometry.setAttribute('position', new THREE.BufferAttribute(this.rain.streakPositions, 3).setUsage(THREE.DynamicDrawUsage))
+        this.rain.streakMaterial = new THREE.LineBasicMaterial({ color: '#abdfea', transparent: true, opacity: 0, depthWrite: false })
+        this.rain.streaks = new THREE.LineSegments(this.rain.streakGeometry, this.rain.streakMaterial)
+        this.rain.streaks.frustumCulled = false
+        this.rain.streaks.visible = false
+        this.container.add(this.rain.streaks)
+        this.rain.splashMaterial = new THREE.MeshBasicMaterial({ color: '#8edfea', transparent: true, opacity: 0, depthWrite: false, side: THREE.DoubleSide })
+        this.rain.splashes = new THREE.InstancedMesh(new THREE.RingGeometry(0.82, 1, 12), this.rain.splashMaterial, 64)
+        this.rain.splashes.frustumCulled = false
+        this.rain.splashes.visible = false
+        this.rain.splashTransform = new THREE.Object3D()
+        this.container.add(this.rain.splashes)
     }
 
     updateRain(_rainValue)
@@ -210,7 +226,11 @@ export default class Weather
         this.rain.material.opacity += (targetOpacity - this.rain.material.opacity) * 0.06
 
         const visible = this.rain.material.opacity > 0.01
-        this.rain.points.visible = visible
+        this.rain.points.visible = visible && isSnow
+        this.rain.streaks.visible = visible && !isSnow
+        this.rain.splashes.visible = visible && !isSnow
+        this.rain.streakMaterial.opacity = this.rain.material.opacity * 0.8
+        this.rain.splashMaterial.opacity = this.rain.material.opacity * 0.4
 
         if(!visible)
         {
@@ -223,6 +243,8 @@ export default class Weather
         {
             this.rain.points.position.x = chassisBody.position.x
             this.rain.points.position.y = chassisBody.position.y
+            this.rain.streaks.position.copy(this.rain.points.position)
+            this.rain.splashes.position.copy(this.rain.points.position)
         }
 
         // Fall and recycle (snow drifts down slowly and sways sideways)
@@ -240,6 +262,11 @@ export default class Weather
                 positions[i * 3 + 0] += Math.sin(elapsed * 1.2 + i * 1.7) * 0.35 * deltaSeconds
                 positions[i * 3 + 1] += Math.cos(elapsed * 0.9 + i * 2.3) * 0.3 * deltaSeconds
             }
+            else
+            {
+                positions[i * 3] += (1.2 + Math.sin(elapsed * 0.4) * 0.6) * deltaSeconds
+                positions[i * 3 + 1] += 0.35 * deltaSeconds
+            }
 
             if(positions[i * 3 + 2] < 0)
             {
@@ -249,6 +276,29 @@ export default class Weather
             }
         }
 
+        if(!isSnow)
+        {
+            const streak = this.rain.streakPositions
+            for(let i = 0; i < this.rain.count; i++)
+            {
+                streak[i * 6] = positions[i * 3]
+                streak[i * 6 + 1] = positions[i * 3 + 1]
+                streak[i * 6 + 2] = positions[i * 3 + 2]
+                streak[i * 6 + 3] = positions[i * 3] - 0.08
+                streak[i * 6 + 4] = positions[i * 3 + 1] - 0.035
+                streak[i * 6 + 5] = positions[i * 3 + 2] + 0.45 + (i % 4) * 0.13
+            }
+            this.rain.streakGeometry.attributes.position.needsUpdate = true
+            for(let i = 0; i < 64; i++)
+            {
+                const phase = (elapsed * 1.5 + i * 0.618) % 1
+                this.rain.splashTransform.position.set(((i * 7.31) % 26) - 13, ((i * 11.17) % 26) - 13, 0.06)
+                this.rain.splashTransform.scale.setScalar(Math.sin(phase * Math.PI) * 0.22)
+                this.rain.splashTransform.updateMatrix()
+                this.rain.splashes.setMatrixAt(i, this.rain.splashTransform.matrix)
+            }
+            this.rain.splashes.instanceMatrix.needsUpdate = true
+        }
         this.rain.positionAttribute.needsUpdate = true
     }
 

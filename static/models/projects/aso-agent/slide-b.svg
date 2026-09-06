@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="700" viewBox="0 0 1200 700">
+<title>ASO Audit Agent — Ten dimensions. Traceable recommendations.</title>
+<defs><pattern id="dots" width="18" height="18" patternUnits="userSpaceOnUse"><circle cx="4" cy="4" r="2" fill="#172334" opacity=".13"/></pattern></defs>
+<rect width="1200" height="700" fill="#f8d665"/>
+<path d="M671 0h529v700H563z" fill="#badcb9"/><path d="M690 0h510v700H582z" fill="url(#dots)"/>
+<rect x="18" y="18" width="1164" height="664" rx="6" fill="none" stroke="#172334" stroke-width="8"/>
+<rect x="52" y="49" width="281" height="49" rx="24" fill="#172334"/><text x="76" y="82" font-family="Arial, Helvetica, sans-serif" font-size="21" font-weight="900" fill="#f8d665" >SELECTED WORK / 06</text>
+<text x="1140" y="84" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="900" fill="#172334" text-anchor="end">02 — 03</text>
+<text x="64" y="166" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="900" fill="#172334" >APP STORE AUDIT WORKSPACE</text><text x="64" y="263" font-family="Arial, Helvetica, sans-serif" font-size="58.57142857142857" font-weight="900" fill="#172334" >LESS GUESSING.</text><text x="64" y="348" font-family="Arial, Helvetica, sans-serif" font-size="58.57142857142857" font-weight="900" fill="#172334" >MORE EVIDENCE.</text>
+<text x="64" y="421" font-family="Arial, Helvetica, sans-serif" font-size="25" font-weight="900" fill="#172334" >ASO AUDIT AGENT</text>
+<g transform="rotate(-9 893 320)"><rect x="773" y="164" width="222" height="332" rx="28" fill="#fff6df" stroke="#172334" stroke-width="9" stroke-linejoin="round"/><path d="M846 190h77" stroke="#172334" stroke-width="9" stroke-linecap="round"/><rect x="805" y="241" width="56" height="56" rx="12" fill="#f8d665" stroke="#172334" stroke-width="9" stroke-linejoin="round"/><path d="M884 251h75m-75 29h60" stroke="#172334" stroke-width="8"/><path d="M813 420v-64m51 64v-94m51 94V302" stroke="#172334" stroke-width="24"/></g><circle cx="1010" cy="405" r="68" fill="#badcb9" stroke="#172334" stroke-width="9" stroke-linejoin="round"/><path d="M976 405l24 24 43-53" fill="none" stroke="#172334" stroke-width="13"/><path d="M1058 456l53 56" stroke="#172334" stroke-width="23" stroke-linecap="round"/><path d="M1020 142v70m-35-35h70M748 442v48m-24-24h48" stroke="#172334" stroke-width="8"/>
+<path d="M51 565h1098" stroke="#172334" stroke-width="5"/>
+<text x="64" y="612" font-family="Arial, Helvetica, sans-serif" font-size="25" font-weight="900" fill="#172334" >Ten dimensions. Traceable recommendations.</text><text x="64" y="650" font-family="Arial, Helvetica, sans-serif" font-size="17" font-weight="900" fill="#172334" >STEP INSIDE THE PROJECT ↗</text>
+<circle cx="1100" cy="620" r="32" fill="#172334"/><path d="M1087 633l27-27m-25 0h25v25" fill="none" stroke="#f8d665" stroke-width="6"/>
+</svg>

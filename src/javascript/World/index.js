@@ -32,6 +32,7 @@ import ExperienceHUD from './ExperienceHUD.js'
 import GuidedTour from './GuidedTour.js'
 import WorldDiagnostics from './WorldDiagnostics.js'
 import ExperienceDirector from './ExperienceDirector.js'
+import City from './City.js'
 
 export default class World
 {
@@ -75,6 +76,7 @@ export default class World
         }
 
         this.started = true
+        document.body.classList.add('has-started')
         this.sounds.startEngine()
 
         // Remove data left by the retired reactive-world tracking feature.
@@ -105,6 +107,8 @@ export default class World
         this.setSections()
         this.setParticleTrails()
         this.setAdvancedLighting()
+        this.city = new City({ resources: this.resources, materials: this.materials, physics: this.physics, time: this.time, lighting: this.advancedLighting })
+        this.container.add(this.city.container)
         this.setDayNightCycle()
         this.setWeather()
         this.setFireflies()
@@ -613,6 +617,7 @@ export default class World
     {
         this.visitGhost = new VisitGhost({
             time: this.time,
+            resources: this.resources,
             physics: this.physics,
             debug: this.debugFolder
         })

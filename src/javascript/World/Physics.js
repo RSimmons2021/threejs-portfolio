@@ -153,6 +153,19 @@ export default class Physics
         this.car.options.controlsAcceleratingQuad = true
         this.car.options.controlsBrakeStrength = 0.45 * 3
 
+        if(!this.config.cyberTruck)
+        {
+            this.car.options.chassisWidth = 1.22
+            this.car.options.chassisHeight = 0.55
+            this.car.options.chassisDepth = 2.95
+            this.car.options.chassisOffset.set(0, 0, 0.2)
+            this.car.options.wheelFrontOffsetDepth = 0.98
+            this.car.options.wheelBackOffsetDepth = -0.92
+            this.car.options.wheelOffsetWidth = 0.83
+            this.car.options.wheelRadius = 0.31
+            this.car.options.wheelHeight = 0.36
+        }
+
         /**
          * Upsize down
          */

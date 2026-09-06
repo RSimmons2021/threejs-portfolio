@@ -1,34 +1,15 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="675" viewBox="0 0 1200 675">
-  <defs>
-    <linearGradient id="zoanA" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#101716"/>
-      <stop offset="0.62" stop-color="#182724"/>
-      <stop offset="1" stop-color="#28413c"/>
-    </linearGradient>
-    <filter id="zoanAShadow" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="16" stdDeviation="18" flood-color="#06100e" flood-opacity="0.4"/>
-    </filter>
-  </defs>
-  <rect width="1200" height="675" fill="url(#zoanA)"/>
-  <path d="M0 96H1200M0 579H1200" stroke="#abc8c3" stroke-opacity="0.22"/>
-  <path d="M94 0V675M1106 0V675" stroke="#abc8c3" stroke-opacity="0.22"/>
-  <g transform="translate(727 337)" fill="none" stroke="#b9d6d1">
-    <rect x="-198" y="-198" width="396" height="396" stroke-opacity="0.2"/>
-    <rect x="-154" y="-154" width="308" height="308" transform="rotate(45)" stroke-opacity="0.34"/>
-    <circle r="146" stroke-opacity="0.28"/>
-    <circle r="102" stroke-opacity="0.5"/>
-    <circle r="24" fill="#d3e1b4" stroke="none"/>
-    <path d="M-264 0H264M0-264V264" stroke-opacity="0.3"/>
-    <path d="M-182-182L182 182M182-182L-182 182" stroke-opacity="0.2"/>
-  </g>
-  <g filter="url(#zoanAShadow)">
-    <rect x="72" y="72" width="514" height="531" fill="#0c1312" fill-opacity="0.88"/>
-    <rect x="72" y="72" width="8" height="531" fill="#bad5cf"/>
-  </g>
-  <text x="124" y="157" fill="#bad5cf" font-family="Amulya, Arial, sans-serif" font-size="25" font-weight="700" letter-spacing="4">FOUNDER-LED DESIGN STUDIO</text>
-  <text x="118" y="300" fill="#f4f5ee" font-family="Amulya, Arial, sans-serif" font-size="112" font-weight="800">ZOAN</text>
-  <text x="122" y="380" fill="#f4f5ee" font-family="Amulya, Arial, sans-serif" font-size="58" font-weight="700" letter-spacing="2">COLLECTIVE</text>
-  <text x="124" y="480" fill="#c8d9d4" font-family="Amulya, Arial, sans-serif" font-size="29">Brand, product, and digital</text>
-  <text x="124" y="520" fill="#c8d9d4" font-family="Amulya, Arial, sans-serif" font-size="29">experiences built for clarity.</text>
-  <text x="1032" y="620" fill="#d3e1b4" font-family="Amulya, Arial, sans-serif" font-size="19" font-weight="700" letter-spacing="3" text-anchor="end">01 / IDENTITY</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="700" viewBox="0 0 1200 700">
+<title>Zoan Collective — Brand meets product.</title>
+<defs><pattern id="dots" width="18" height="18" patternUnits="userSpaceOnUse"><circle cx="4" cy="4" r="2" fill="#172334" opacity=".13"/></pattern></defs>
+<rect width="1200" height="700" fill="#bce685"/>
+<path d="M671 0h529v700H563z" fill="#f5d7a1"/><path d="M690 0h510v700H582z" fill="url(#dots)"/>
+<rect x="18" y="18" width="1164" height="664" rx="6" fill="none" stroke="#172334" stroke-width="8"/>
+<rect x="52" y="49" width="281" height="49" rx="24" fill="#172334"/><text x="76" y="82" font-family="Arial, Helvetica, sans-serif" font-size="21" font-weight="900" fill="#bce685" >SELECTED WORK / 01</text>
+<text x="1140" y="84" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="900" fill="#172334" text-anchor="end">01 — 03</text>
+<text x="64" y="166" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="900" fill="#172334" >INDEPENDENT DESIGN STUDIO</text><text x="64" y="263" font-family="Arial, Helvetica, sans-serif" font-size="76" font-weight="900" fill="#172334" >ZOAN</text><text x="64" y="348" font-family="Arial, Helvetica, sans-serif" font-size="76" font-weight="900" fill="#172334" >COLLECTIVE</text>
+<text x="64" y="421" font-family="Arial, Helvetica, sans-serif" font-size="25" font-weight="900" fill="#172334" >MAKE SOME GOOD TROUBLE.</text>
+<circle cx="906" cy="320" r="146" fill="#f5d7a1" stroke="#172334" stroke-width="9" stroke-linejoin="round"/><g transform="rotate(-12 906 320)"><path d="M791 217h221L805 421h221" fill="none" stroke="#172334" stroke-width="58"/><path d="M776 202h221L790 406h221" fill="none" stroke="#fff6df" stroke-width="39"/></g><circle cx="1042" cy="461" r="49" fill="#172334"/><text x="1011" y="476" font-family="Arial, Helvetica, sans-serif" font-size="37" font-weight="900" fill="#bce685" >Z!</text><path d="M1020 142v70m-35-35h70M748 442v48m-24-24h48" stroke="#172334" stroke-width="8"/>
+<path d="M51 565h1098" stroke="#172334" stroke-width="5"/>
+<text x="64" y="612" font-family="Arial, Helvetica, sans-serif" font-size="25" font-weight="900" fill="#172334" >Brand meets product.</text><text x="64" y="650" font-family="Arial, Helvetica, sans-serif" font-size="17" font-weight="900" fill="#172334" >STEP INSIDE THE PROJECT ↗</text>
+<circle cx="1100" cy="620" r="32" fill="#172334"/><path d="M1087 633l27-27m-25 0h25v25" fill="none" stroke="#bce685" stroke-width="6"/>
 </svg>

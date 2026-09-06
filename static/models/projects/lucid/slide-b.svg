@@ -1,23 +1,15 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="675" viewBox="0 0 1200 675">
-  <defs>
-    <linearGradient id="bg" x1="0" y1="1" x2="1" y2="0">
-      <stop offset="0" stop-color="#0c1326"/>
-      <stop offset="0.5" stop-color="#142a59"/>
-      <stop offset="1" stop-color="#43e0c8"/>
-    </linearGradient>
-  </defs>
-  <rect width="1200" height="675" fill="url(#bg)"/>
-  <g transform="translate(600 320)">
-    <circle r="212" fill="#ffffff" opacity="0.08"/>
-    <circle r="156" fill="#ffffff" opacity="0.08"/>
-    <circle r="98" fill="#ffffff" opacity="0.12"/>
-    <circle r="38" fill="#fff2ac"/>
-  </g>
-  <g fill="none" stroke-linecap="round" stroke-width="18">
-    <path d="M160 330 C260 200 350 200 450 330 S640 460 740 330 930 200 1040 330" stroke="#eafcff" opacity="0.86"/>
-    <path d="M160 402 C260 272 350 272 450 402 S640 532 740 402 930 272 1040 402" stroke="#90fff0" opacity="0.42"/>
-  </g>
-  <text x="96" y="125" fill="#fff7c8" font-family="Amulya, Arial, sans-serif" font-size="34" font-weight="700" letter-spacing="4">PERSONALIZED SESSIONS</text>
-  <text x="96" y="214" fill="#ffffff" font-family="Amulya, Arial, sans-serif" font-size="72" font-weight="800">Sleep. Focus. Reset.</text>
-  <text x="96" y="548" fill="#d9fbff" font-family="Amulya, Arial, sans-serif" font-size="34" font-weight="500">AI-generated soundscapes shaped around the user's intent.</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="700" viewBox="0 0 1200 700">
+<title>Lucid — Focus. Reset. Sleep.</title>
+<defs><pattern id="dots" width="18" height="18" patternUnits="userSpaceOnUse"><circle cx="4" cy="4" r="2" fill="#172334" opacity=".13"/></pattern></defs>
+<rect width="1200" height="700" fill="#c9b6ff"/>
+<path d="M671 0h529v700H563z" fill="#80e3e5"/><path d="M690 0h510v700H582z" fill="url(#dots)"/>
+<rect x="18" y="18" width="1164" height="664" rx="6" fill="none" stroke="#172334" stroke-width="8"/>
+<rect x="52" y="49" width="281" height="49" rx="24" fill="#172334"/><text x="76" y="82" font-family="Arial, Helvetica, sans-serif" font-size="21" font-weight="900" fill="#c9b6ff" >SELECTED WORK / 05</text>
+<text x="1140" y="84" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="900" fill="#172334" text-anchor="end">02 — 03</text>
+<text x="64" y="166" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="900" fill="#172334" >AI AUDIO PRODUCT</text><text x="64" y="263" font-family="Arial, Helvetica, sans-serif" font-size="76" font-weight="900" fill="#172334" >FIND YOUR</text><text x="64" y="348" font-family="Arial, Helvetica, sans-serif" font-size="76" font-weight="900" fill="#172334" >FREQUENCY.</text>
+<text x="64" y="421" font-family="Arial, Helvetica, sans-serif" font-size="25" font-weight="900" fill="#172334" >LUCID</text>
+<circle cx="919" cy="324" r="146" fill="#172334"/><circle cx="901" cy="306" r="146" fill="#80e3e5" stroke="#172334" stroke-width="9" stroke-linejoin="round"/><path d="M957 184a120 120 0 1 0 83 180 126 126 0 0 1-83-180" fill="#fff6df" stroke="#172334" stroke-width="9" stroke-linejoin="round"/><path d="M763 400.72054934114215v88.5589013177157" stroke="#172334" stroke-width="13" stroke-linecap="round"/><path d="M791 387.78024247438265v114.43951505123466" stroke="#172334" stroke-width="13" stroke-linecap="round"/><path d="M819 412.55622611082697v64.887547778346" stroke="#172334" stroke-width="13" stroke-linecap="round"/><path d="M847 433.9187392800456v22.162521439908783" stroke="#172334" stroke-width="13" stroke-linecap="round"/><path d="M875 416.404606300683v57.19078739863398" stroke="#172334" stroke-width="13" stroke-linecap="round"/><path d="M903 389.0884388457101v111.82312230857981" stroke="#172334" stroke-width="13" stroke-linecap="round"/><path d="M931 397.3168699504601v95.36626009907981" stroke="#172334" stroke-width="13" stroke-linecap="round"/><path d="M959 427.4301632562847v35.13967348743064" stroke="#172334" stroke-width="13" stroke-linecap="round"/><path d="M987 429.4382730045506v31.123453990898817" stroke="#172334" stroke-width="13" stroke-linecap="round"/><path d="M1015 400.00760505181177v89.98478989637647" stroke="#172334" stroke-width="13" stroke-linecap="round"/><path d="M1043 387.99500221240044v114.00999557519908" stroke="#172334" stroke-width="13" stroke-linecap="round"/><path d="M1020 142v70m-35-35h70M748 442v48m-24-24h48" stroke="#172334" stroke-width="8"/>
+<path d="M51 565h1098" stroke="#172334" stroke-width="5"/>
+<text x="64" y="612" font-family="Arial, Helvetica, sans-serif" font-size="25" font-weight="900" fill="#172334" >Focus. Reset. Sleep.</text><text x="64" y="650" font-family="Arial, Helvetica, sans-serif" font-size="17" font-weight="900" fill="#172334" >STEP INSIDE THE PROJECT ↗</text>
+<circle cx="1100" cy="620" r="32" fill="#172334"/><path d="M1087 633l27-27m-25 0h25v25" fill="none" stroke="#c9b6ff" stroke-width="6"/>
 </svg>

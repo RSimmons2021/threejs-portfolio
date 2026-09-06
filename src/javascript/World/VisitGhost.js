@@ -1,4 +1,5 @@
 import * as THREE from 'three'
+import createGhostF1 from './createGhostF1.js'
 
 /**
  * "Echo of your last visit": records the visitor's drive (position + heading
@@ -13,6 +14,7 @@ export default class VisitGhost
         // Options
         this.time = _options.time
         this.physics = _options.physics
+        this.resources = _options.resources
         this.debug = _options.debug
 
         // Container
@@ -284,24 +286,9 @@ export default class VisitGhost
 
     setModel()
     {
-        // Simple translucent "echo" car: chassis box + cabin, no wheels needed
-        this.material = new THREE.MeshBasicMaterial({
-            color: '#9fd2ff',
-            transparent: true,
-            opacity: 0.16,
-            depthWrite: false
-        })
-
-        this.model = new THREE.Group()
-
-        const body = new THREE.Mesh(new THREE.BoxGeometry(2.02, 1.07, 0.55), this.material)
-        body.position.z = 0.42
-        this.model.add(body)
-
-        const cabin = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.98, 0.5), this.material)
-        cabin.position.set(- 0.25, 0, 0.92)
-        this.model.add(cabin)
-
+        this.material = new THREE.MeshBasicMaterial({ color: '#8ee9ff', transparent: true, opacity: 0.24, depthWrite: false })
+        this.model = createGhostF1(this.resources, this.material)
+        this.model.position.z = 0.07
         this.container.add(this.model)
     }
 

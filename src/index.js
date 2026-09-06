@@ -42,6 +42,13 @@ try
         $canvas: document.querySelector('.js-canvas'),
         useComposer: true
     })
+    const startButton = document.querySelector('.js-city-start')
+    window.application.resources.on('ready', () =>
+    {
+        startButton.disabled = false
+        startButton.textContent = 'Start your engine ↗'
+    })
+    startButton.addEventListener('click', () => window.application.world.startingScreen.area.interact())
 }
 catch(error)
 {

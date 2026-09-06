@@ -203,6 +203,8 @@ export default class AdvancedLighting
         }
 
         const carPosition = chassisBody.position
+        lightUniforms.uWetness.value = this.weatherState.wetness
+        lightUniforms.uTime.value = this.time.elapsed * 0.001
         const carQuaternion = chassisBody.quaternion
         const carVelocity = chassisBody.velocity
         const carSpeed = Math.abs(this.physics.car.speed)

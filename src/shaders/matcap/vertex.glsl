@@ -50,9 +50,11 @@ void main() {
     #include <displacementmap_vertex>
 
     // Custom start
-    vec4 worldNormal = modelMatrix * vec4(normal, 1.0);
-
-    vec4 worldPosition = modelMatrix * vec4(transformed, 1.0);
+    vec4 localPosition = vec4(transformed, 1.0);
+    #ifdef USE_INSTANCING
+        localPosition = instanceMatrix * localPosition;
+    #endif
+    vec4 worldPosition = modelMatrix * localPosition;
 
     // Reveal
     float distanceToCenter = length(worldPosition);

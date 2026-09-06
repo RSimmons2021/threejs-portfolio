@@ -74,4 +74,5 @@ void main()
     color *= vignette;
 
     gl_FragColor = vec4(color, 1.0);
+    #include <colorspace_fragment>
 }

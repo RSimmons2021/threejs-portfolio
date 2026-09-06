@@ -85,7 +85,7 @@ export default class Camera
     setInstance()
     {
         // Set up
-        this.instance = new THREE.PerspectiveCamera(40, this.sizes.viewport.width / this.sizes.viewport.height, 1, 80)
+        this.instance = new THREE.PerspectiveCamera(40, this.sizes.viewport.width / this.sizes.viewport.height, 1, 120)
         this.instance.up.set(0, 0, 1)
         this.instance.position.copy(this.angle.value)
         this.instance.lookAt(new THREE.Vector3())
@@ -127,7 +127,7 @@ export default class Camera
         this.zoom.easing = 0.1
         this.zoom.minDistance = 14
         this.zoom.amplitude = 15
-        this.zoom.value = this.config.cyberTruck ? 0.3 : 0.5
+        this.zoom.value = this.config.cyberTruck ? 0.3 : 0.8
         this.zoom.targetValue = this.zoom.value
         this.zoom.distance = this.zoom.minDistance + this.zoom.amplitude * this.zoom.value
 

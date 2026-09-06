@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="700" viewBox="0 0 1200 700">
+<title>Agent Lab — Play it. Then hand over the controls.</title>
+<defs><pattern id="dots" width="18" height="18" patternUnits="userSpaceOnUse"><circle cx="4" cy="4" r="2" fill="#172334" opacity=".13"/></pattern></defs>
+<rect width="1200" height="700" fill="#71e0f4"/>
+<path d="M671 0h529v700H563z" fill="#ffad60"/><path d="M690 0h510v700H582z" fill="url(#dots)"/>
+<rect x="18" y="18" width="1164" height="664" rx="6" fill="none" stroke="#172334" stroke-width="8"/>
+<rect x="52" y="49" width="281" height="49" rx="24" fill="#172334"/><text x="76" y="82" font-family="Arial, Helvetica, sans-serif" font-size="21" font-weight="900" fill="#71e0f4" >SELECTED WORK / 02</text>
+<text x="1140" y="84" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="900" fill="#172334" text-anchor="end">03 — 03</text>
+<text x="64" y="166" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="900" fill="#172334" >EMBODIED AI EVALUATION</text><text x="64" y="263" font-family="Arial, Helvetica, sans-serif" font-size="68.33333333333333" font-weight="900" fill="#172334" >HUMAN OR AI.</text><text x="64" y="348" font-family="Arial, Helvetica, sans-serif" font-size="74.54545454545455" font-weight="900" fill="#172334" >SAME RULES.</text>
+<text x="64" y="421" font-family="Arial, Helvetica, sans-serif" font-size="25" font-weight="900" fill="#172334" >AGENT LAB</text>
+<ellipse cx="817" cy="333" rx="68" ry="155" fill="#172334" stroke="#71e0f4" stroke-width="22" transform="rotate(-16 817 333)"/><ellipse cx="1034" cy="285" rx="64" ry="147" fill="#172334" stroke="#ffad60" stroke-width="22" transform="rotate(17 1034 285)"/><path d="M808 351Q936 474 1040 257" fill="none" stroke="#fff6df" stroke-width="10" stroke-dasharray="16 12"/><path d="M864 263l66-36 66 36v79l-66 38-66-38z" fill="#fff6df" stroke="#172334" stroke-width="9" stroke-linejoin="round"/><path d="M864 263l66 38 66-38M930 301v79" fill="none" stroke="#172334" stroke-width="9" stroke-linejoin="round"/><circle cx="930" cy="263" r="13" fill="#71e0f4" stroke="#172334" stroke-width="5"/><path d="M1020 142v70m-35-35h70M748 442v48m-24-24h48" stroke="#172334" stroke-width="8"/>
+<path d="M51 565h1098" stroke="#172334" stroke-width="5"/>
+<text x="64" y="612" font-family="Arial, Helvetica, sans-serif" font-size="25" font-weight="900" fill="#172334" >Play it. Then hand over the controls.</text><text x="64" y="650" font-family="Arial, Helvetica, sans-serif" font-size="17" font-weight="900" fill="#172334" >STEP INSIDE THE PROJECT ↗</text>
+<circle cx="1100" cy="620" r="32" fill="#172334"/><path d="M1087 633l27-27m-25 0h25v25" fill="none" stroke="#71e0f4" stroke-width="6"/>
+</svg>

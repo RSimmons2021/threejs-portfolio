@@ -47,10 +47,10 @@ export default class DayNightCycle
         this.colorSchemes = {
             day: {
                 floor: {
-                    topLeft: '#8B9B7A',
-                    topRight: '#7A8A69',
-                    bottomRight: '#D4C5B0',
-                    bottomLeft: '#B8A999'
+                    topLeft: '#839fac',
+                    topRight: '#b2c4ca',
+                    bottomRight: '#e7d5b8',
+                    bottomLeft: '#bac4c4'
                 },
                 ambient: '#6B7F3F',
                 ambientIntensity: 0.3,
@@ -58,7 +58,7 @@ export default class DayNightCycle
                 directionalIntensity: 0.5,
                 spotlight: '#ffffff',
                 spotlightIntensity: 1.5,
-                materialIndirect: '#800020',
+                materialIndirect: '#566987',
                 matcapTint: '#ffffff',
                 glow: '#ffcfe0',
                 vignetteIntensity: 0.35,

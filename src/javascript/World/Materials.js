@@ -38,6 +38,23 @@ export default class Materials
         this.pures.items.yellow.name = 'pureYellow'
     }
 
+    getCelMaterial(_color, _emission = 0)
+    {
+        const key = `cel${_color.getHexString()}${_emission ? 'Glow' : ''}`
+        if(this.shades.items[key]) return this.shades.items[key]
+        const material = this.shades.items.white.clone()
+        material.name = key
+        material.uniforms.uCelColor.value.copy(_color)
+        material.uniforms.uUseCelColor.value = 1
+        material.uniforms.uCelEmission.value = _emission
+        for(const [name, uniform] of Object.entries(this.shades.lightUniforms))
+        {
+            material.uniforms[name] = uniform
+        }
+        this.shades.items[key] = material
+        return material
+    }
+
     setShades()
     {
         // Setup
@@ -137,6 +154,9 @@ export default class Materials
         // Shared lighting uniforms: every shade material points at the same uniform
         // records, so mutating these once per frame updates all materials at once.
         this.shades.lightUniforms = {
+            uWetness: { value: 0 },
+            uTime: { value: 0 },
+            uSunDirection: { value: new THREE.Vector3(-0.6, -0.4, 0.8).normalize() },
             uNightTint: { value: new THREE.Color(1, 1, 1) },
             uSpotPosition: { value: new THREE.Vector3(0, 0, 6) },
             uSpotDirection: { value: new THREE.Vector3(0, 0, - 1) },

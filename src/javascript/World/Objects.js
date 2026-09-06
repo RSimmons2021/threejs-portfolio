@@ -120,7 +120,9 @@ export default class Objects
         {
             // Create clone mesh with normal material
             const mesh = _mesh.clone()
-            mesh.material = this.materials.shades.items.white
+            mesh.material = _mesh.name.startsWith('cel_') && _mesh.material.color
+                ? this.materials.getCelMaterial(_mesh.material.color)
+                : this.materials.shades.items.white
 
             return mesh
         }

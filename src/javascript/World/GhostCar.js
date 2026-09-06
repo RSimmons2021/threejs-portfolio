@@ -1,4 +1,5 @@
 import * as THREE from 'three'
+import createGhostF1 from './createGhostF1.js'
 
 export default class GhostCar
 {
@@ -101,9 +102,9 @@ export default class GhostCar
                 waypoints: [
                     { x: 10, y: -30, z: 0, pause: false },
                     { x: 20, y: -30, z: 0, pause: false },
-                    { x: 30, y: -30, z: 0, pause: true }, // Main project area
-                    { x: 35, y: -30, z: 0, pause: false },
-                    { x: 30, y: -35, z: 0, pause: false }
+                    ...Array.from({ length: 6 }, (_, i) => ({ x: 30 + i * 24, y: -30, z: 0, pause: true })),
+                    { x: 150, y: -36, z: 0, pause: false },
+                    { x: 20, y: -36, z: 0, pause: false }
                 ]
             },
             {
@@ -142,69 +143,19 @@ export default class GhostCar
 
     setModel()
     {
-        // Clone the car model for ghost
-        if(!this.resources.items.carChassis) return
-
         this.model = {}
-        this.model.container = new THREE.Object3D()
+        this.ghostMaterial = new THREE.MeshBasicMaterial({ color: this.settings.color, transparent: true, opacity: this.settings.opacity, depthWrite: false })
+        this.model.container = createGhostF1(this.resources, this.ghostMaterial)
         this.model.container.matrixAutoUpdate = false
-
-        // Clone chassis
-        const chassisClone = this.resources.items.carChassis.scene.clone()
-        this.model.chassis = chassisClone
-        this.model.container.add(chassisClone)
-
-        // Clone wheels
-        this.model.wheels = []
-        const wheelPositions = [
-            { x: -0.65, y: -0.8, z: -0.4 },  // Front left
-            { x: 0.65, y: -0.8, z: -0.4 },   // Front right
-            { x: -0.65, y: 0.8, z: -0.4 },   // Back left
-            { x: 0.65, y: 0.8, z: -0.4 }     // Back right
-        ]
-
-        for(const pos of wheelPositions)
-        {
-            if(this.resources.items.carWheel)
-            {
-                const wheelClone = this.resources.items.carWheel.scene.clone()
-                wheelClone.position.set(pos.x, pos.y, pos.z)
-                this.model.wheels.push(wheelClone)
-                this.model.container.add(wheelClone)
-            }
-        }
-
-        // Apply ghost materials
-        this.updateMaterials()
-
+        this.model.wheels = this.model.container.userData.wheels
         this.container.add(this.model.container)
     }
 
     updateMaterials()
     {
-        if(!this.model) return
-
-        const ghostColor = new THREE.Color(this.settings.color)
-
-        // Create ghost material
-        const ghostMaterial = new THREE.MeshPhongMaterial({
-            color: ghostColor,
-            transparent: true,
-            opacity: this.settings.opacity,
-            emissive: ghostColor,
-            emissiveIntensity: 0.5,
-            side: THREE.DoubleSide,
-            depthWrite: false
-        })
-
-        // Apply to all meshes
-        this.model.container.traverse((child) =>
-        {
-            if(child instanceof THREE.Mesh)
-            {
-                child.material = ghostMaterial
-            }
-        })
+        if(!this.ghostMaterial) return
+        this.ghostMaterial.color.set(this.settings.color)
+        this.ghostMaterial.opacity = this.settings.opacity
     }
 
     setTrail()
@@ -377,7 +328,7 @@ export default class GhostCar
         {
             // Move towards target
             direction.normalize()
-            this.state.position.add(direction.multiplyScalar(this.settings.speed))
+            this.state.position.add(direction.multiplyScalar(this.settings.speed * Math.min(this.time.delta, 50) / 16.667))
 
             // Update rotation to face direction
             const targetRotation = Math.atan2(direction.y, direction.x)
@@ -395,8 +346,8 @@ export default class GhostCar
         if(this.model && this.model.container)
         {
             const matrix = new THREE.Matrix4()
-            matrix.makeRotationZ(this.state.rotation - Math.PI / 2)
-            matrix.setPosition(this.state.position.x, this.state.position.y, this.state.position.z + 0.3)
+            matrix.makeRotationZ(this.state.rotation)
+            matrix.setPosition(this.state.position.x, this.state.position.y, this.state.position.z + 0.07)
             this.model.container.matrix.copy(matrix)
             this.model.container.matrixAutoUpdate = false
             this.model.container.updateMatrixWorld(true)
@@ -407,7 +358,7 @@ export default class GhostCar
                 const wheelRotation = this.time.elapsed * 0.005
                 for(const wheel of this.model.wheels)
                 {
-                    wheel.rotation.x = wheelRotation
+                    wheel.rotation.y = wheelRotation
                 }
             }
         }

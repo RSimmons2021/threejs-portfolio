@@ -4,6 +4,8 @@ import Loader from './Utils/Loader.js'
 import EventEmitter from './Utils/EventEmitter.js'
 
 const CORE_RESOURCES = [
+    { name: 'manhattan', source: './models/nyc/manhattan.glb' },
+    ...['github', 'linkedin', 'email', 'portfolio'].map((kind) => ({ name: `link${kind}`, source: `./models/nyc/link-${kind}.glb` })),
     // Matcaps
     { name: 'matcapBeige', source: './models/matcaps/beige.png', type: 'texture' },
     { name: 'matcapBlack', source: './models/matcaps/black.png', type: 'texture' },
@@ -19,30 +21,12 @@ const CORE_RESOURCES = [
     { name: 'matcapMetal', source: './models/matcaps/metal.png', type: 'texture' },
 
     // Intro
-    { name: 'introStaticBase', source: './models/intro/static/base.glb' },
-    { name: 'introStaticCollision', source: './models/intro/static/collision.glb' },
-    { name: 'introStaticFloorShadow', source: './models/intro/static/floorShadow.png', type: 'texture' },
     { name: 'introInstructionsLabels', source: './models/intro/instructions/labels.glb' },
     { name: 'introInstructionsArrows', source: './models/intro/instructions/arrows.png', type: 'texture' },
     { name: 'introInstructionsControls', source: './models/intro/instructions/controls.png', type: 'texture' },
     { name: 'introInstructionsOther', source: './models/intro/instructions/other.png', type: 'texture' },
-    { name: 'introArrowKeyBase', source: './models/intro/arrowKey/base.glb' },
-    { name: 'introArrowKeyCollision', source: './models/intro/arrowKey/collision.glb' },
-    { name: 'introNBase', source: './models/intro/n/base.glb' },
-    { name: 'introNCollision', source: './models/intro/n/collision.glb' },
-    { name: 'introOBase', source: './models/intro/o/base.glb' },
-    { name: 'introOCollision', source: './models/intro/o/collision.glb' },
-    { name: 'introSBase', source: './models/intro/s/base.glb' },
-    { name: 'introSCollision', source: './models/intro/s/collision.glb' },
-    { name: 'introIBase', source: './models/intro/i/base.glb' },
-    { name: 'introICollision', source: './models/intro/i/collision.glb' },
-    { name: 'introMBase', source: './models/intro/m/base.glb' },
-    { name: 'introMCollision', source: './models/intro/m/collision.glb' },
 
     // Crossroads
-    { name: 'crossroadsStaticBase', source: './models/crossroads/static/base.glb' },
-    { name: 'crossroadsStaticCollision', source: './models/crossroads/static/collision.glb' },
-    { name: 'crossroadsStaticFloorShadow', source: './models/crossroads/static/floorShadow.png', type: 'texture' },
 
     // Projects
     { name: 'projectsBoardStructure', source: './models/projects/board/structure.glb' },
@@ -51,11 +35,6 @@ const CORE_RESOURCES = [
     { name: 'projectsBoardPlane', source: './models/projects/board/plane.glb' },
 
     // Information
-    { name: 'informationStaticBase', source: './models/information/static/base.glb' },
-    { name: 'informationStaticCollision', source: './models/information/static/collision.glb' },
-    { name: 'informationStaticFloorShadow', source: './models/information/static/floorShadow.png', type: 'texture' },
-    { name: 'informationBaguetteBase', source: './models/information/baguette/base.glb' },
-    { name: 'informationBaguetteCollision', source: './models/information/baguette/collision.glb' },
     { name: 'informationContactTwitterLabel', source: './models/information/static/contactTwitterLabel.png', type: 'texture' },
     { name: 'informationContactGithubLabel', source: './models/information/static/contactGithubLabel.png', type: 'texture' },
     { name: 'informationContactLinkedinLabel', source: './models/information/static/contactLinkedinLabel.png', type: 'texture' },
@@ -81,24 +60,14 @@ const CORE_RESOURCES = [
     { name: 'areaReset', source: './models/area/reset.png', type: 'texture' },
 
     // Road tiles
-    { name: 'tilesABase', source: './models/tiles/a/base.glb' },
-    { name: 'tilesACollision', source: './models/tiles/a/collision.glb' },
-    { name: 'tilesBBase', source: './models/tiles/b/base.glb' },
-    { name: 'tilesBCollision', source: './models/tiles/b/collision.glb' },
-    { name: 'tilesCBase', source: './models/tiles/c/base.glb' },
-    { name: 'tilesCCollision', source: './models/tiles/c/collision.glb' },
-    { name: 'tilesDBase', source: './models/tiles/d/base.glb' },
-    { name: 'tilesDCollision', source: './models/tiles/d/collision.glb' },
-    { name: 'tilesEBase', source: './models/tiles/e/base.glb' },
-    { name: 'tilesECollision', source: './models/tiles/e/collision.glb' }
 ]
 
 const DEFAULT_CAR_RESOURCES = [
-    { name: 'carDefaultChassis', source: './models/car/default/chassis.glb' },
-    { name: 'carDefaultWheel', source: './models/car/default/wheel.glb' },
-    { name: 'carDefaultBackLightsBrake', source: './models/car/default/backLightsBrake.glb' },
-    { name: 'carDefaultBackLightsReverse', source: './models/car/default/backLightsReverse.glb' },
-    { name: 'carDefaultAntena', source: './models/car/default/antena.glb' }
+    { name: 'carDefaultChassis', source: './models/nyc/f1-chassis.glb' },
+    { name: 'carDefaultWheel', source: './models/nyc/f1-wheel.glb' },
+    { name: 'carDefaultBackLightsBrake', source: './models/nyc/f1-brake.glb' },
+    { name: 'carDefaultBackLightsReverse', source: './models/nyc/f1-reverse.glb' },
+    { name: 'carDefaultAntena', source: './models/nyc/f1-antenna.glb' }
 ]
 
 const CYBER_TRUCK_RESOURCES = [
@@ -149,6 +118,7 @@ export default class Resources extends EventEmitter
             if(_resource.type === 'texture')
             {
                 const texture = new THREE.Texture(_data)
+                if(_resource.name.startsWith('matcap')) texture.colorSpace = THREE.SRGBColorSpace
                 texture.needsUpdate = true
                 this.items[`${_resource.name}Texture`] = texture
             }
@@ -174,7 +144,7 @@ export default class Resources extends EventEmitter
 
     loadCore()
     {
-        const carResources = this.config.cyberTruck ? CYBER_TRUCK_RESOURCES : DEFAULT_CAR_RESOURCES
+        const carResources = this.config.cyberTruck ? [...DEFAULT_CAR_RESOURCES, ...CYBER_TRUCK_RESOURCES] : DEFAULT_CAR_RESOURCES
         return this.loadStage('core', [...CORE_RESOURCES, ...carResources])
     }
 

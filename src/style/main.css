@@ -29,6 +29,45 @@
     --experience-secondary: #f2cc94;
 }
 
+.city-welcome
+{
+    position: fixed;
+    inset: 0;
+    z-index: 8;
+    padding: clamp(28px, 6vw, 90px);
+    color: #172334;
+    background: radial-gradient(circle at 82% 40%, transparent 0 22%, #17233412 22.1% 22.4%, transparent 22.5%), #f5e9cf;
+}
+.city-welcome__eyebrow, .city-welcome__hint, .city-welcome__edition { font-size: 12px; font-weight: 800; letter-spacing: .13em; }
+.city-welcome h1 { margin: 32px 0 22px; font-size: clamp(64px, 9vw, 128px); line-height: .87; letter-spacing: -.075em; font-weight: 800; }
+.city-welcome h1 span { font-size: .22em; vertical-align: top; letter-spacing: 0; margin-left: 14px; }
+.city-welcome__intro { font-size: clamp(19px, 2.3vw, 29px); font-weight: 700; }
+.city-welcome__copy { font-size: 16px; line-height: 1.6; margin-top: 14px; }
+.city-welcome__start { display: block; margin: 28px 0 22px; padding: 17px 25px; font: 800 18px 'Amulya', sans-serif; color: #172334; background: #f8ce65; border: 3px solid #172334; box-shadow: 6px 6px 0 #172334; cursor: pointer; }
+.city-welcome__start:disabled { opacity: .55; cursor: progress; }
+.city-welcome__start:not(:disabled):hover { transform: translate(-2px, -2px); box-shadow: 8px 8px 0 #172334; }
+.city-welcome__start:focus-visible { outline: 3px solid #227380; outline-offset: 7px; }
+.city-welcome__edition { position: absolute; bottom: 45px; right: 6vw; line-height: 1.7; text-align: right; }
+.has-started .city-welcome, .has-app-fallback .city-welcome { display: none; }
+.guided-tour__project { max-width: 190px; min-height: 36px; padding: 7px 10px; color: #172334; background: #f5e9cf; border: 2px solid #172334; border-radius: 5px; font: 700 12px 'Amulya', sans-serif; }
+.guided-tour__project:focus-visible { outline: 3px solid #f8ce65; outline-offset: 3px; }
+@media (max-width: 650px)
+{
+    .city-welcome { padding-top: 52px; }
+    .city-welcome h1 { margin-top: 46px; }
+    .city-welcome__hint { max-width: 260px; line-height: 1.7; font-size: 10px; }
+    .city-welcome__edition { display: none; }
+    .guided-tour { flex-wrap: wrap; justify-content: center; }
+    .guided-tour__project { max-width: 145px; }
+}
+@media (max-height: 600px)
+{
+    .city-welcome { padding: 24px 40px; }
+    .city-welcome h1 { font-size: 64px; margin: 22px 0 16px; }
+    .city-welcome__copy { display: none; }
+    .city-welcome__start { margin: 20px 0; }
+}
+
 *
 {
     padding: 0;
@@ -550,10 +589,10 @@ html
     min-width: 72px;
     min-height: 38px;
     padding: 0 12px;
-    border: 1px solid rgba(173, 222, 255, 0.36);
-    border-radius: 9px;
-    color: var(--ui-text);
-    background: rgba(17, 32, 46, 0.58);
+    border: 2px solid #172334;
+    border-radius: 4px;
+    color: #172334;
+    background: #f5e9cf;
     font-family: 'Amulya', sans-serif;
     font-size: 13px;
     font-weight: 800;
@@ -566,8 +605,8 @@ html
 .guided-tour__button.is-active
 {
     color: #142638;
-    border-color: rgba(255, 255, 255, 0.72);
-    background: #d9efff;
+    border-color: #172334;
+    background: #f8ce65;
 }
 
 .guided-tour__button:active
@@ -1867,7 +1906,7 @@ html
     .experience-hud
     {
         left: 8px;
-        top: 8px;
+        top: 116px;
         max-width: calc(100vw - 16px);
     }
 
@@ -1891,12 +1930,15 @@ html
 
     .experience-hud__tip
     {
-        font-size: 10.5px;
+        display: none;
     }
 
     .guided-tour
     {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
         top: 8px;
+        left: 8px;
         right: 8px;
         bottom: auto;
         max-width: calc(100vw - 16px);
@@ -1909,8 +1951,16 @@ html
     .guided-tour__button
     {
         min-width: 62px;
-        min-height: 34px;
+        min-height: 44px;
         padding: 0 9px;
         font-size: 12px;
+    }
+
+    .guided-tour__project
+    {
+        grid-column: 1 / -1;
+        width: 100%;
+        max-width: none;
+        min-height: 38px;
     }
 }
