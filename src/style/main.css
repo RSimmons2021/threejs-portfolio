@@ -29,6 +29,70 @@
     --experience-secondary: #f2cc94;
 }
 
+.arcade-panel
+{
+    position: fixed;
+    right: 22px;
+    bottom: 22px;
+    z-index: 150;
+    width: min(360px, calc(100vw - 32px));
+    max-height: calc(100dvh - 180px);
+    overflow-y: auto;
+    padding: 20px;
+    color: #172334;
+    background: #fff0d2;
+    border: 3px solid #172334;
+    box-shadow: 7px 7px 0 #172334;
+    font-family: 'Amulya', sans-serif;
+}
+.arcade-panel[hidden], .arcade-panel [hidden] { display: none !important; }
+.arcade-panel__eyebrow { font-size: 10px; font-weight: 800; letter-spacing: .08em; }
+.arcade-panel h2 { margin: 10px 0 12px; font-size: 30px; line-height: 1; letter-spacing: -.045em; }
+.arcade-panel h2 span { color: #207c79; margin-left: 8px; }
+.arcade-panel p { font-size: 13px; line-height: 1.45; margin: 10px 0; }
+.arcade-panel button { font: 700 13px 'Amulya', sans-serif; cursor: pointer; color: #172334; border: 2px solid #172334; background: #ffca62; min-height: 44px; padding: 10px 12px; transition: transform 120ms ease-out, background 120ms ease-out; }
+.arcade-panel button:hover { background: #ffe0a0; transform: translateY(-1px); }
+.arcade-panel button:active { transform: translateY(1px); }
+.arcade-panel button:focus-visible { outline: 3px solid #187575; outline-offset: 3px; }
+.arcade-menu > button[data-game] { display: block; width: 100%; text-align: left; margin: 10px 0; }
+.arcade-menu > button[data-game="bowling"] { background: #93d6d0; }
+.arcade-menu button strong { display: block; font-size: 17px; }
+.arcade-menu button span { display: block; margin-top: 5px; font-size: 12px; font-weight: 500; line-height: 1.45; }
+.arcade-panel .arcade-small { background: transparent; padding: 8px; font-size: 12px; }
+.arcade-best { font-size: 11px !important; }
+.arcade-round__title { font-size: 12px; font-weight: 800; margin: 16px 0 4px; }
+.arcade-value { display: block; font-size: 54px; font-weight: 800; line-height: 1.05; font-variant-numeric: tabular-nums; letter-spacing: -.04em; }
+.arcade-status { min-height: 38px; font-weight: 700; }
+.arcade-progress { height: 8px; background: #dbcaaa; margin: 12px 0; }
+.arcade-progress span { display: block; height: 100%; background: #187575; transform-origin: left; transition: transform 160ms ease-out; }
+.arcade-round__actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.arcade-round small { display: block; font-size: 10px; margin-top: 12px; line-height: 1.5; }
+.arcade-active .journey, .arcade-active .experience-tools, .arcade-active .experience-hud__tip { display: none !important; }
+@media (max-width: 768px)
+{
+    .arcade-panel { right: 10px; bottom: 155px; padding: 12px; width: min(300px, calc(100vw - 44px)); max-height: calc(100dvh - 310px); box-shadow: 4px 4px 0 #172334; }
+    .arcade-panel h2 { font-size: 24px; }
+    .arcade-active .arcade-panel h2, .arcade-active .arcade-panel__eyebrow, .arcade-active .arcade-round small { display: none; }
+    .arcade-active .arcade-panel { top: 112px; bottom: auto; width: min(400px, calc(100vw - 20px)); padding: 10px; }
+    .arcade-active .arcade-round { display: grid; grid-template-columns: 100px 1fr; column-gap: 10px; align-items: center; }
+    .arcade-active .arcade-round__title, .arcade-active .arcade-progress, .arcade-active .arcade-round__actions { grid-column: 1 / -1; }
+    .arcade-active .arcade-round__actions { gap: 6px; }
+    .arcade-active .arcade-round__actions button { padding: 8px; }
+    .arcade-active .arcade-status { font-size: 11px; min-height: 0; }
+    .arcade-active .arcade-value { font-size: 28px; }
+    .arcade-active .experience-hud { display: none; }
+    .arcade-value { font-size: 38px; }
+    .arcade-round__title { margin-top: 0; }
+}
+@media (max-height: 550px)
+{
+    .arcade-panel { bottom: 8px; max-height: calc(100dvh - 120px); }
+}
+@media (prefers-reduced-motion: reduce)
+{
+    .arcade-panel button, .arcade-progress span { transition: none; }
+}
+
 .city-welcome
 {
     position: fixed;

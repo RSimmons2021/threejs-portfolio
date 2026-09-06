@@ -33,6 +33,7 @@ import GuidedTour from './GuidedTour.js'
 import WorldDiagnostics from './WorldDiagnostics.js'
 import ExperienceDirector from './ExperienceDirector.js'
 import City from './City.js'
+import Arcade from './Arcade.js'
 
 export default class World
 {
@@ -121,6 +122,8 @@ export default class World
         this.setGuidedTour()
         this.setDiagnostics()
         this.setExperienceDirector()
+        this.arcade = new Arcade(this)
+        this.container.add(this.arcade.container)
         this.loadDeferredContent()
     }
 

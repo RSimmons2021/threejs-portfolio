@@ -6,6 +6,7 @@
     "dev": "vite",
     "assets:billboards": "node scripts/build-billboards.mjs",
     "test:assets": "node --test scripts/assets.test.mjs",
+    "test:arcade": "node --test scripts/arcade.test.mjs",
     "build": "vite build"
   },
   "devDependencies": {

@@ -1,6 +1,6 @@
 # Manhattan Circuit
 
-The portfolio now uses an original Blender F1-style car and a stylized New York streetscape: 36 towers with stepped crowns, spires, window grids, water tanks, awnings, crosswalks, traffic signals, and green NYC street signs. Purple urban ginkgo trees replace the yellow trees. The old statues, pedestals, raised road tiles and obsolete collision bodies are retired; the playground retains its game rails and goal. Foreground block 32 is omitted to keep the contact links visible and accessible.
+The portfolio now uses an original Blender F1-style car and a stylized New York streetscape: 36 towers with stepped crowns, spires, window grids, water tanks, awnings, crosswalks, traffic signals, and green NYC street signs. Purple urban ginkgo trees replace the yellow trees. The old statues, pedestals, raised road tiles and obsolete collision bodies are retired. The playground now hosts [After Hours Arcade](after-hours-arcade.md). Foreground block 32 is omitted to keep the contact links visible and accessible; block 29 sits at the district's western edge to keep the arcade camera clear.
 
 ## Asset workflow
 

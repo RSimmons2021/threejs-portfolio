@@ -144,7 +144,7 @@ try:
     for i in range(19):
         buildings.append((26+i*7,-14+(i%3)*3,5.5,5,10+(i*7%13)))
     buildings.extend([(-10,-20,5,5,15),(10,-20,5,5,12),(-10,-43,5,5,14),
-                      (10,-43,5,5,17),(-13,-54,5,5,16),(21,-48,5,5,12),
+                      (10,-43,5,5,17),(-64,-54,5,5,16),(21,-48,5,5,12),
                       (-13,-66,5,5,13),(22,-65,5,5,16),(-55,-16,5,5,18),
                       (-46,-16,5,5,15),(-37,-16,5,5,20),(-28,-16,5,5,12)])
     for i,(x,y,w,d,h) in enumerate(buildings):
@@ -221,6 +221,61 @@ try:
             rod('violet' if j%2 else 'pink',(x+dx,y+dy,1.9),(x+dx,y+dy,2.65),.85,5,top=.42)
     city.extend(flush('cyber-grove'))
     export('manhattan',city)
+
+    # Daylight-first arcade: painted cream/teal lane, warm masonry and ink trim.
+    box('stone',(-39,-46,.012),(39,19,.024))
+    box('ink',(-39,-45,.028),(27,8.1,.016))
+    box('teal',(-39,-45,.04),(26,7.5,.012))
+    for y in [-48.4,-41.6]:
+        box('cream',(-39,y,.051),(26,.12,.01))
+    for y in [-49,-41]:
+        box('ink',(-39,y,.23),(27,.28,.46))
+        box('cream',(-39,y,.47),(27,.3,.04))
+    for x in range(-51,-27,2):
+        box('glass',(x,-45,.049),(.04,7.1,.01))
+    box('pink',(-31,-45,.056),(.17,7.5,.01))
+    # Four-way aiming chevrons, painted rather than light-dependent.
+    for y in [-47.4,-46.2,-45,-43.8,-42.6]:
+        poly('cream',[(-35,y,.057),(-34.3,y-.25,.057),(-34.3,y+.25,.057)],[(0,1,2)])
+    box('brick',(-43,-38.9,2.2),(29,.6,4.4))
+    box('ink',(-43,-38.9,4.45),(29.5,1.1,.2))
+    for z in [.6,1.2,1.8,2.4]:
+        box('cream',(-43,-39.21,z),(28,.018,.035))
+    for x in [-54,-48,-42,-36,-30]:
+        box('ink',(x,-39.25,1.3),(4,.05,2.2))
+        box('blue',(x,-39.29,1.3),(3.6,.025,1.95))
+        for z in [.5,.8,1.1,1.4,1.7,2.0]:
+            box('glass',(x,-39.31,z),(3.5,.012,.025))
+        box('gold',(x,-39.65,2.45),(4.1,.9,.13))
+    # Fire escape, roof pipes and a slim side fence, all batched by material.
+    box('ink',(-54,-39.9,3.0),(4,1.6,.12))
+    for x in [-55.8,-52.2]:
+        rod('ink',(x,-40.6,3),(x,-40.6,4),.045)
+    rod('cream',(-55.8,-40.6,4),(-52.2,-40.6,4),.035)
+    for z in [i*.3 for i in range(1,10)]:
+        rod('ink',(-55,-40,z),(-54.3,-40,z),.035)
+    for x in [-55,-54.3]: rod('ink',(x,-40,0),(x,-40,3),.035)
+    for x in [-48,-38]: rod('ink',(x,-38.9,4.4),(x,-38.9,5.3),.16)
+    box('ink',(-53,-45,.45),(.5,11,.9))
+    for y in [-49,-46,-43,-40]: rod('ink',(-53,y,.9),(-53,y,2),.045)
+    rod('cream',(-53,-49,2),(-53,-40,2),.035)
+    for y in range(-49,-40):
+        rod('ink',(-53,y,.95),(-53,y+1,1.95),.018)
+        rod('ink',(-53,y,1.95),(-53,y+1,.95),.018)
+    # Small tire stacks around the courtyard, never on the lane or approach.
+    for x,y in [(-54,-51),(-50,-51),(-29,-51)]:
+        for z in [.2,.55]:
+            rod('ink',(x,y,z-.15),(x,y,z+.15),.55,12)
+            rod('gold',(x,y,z+.151),(x,y,z+.17),.28,12)
+    export('arcade-courtyard',flush('arcade courtyard'))
+    # Faceted, oversized bowling pin with two coral neck stripes.
+    for z0,z1,r0,r1,key in [(0,.12,.28,.34,'cream'),(.12,.5,.34,.4,'cream'),
+                           (.5,.85,.4,.22,'cream'),(.85,.99,.22,.16,'cream'),
+                           (.99,1.07,.16,.16,'red'),(1.07,1.15,.16,.16,'cream'),
+                           (1.15,1.23,.16,.18,'red'),(1.23,1.42,.18,.26,'cream'),
+                           (1.42,1.6,.26,.08,'cream')]:
+        rod(key,(0,0,z0),(0,0,z1),r0,12,top=r1)
+    export('arcade-pin',flush('arcade pin'))
 
     # Link-specific landmarks: objects communicate their destination directly.
     for kind in ['github','linkedin','email','portfolio']:

@@ -62,3 +62,14 @@ test('contact links remain clear of the foreground tower', () => {
     assert.equal(blocks.size, 36)
     assert.ok(!blocks.has('32'), 'foreground block 32 must not generate meshes, shadows, or colliders')
 })
+
+test('arcade assets are isolated, lightweight and colored for daylight', () => {
+    for(const name of ['arcade-courtyard', 'arcade-pin']) {
+        const { buffer, json } = readGlb(name)
+        assert.equal(json.scenes.length, 1)
+        assert.ok(json.nodes.every(node => node.name.startsWith('cel_')))
+        assert.ok(buffer.length < (name === 'arcade-pin' ? 25_000 : 150_000))
+        assert.ok(json.materials.some(m => m.name.startsWith('cel_cream')))
+        assert.ok(json.materials.some(m => m.name.startsWith(name === 'arcade-pin' ? 'cel_red' : 'cel_teal')))
+    }
+})

@@ -5,6 +5,8 @@ import EventEmitter from './Utils/EventEmitter.js'
 
 const CORE_RESOURCES = [
     { name: 'manhattan', source: './models/nyc/manhattan.glb' },
+    { name: 'arcadeCourtyard', source: './models/nyc/arcade-courtyard.glb' },
+    { name: 'arcadePin', source: './models/nyc/arcade-pin.glb' },
     ...['github', 'linkedin', 'email', 'portfolio'].map((kind) => ({ name: `link${kind}`, source: `./models/nyc/link-${kind}.glb` })),
     // Matcaps
     { name: 'matcapBeige', source: './models/matcaps/beige.png', type: 'texture' },
@@ -41,16 +43,12 @@ const CORE_RESOURCES = [
     { name: 'informationContactMailLabel', source: './models/information/static/contactMailLabel.png', type: 'texture' },
 
     // Playground and interactive props
-    { name: 'playgroundStaticBase', source: './models/playground/static/base.glb' },
-    { name: 'playgroundStaticCollision', source: './models/playground/static/collision.glb' },
-    { name: 'playgroundStaticFloorShadow', source: './models/playground/static/floorShadow.png', type: 'texture' },
     { name: 'brickBase', source: './models/brick/base.glb' },
     { name: 'brickCollision', source: './models/brick/collision.glb' },
     { name: 'hornBase', source: './models/horn/base.glb' },
     { name: 'hornCollision', source: './models/horn/collision.glb' },
     { name: 'bowlingBallBase', source: './models/bowlingBall/base.glb' },
     { name: 'bowlingBallCollision', source: './models/bowlingBall/collision.glb' },
-    { name: 'bowlingPinBase', source: './models/bowlingPin/base.glb' },
     { name: 'bowlingPinCollision', source: './models/bowlingPin/collision.glb' },
 
     // Interaction labels

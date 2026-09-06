@@ -14,7 +14,7 @@ export default class GuidedTour
             { id: 'intro', label: 'Intro', x: 0, y: 2, z: 3, heading: - Math.PI * 0.5, cameraAngle: 'default', zoom: 0.8 },
             { id: 'projects', label: 'Projects', x: 30, y: - 30, z: 3, heading: 0, cameraAngle: 'projects', zoom: 0.3 },
             { id: 'about', label: 'About', x: 1.2, y: - 54, z: 3, heading: - Math.PI * 0.5, cameraAngle: 'default', zoom: 0.42 },
-            { id: 'play', label: 'Play', x: - 22, y: - 36, z: 3, heading: 0, cameraAngle: 'default', zoom: 0.5 }
+            { id: 'play', label: 'Play', x: - 37, y: - 44, z: 1, heading: Math.PI, cameraAngle: 'projects', zoom: 1 }
         ]
 
         this.setElement()
@@ -61,6 +61,7 @@ export default class GuidedTour
 
     goTo(_target)
     {
+        window.dispatchEvent(new Event('portfolio:navigate'))
         const body = this.physics?.car?.chassis?.body
         if(!body)
         {

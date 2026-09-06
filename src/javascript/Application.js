@@ -60,6 +60,7 @@ export default class Application
         {
             this.config.touch = true
             this.world.controls.setTouch()
+            if(this.world.started) this.world.controls.touch.reveal()
 
             this.passes.horizontalBlurPass.strength = 1
             this.passes.horizontalBlurPass.material.uniforms.uStrength.value = new THREE.Vector2(this.passes.horizontalBlurPass.strength, 0)

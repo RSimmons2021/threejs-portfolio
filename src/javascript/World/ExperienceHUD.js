@@ -71,7 +71,7 @@ export default class ExperienceHUD
             </div>
             <div class="experience-hud__row experience-hud__row--secondary">
                 <div class="experience-hud__tip js-hud-tip-controls"></div>
-                <div class="experience-hud__tip js-hud-tip-goal is-hidden">Goal: bowl a strike to unlock the resume download</div>
+                <div class="experience-hud__tip js-hud-tip-goal is-hidden">Free play: race your ghost or bowl three frames at the arcade</div>
             </div>
         `
 
