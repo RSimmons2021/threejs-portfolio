@@ -2424,14 +2424,108 @@ body.is-touch-input .career-game__lede kbd { display: none; }
     .career-prompt { bottom: 200px; font-size: 12px; padding: 10px 13px; }
 }
 
-/* Sky gradient. The WebGL canvas is transparent wherever the scene draws
-   nothing, so this sits behind it and reads as the sky; Sky.js repaints it as
-   the day/night cycle moves. */
-.sky-backdrop
+
+/* Skateboard toggle: an on state you can see at a glance. */
+.explorer-controls button.is-on { background: #ffca62; color: #16130e; border-color: #16130e; }
+
+/* Indoor bar, shown while you are inside a modelled interior. */
+.interior-bar
 {
     position: fixed;
-    inset: 0;
-    z-index: -1;
-    pointer-events: none;
-    background-image: linear-gradient(to bottom, #2f7bc4 0%, #7cc0e8 42%, #cfe9f7 72%, #cfe9f7 100%);
+    left: 50%;
+    bottom: 96px;
+    z-index: 160;
+    transform: translateX(-50%);
+    display: grid;
+    gap: 9px;
+    max-width: min(560px, calc(100vw - 24px));
+    padding: 12px 14px;
+    color: var(--ui-text);
+    background: var(--ui-bg);
+    border: 1px solid var(--ui-border);
+    border-radius: 10px;
+    font-family: var(--font-ui);
 }
+.interior-bar[hidden] { display: none; }
+.interior-bar__where { margin: 0; font-size: 11px; font-weight: 700; letter-spacing: .07em; color: var(--ui-accent); }
+.interior-bar__actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.interior-bar button
+{
+    min-height: 42px;
+    padding: 8px 13px;
+    font: 700 12px var(--font-ui);
+    color: var(--ui-ink);
+    background: var(--ui-accent);
+    border: 0;
+    border-radius: 7px;
+    cursor: pointer;
+}
+.interior-bar button:hover { background: var(--experience-secondary); }
+.interior-bar button kbd { font: inherit; opacity: .65; }
+body.is-touch-input .interior-bar kbd { display: none; }
+/* Outdoors-only chrome has no business showing while you are inside. */
+/* The prompt is how you use the bed and the door, so it stays indoors. */
+.is-indoors .minimap { display: none; }
+/* Indoors is first person only, so the view toggle would do nothing. */
+.is-indoors .explorer-controls [data-explorer="view"] { display: none; }
+
+@media (max-width: 900px)
+{
+    .interior-bar { bottom: 150px; padding: 10px; }
+    .interior-bar button { font-size: 11px; padding: 7px 10px; }
+}
+
+/* Bag: the inventory drawer beside the objectives drawer. */
+.career-hud__bag[hidden] { display: none; }
+.career-hud__bag { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--ui-soft); display: grid; gap: 6px; max-height: 32vh; overflow-y: auto; }
+.career-bag__item { display: flex; align-items: center; gap: 8px; font-size: 10.5px; color: var(--ui-dim); }
+.career-bag__item[data-on="true"] { color: var(--ui-text); }
+.career-bag__item span { flex: 1; }
+.career-bag__item button
+{
+    min-height: 24px;
+    padding: 3px 8px;
+    font: 700 9px var(--font-ui);
+    letter-spacing: .05em;
+    color: var(--ui-ink);
+    background: var(--ui-accent);
+    border: 0;
+    border-radius: 5px;
+    cursor: pointer;
+}
+.career-bag__item[data-on="true"] button { background: #86ded7; }
+.career-bag__item button:disabled { background: var(--ui-soft); color: var(--ui-dim); cursor: not-allowed; }
+.career-bag__empty { margin: 0; font-size: 10px; line-height: 1.5; color: var(--ui-dim); }
+.career-hud__top button.is-on { background: #86ded7; }
+
+/* Minigame canvases */
+.career-canvas
+{
+    display: block;
+    width: 100%;
+    height: auto;
+    border: 2px solid #172334;
+    background: #16130e;
+    image-rendering: auto;
+}
+.career-options button, .career-case { animation: career-slide-in 220ms ease-out both; }
+@keyframes career-slide-in { from { opacity: 0; transform: translateX(14px); } }
+@media (prefers-reduced-motion: reduce) { .career-options button, .career-case { animation: none; } }
+
+/* The arcade panel is a cream card, but its type was picking up the dark-theme
+   text colours from further up the sheet and rendering amber-on-cream. Pin the
+   ink explicitly so the card is legible whatever else is in scope. */
+.arcade-panel,
+.arcade-panel h2,
+.arcade-panel p,
+.arcade-panel strong,
+.arcade-panel span,
+.arcade-panel small,
+.arcade-panel .arcade-round__title,
+.arcade-panel .arcade-value,
+.arcade-panel .arcade-status { color: #172334; }
+.arcade-panel h2 span { color: #207c79; }
+.arcade-panel__eyebrow { color: #5d6470; }
+.arcade-panel .arcade-best, .arcade-panel .arcade-round small { color: #5d6470; }
+.arcade-panel button, .arcade-menu button strong, .arcade-menu button span { color: #172334; }
+.arcade-panel .arcade-small { color: #172334; border: 2px solid #172334; }

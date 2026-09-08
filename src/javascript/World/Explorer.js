@@ -16,6 +16,10 @@ export default class Explorer
         this.avatar = createPerson(world.materials)
         this.avatar.visible = false
         world.container.add(this.avatar)
+        this.skating = false
+        this.board = this.createBoard(world.materials)
+        this.board.visible = false
+        world.container.add(this.board)
         this.body = new CANNON.Body({ mass: 65, fixedRotation: true, linearDamping: 0.1 })
         this.body.addShape(new CANNON.Sphere(0.38))
         this.body.collisionRole = 'player-on-foot'
@@ -32,7 +36,30 @@ export default class Explorer
     }
 
     get position() { return this.active ? this.body.position : this.world.physics.car.chassis.body.position }
+    // Everything else in the world draws from raw physics positions, so the
+    // walker has to as well or the camera and the meshes disagree by a frame.
+    get renderPosition() { return this.position }
     get blocked() { return this.world.experienceDirector.locks.size > 0 || this.world.arcade.state !== 'idle' }
+
+    // Deck, trucks and four wheels, in the same flat box language as the walker.
+    createBoard(_materials)
+    {
+        const group = new THREE.Group()
+        const box = new THREE.BoxGeometry(1, 1, 1)
+        const part = (size, position, hex) =>
+        {
+            const mesh = new THREE.Mesh(box, _materials.getCelMaterial(new THREE.Color(hex)))
+            mesh.scale.set(...size)
+            mesh.position.set(...position)
+            group.add(mesh)
+        }
+        part([0.44, 1.35, 0.07], [0, 0, 0.14], '#c2412d')
+        part([0.36, 0.3, 0.05], [0, 0.48, 0.19], '#16130e')
+        part([0.36, 0.3, 0.05], [0, - 0.48, 0.19], '#16130e')
+        for(const y of [0.46, - 0.46]) for(const x of [- 0.22, 0.22])
+            part([0.1, 0.16, 0.16], [x, y, 0.08], '#ffe7b0')
+        return group
+    }
 
     setInterface()
     {
@@ -42,7 +69,7 @@ export default class Explorer
         this.panel.innerHTML = `<div class="explorer-controls__buttons">
             <button type="button" data-explorer="mode">Exit car <kbd>F</kbd></button>
             <button type="button" data-explorer="view" aria-pressed="false">First person <kbd>V</kbd></button>
-            <button type="button" data-explorer="run" aria-pressed="false" hidden>Run</button>
+            <button type="button" data-explorer="run" aria-pressed="false" hidden>Skateboard <kbd>Shift</kbd></button>
             </div><p role="status">F exit car · V first person</p>`
         document.body.appendChild(this.panel)
         this.modeButton = this.panel.querySelector('[data-explorer="mode"]')
@@ -55,12 +82,19 @@ export default class Explorer
             if(this.blocked) return
             if(action === 'mode') this.active ? this.enterCar() : this.exitCar()
             if(action === 'view') this.toggleView()
-            if(action === 'run')
-            {
-                this.running = !this.running
-                this.runButton.setAttribute('aria-pressed', String(this.running))
-            }
+            if(action === 'run') this.setSkating(!this.skating)
         })
+    }
+
+    // The board is a toggle rather than a held key so touch gets it too: tap
+    // once and you keep rolling, the way Stick RPG's skateboard works.
+    setSkating(_next)
+    {
+        this.skating = Boolean(_next)
+        this.runButton.setAttribute('aria-pressed', String(this.skating))
+        this.runButton.classList.toggle('is-on', this.skating)
+        if(this.board) this.board.visible = this.active && this.skating
+        this.updateInterface()
     }
 
     bindInput()
@@ -74,6 +108,11 @@ export default class Explorer
                 event.stopImmediatePropagation()
                 if(event.code === 'KeyF') this.active ? this.enterCar() : this.exitCar()
                 else this.toggleView()
+            }
+            if(this.active && (event.code === 'ShiftLeft' || event.code === 'ShiftRight') && !event.repeat)
+            {
+                event.preventDefault()
+                this.setSkating(!this.skating)
             }
             if(this.active && event.code === 'KeyR') { event.preventDefault(); event.stopImmediatePropagation() }
         }, true)
@@ -155,6 +194,7 @@ export default class Explorer
         this.active = false
         this.world.physics.onFoot = false
         this.avatar.visible = false
+        if(this.board) this.board.visible = false
         this.world.guidedTour.clearControls()
         this.world.physics.car.chassis.body.wakeUp()
         this.lastCarAngle = this.world.physics.car.angle
@@ -182,6 +222,7 @@ export default class Explorer
         camera.instance.fov = camera.fovKick.baseFov
         camera.instance.updateProjectionMatrix()
         this.avatar.visible = this.active && !this.firstPerson
+        if(this.board) this.board.visible = this.active && this.skating && !this.firstPerson
         if(this.firstPerson) camera.pan.disable()
         else
         {
@@ -202,9 +243,9 @@ export default class Explorer
         this.world.experienceHUD.updateInstructionText()
         const touch = this.world.config.touch || window.matchMedia('(max-width: 767px)').matches
         this.hint.textContent = touch
-            ? (this.active ? 'Joystick walks · Run changes pace · Enter beside your car' : 'Exit car to explore on foot') + (this.firstPerson ? ' · Drag to look' : '')
+            ? (this.active ? 'Joystick walks · Skateboard doubles your pace · Enter beside your car' : 'Exit car to explore on foot') + (this.firstPerson ? ' · Drag to look' : '')
             : this.active
-                ? 'WASD / arrows walk · Shift run · F enter car · E interact' + (this.firstPerson ? ' · Drag to look / Esc release mouse' : '')
+                ? `WASD / arrows walk · Shift ${this.skating ? 'steps off the board' : 'grabs the skateboard'} · F enter car · E interact` + (this.firstPerson ? ' · Drag to look / Esc release mouse' : '')
                 : 'F exit car · V change view' + (this.firstPerson ? ' · Click / drag to look · Esc release mouse' : '')
     }
 
@@ -231,16 +272,45 @@ export default class Explorer
             }
             const angle = this.firstPerson ? this.yaw : Math.atan2(-w.camera.angle.value.y, -w.camera.angle.value.x)
             const length = Math.max(1, Math.hypot(forward, right))
-            const speed = this.blocked || document.hidden ? 0 : (a.boost || this.running ? 7 : 3.2)
-            this.body.velocity.x = (Math.cos(angle) * forward + Math.sin(angle) * right) * speed / length
-            this.body.velocity.y = (Math.sin(angle) * forward - Math.cos(angle) * right) * speed / length
+            const speed = this.blocked || document.hidden ? 0 : (this.skating ? 7.6 : 3.2)
+            const targetX = (Math.cos(angle) * forward + Math.sin(angle) * right) * speed / length
+            const targetY = (Math.sin(angle) * forward - Math.cos(angle) * right) * speed / length
+
+            // Ease into the target velocity rather than snapping to it. Snapping
+            // every frame is what made walking feel stepped, and it fought the
+            // solver whenever the walker was in contact with anything. The board
+            // ramps slower in both directions, so it carries and coasts.
+            const delta = Math.min(w.time.delta / 1000, 0.05)
+            const rate = this.skating ? (forward || right ? 3.2 : 1.6) : 14
+            const ease = 1 - Math.exp(- rate * delta)
+            this.body.velocity.x += (targetX - this.body.velocity.x) * ease
+            this.body.velocity.y += (targetY - this.body.velocity.y) * ease
             this.body.angularVelocity.set(0, 0, 0)
-            const moving = Math.hypot(this.body.velocity.x, this.body.velocity.y) > 0.1
+
+            const travelling = Math.hypot(this.body.velocity.x, this.body.velocity.y)
+            const moving = travelling > 0.1
             if(moving) this.body.wakeUp()
-            if(moving) this.avatar.rotation.z = Math.atan2(this.body.velocity.y, this.body.velocity.x) - Math.PI / 2
-            this.phase += Math.min(w.time.delta / 1000, 0.05) * speed * 2.5
-            this.avatar.position.set(this.body.position.x, this.body.position.y, this.body.position.z - 0.38)
-            this.avatar.userData.animate(this.phase, moving && !w.config.reducedMotion)
+            if(moving)
+            {
+                // Turn towards the heading over a few frames; a hard set makes
+                // the avatar flick round whenever the input direction changes.
+                const heading = Math.atan2(this.body.velocity.y, this.body.velocity.x) - Math.PI / 2
+                const current = this.avatar.rotation.z
+                const turn = Math.atan2(Math.sin(heading - current), Math.cos(heading - current))
+                this.avatar.rotation.z = current + turn * Math.min(1, delta * (this.skating ? 8 : 16))
+            }
+            this.phase += delta * travelling * 2.5
+            const render = this.renderPosition
+            this.avatar.position.set(render.x, render.y, render.z - 0.38)
+            // On the board the legs stop cycling and the rider leans into the roll.
+            this.avatar.userData.animate(this.phase, moving && !this.skating && !w.config.reducedMotion)
+            if(this.board)
+            {
+                this.board.visible = this.skating
+                this.board.position.copy(this.avatar.position)
+                this.board.rotation.z = this.avatar.rotation.z
+            }
+            this.avatar.rotation.x = this.skating ? - 0.05 - Math.min(travelling / 7.6, 1) * 0.13 : 0
             if(this.body.position.z < -5) this.body.position.set(this.parked.position.x, this.parked.position.y + 2, 1)
         }
     }
@@ -257,7 +327,7 @@ export default class Explorer
             this.yaw += Math.atan2(Math.sin(angle - this.lastCarAngle), Math.cos(angle - this.lastCarAngle))
             this.lastCarAngle = angle
         }
-        const p = this.position
+        const p = this.renderPosition
         camera.position.set(p.x, p.y, p.z + (this.active ? 1.27 : 0.85))
         this.lookTarget.set(p.x + Math.cos(this.yaw) * Math.cos(this.pitch), p.y + Math.sin(this.yaw) * Math.cos(this.pitch), camera.position.z + Math.sin(this.pitch))
         camera.lookAt(this.lookTarget)

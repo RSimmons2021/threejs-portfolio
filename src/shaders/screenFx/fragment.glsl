@@ -15,9 +15,19 @@ uniform float uTime;
 uniform vec3 uCameraPosition;
 uniform mat4 uInverseViewProjection;
 
+
 varying vec2 vUv;
 
 #include ../partials/cnoise.glsl
+
+// Reconstruct the world-space view ray for this pixel. Used by both the sky
+// and the ground mist below.
+vec3 viewRay()
+{
+    vec2 ndc = vUv * 2.0 - 1.0;
+    vec4 farPoint = uInverseViewProjection * vec4(ndc, 1.0, 1.0);
+    return normalize(farPoint.xyz / farPoint.w - uCameraPosition);
+}
 
 void main()
 {
@@ -35,9 +45,7 @@ void main()
     // of patches anchored to the world instead of a flat screen wash
     if(uFogIntensity > 0.001)
     {
-        vec2 ndc = vUv * 2.0 - 1.0;
-        vec4 farPoint = uInverseViewProjection * vec4(ndc, 1.0, 1.0);
-        vec3 rayDirection = normalize(farPoint.xyz / farPoint.w - uCameraPosition);
+        vec3 rayDirection = viewRay();
 
         float fogAmount = 0.0;
 

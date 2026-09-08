@@ -37,6 +37,7 @@ export default class Sky
         this.dayNightCycle = _options.dayNightCycle
         this.config = _options.config
         this.scene = _options.scene
+        this.floor = _options.floor
 
         this.container = new THREE.Group()
         this.container.name = 'Sky / sun, moon, stars, clouds'
@@ -58,30 +59,19 @@ export default class Sky
         this.time.on('tick', () => this.update())
     }
 
-    // The renderer runs with alpha: true through an EffectComposer with
-    // autoClear off, so the sky region of the canvas is genuinely transparent
-    // and the page shows through it. That makes the page itself the only
-    // reliable surface for the gradient: a scene.background is skipped by the
-    // renderer's background step, and a dome mesh never wins the composite.
-    // Sun, moon, stars and clouds are real meshes drawn on top of it.
+    // The sky of this world is painted by the floor shader: its quad is
+    // NDC-sized and covers every ray above the horizon. That shader used to
+    // hardcode one navy constant, so the sky never changed; these uniforms give
+    // it the time-of-day ramp. Sun, moon, stars and clouds stay real meshes.
     setDome()
     {
-        this.gradient = { horizon: new THREE.Color(), mid: new THREE.Color(), zenith: new THREE.Color(), lastKey: '' }
-
-        this.$backdrop = document.createElement('div')
-        this.$backdrop.className = 'sky-backdrop'
-        this.$backdrop.setAttribute('aria-hidden', 'true')
-        document.body.insertBefore(this.$backdrop, document.body.firstChild)
-    }
-
-    paintGradient()
-    {
-        const g = this.gradient
-        // Only repaint when the colours actually move: this runs on a tick.
-        const key = `${g.zenith.getHexString()}${g.mid.getHexString()}${g.horizon.getHexString()}`
-        if(key === g.lastKey) return
-        g.lastKey = key
-        this.$backdrop.style.backgroundImage = `linear-gradient(to bottom, #${g.zenith.getHexString()} 0%, #${g.mid.getHexString()} 42%, #${g.horizon.getHexString()} 72%, #${g.horizon.getHexString()} 100%)`
+        const uniforms = this.floor.material.uniforms
+        this.gradient = {
+            horizon: uniforms.uSkyHorizon.value,
+            mid: uniforms.uSkyMid.value,
+            zenith: uniforms.uSkyZenith.value
+        }
+        this.sunUniforms = uniforms
     }
 
 
@@ -91,7 +81,7 @@ export default class Sky
     {
         const mesh = new THREE.Mesh(
             new THREE.CircleGeometry(_radius, 32),
-            new THREE.MeshBasicMaterial({ color: new THREE.Color(_colour), transparent: true, opacity: _opacity, depthWrite: false, depthTest: false, fog: false })
+            new THREE.MeshBasicMaterial({ color: new THREE.Color(_colour), transparent: true, opacity: _opacity, depthWrite: false, fog: false })
         )
         mesh.renderOrder = - 9
         mesh.frustumCulled = false
@@ -180,7 +170,6 @@ export default class Sky
             `,
             transparent: true,
             depthWrite: false,
-            depthTest: false,
             fog: false
         })
 
@@ -200,7 +189,7 @@ export default class Sky
 
         for(let i = 0; i < count; i++)
         {
-            const material = new THREE.MeshBasicMaterial({ map: texture, transparent: true, opacity: 0.75, depthWrite: false, depthTest: false, fog: false })
+            const material = new THREE.MeshBasicMaterial({ map: texture, transparent: true, opacity: 0.75, depthWrite: false, fog: false })
             const scale = (34 + Math.random() * 46) * S
             const mesh = new THREE.Mesh(new THREE.PlaneGeometry(scale, scale * 0.42), material)
             mesh.renderOrder = - 9.2
@@ -249,7 +238,6 @@ export default class Sky
         this.gradient.horizon.lerpColors(from.horizon, next.horizon, t)
         this.gradient.mid.lerpColors(from.mid, next.mid, t)
         this.gradient.zenith.lerpColors(from.zenith, next.zenith, t)
-        this.paintGradient()
     }
 
     update()
@@ -285,6 +273,10 @@ export default class Sky
         this.moon.visible = Math.sin(sunAngle + Math.PI) > - 0.12
         this.sunHalo.material.opacity = 0.1 + (1 - sunUp) * 0.28
         this.moonHalo.material.opacity = 0.08 + night * 0.12
+
+        this.sunUniforms.uSunDirection.value.copy(this.sun.position).normalize()
+        this.sunUniforms.uSunStrength.value = Math.max(0, 1 - night * 1.2)
+        this.sunUniforms.uSunColor.value.copy(this.gradient.horizon)
 
         this.starMaterial.uniforms.uOpacity.value = Math.max(0, (night - 0.25) / 0.75)
         this.starMaterial.uniforms.uTime.value = elapsed

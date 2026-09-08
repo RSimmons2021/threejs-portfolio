@@ -56,9 +56,10 @@ export default class Arcade
     label(title, subtitle, x, y, z, width, color = '#fff0c9', vertical = true)
     {
         const canvas = document.createElement('canvas')
-        canvas.width = 1024
-        canvas.height = 256
+        canvas.width = 2048
+        canvas.height = 512
         const ctx = canvas.getContext('2d')
+        ctx.scale(2, 2)
         ctx.fillStyle = color
         ctx.fillRect(0, 0, 1024, 256)
         ctx.strokeStyle = '#172334'
@@ -68,10 +69,11 @@ export default class Arcade
         ctx.textAlign = 'center'
         ctx.font = '900 76px Arial, sans-serif'
         ctx.fillText(title, 512, 116, 940)
-        ctx.font = 'bold 34px Arial, sans-serif'
-        ctx.fillText(subtitle, 512, 197, 940)
+        ctx.font = 'bold 46px Arial, sans-serif'
+        ctx.fillText(subtitle, 512, 200, 940)
         const texture = new THREE.CanvasTexture(canvas)
         texture.colorSpace = THREE.SRGBColorSpace
+        texture.anisotropy = 8
         const mesh = new THREE.Mesh(new THREE.PlaneGeometry(width, width / 4), new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide }))
         if(vertical) mesh.rotation.x = Math.PI / 2
         mesh.position.set(x, y, z)

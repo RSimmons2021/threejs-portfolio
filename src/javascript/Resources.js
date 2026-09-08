@@ -6,6 +6,7 @@ import EventEmitter from './Utils/EventEmitter.js'
 const CORE_RESOURCES = [
     { name: 'manhattan', source: './models/nyc/manhattan.glb' },
     { name: 'apartment', source: './models/nyc/apartment.glb' },
+    { name: 'apartmentInterior', source: './models/nyc/apartment-interior.glb' },
     { name: 'arcadeCourtyard', source: './models/nyc/arcade-courtyard.glb' },
     { name: 'arcadePin', source: './models/nyc/arcade-pin.glb' },
     ...['github', 'linkedin', 'email', 'portfolio'].map((kind) => ({ name: `link${kind}`, source: `./models/nyc/link-${kind}.glb` })),

@@ -22,54 +22,117 @@ const finish = (_state, _onDone, _passed, _summary) =>
     _onDone(_passed, _summary)
 }
 
-// BENCHMARK GYM / SYSTEMS — sustained throughput, not one heroic request.
+// BENCHMARK GYM / SYSTEMS — a live traffic graph. Requests scroll right to
+// left, your tap rate drives throughput, and the p95 line climbs whenever the
+// queue drains slower than it fills.
 export function loadTest($host, onDone)
 {
-    const target = 38
-    const duration = 8000
-    const state = { done: false, count: 0, started: 0, raf: 0 }
+    const duration = 9000
+    const target = 34
+    const state = { done: false, count: 0, started: 0, raf: 0, rate: 0, p95: 0.18, history: [], flash: 0 }
 
     $host.innerHTML = `
-        <p class="career-game__lede">Serve traffic for 8 seconds. Target <strong>${target}k requests</strong>. Tap the pad or hit <kbd>Space</kbd>.</p>
-        <div class="career-meter"><span></span></div>
-        <p class="career-game__read"><strong data-count>0</strong>k / ${target}k · <span data-clock>8.0</span>s</p>
+        <p class="career-game__lede">Hold the line for 9 seconds. Land <strong>${target}k requests</strong> and keep p95 out of the red. Tap the pad or hit <kbd>Space</kbd>.</p>
+        <canvas class="career-canvas" width="640" height="220"></canvas>
+        <p class="career-game__read"><strong data-count>0</strong>k served · p95 <span data-p95>ok</span> · <span data-clock>9.0</span>s</p>
         <button class="career-pad" type="button" data-pad>SERVE</button>`
 
-    const $bar = $host.querySelector('.career-meter span')
+    const canvas = $host.querySelector('canvas')
+    const ctx = canvas.getContext('2d')
     const $count = $host.querySelector('[data-count]')
+    const $p95 = $host.querySelector('[data-p95]')
     const $clock = $host.querySelector('[data-clock]')
     const $pad = $host.querySelector('[data-pad]')
 
     const hit = () =>
     {
         if(state.done) return
-        if(!state.started)
-        {
-            state.started = performance.now()
-            tick()
-        }
+        if(!state.started) { state.started = performance.now(); tick() }
         state.count++
+        state.rate = Math.min(1, state.rate + 0.14)
+        state.flash = 1
         $count.textContent = state.count
-        $bar.style.transform = `scaleX(${Math.min(1, state.count / target)})`
-        $pad.classList.remove('is-hit')
-        void $pad.offsetWidth
-        $pad.classList.add('is-hit')
     }
 
+    const draw = (left) =>
+    {
+        const w = canvas.width, h = canvas.height
+        ctx.clearRect(0, 0, w, h)
+        ctx.fillStyle = '#16130e'
+        ctx.fillRect(0, 0, w, h)
+
+        // SLO band: stay above it
+        ctx.fillStyle = 'rgba(194, 65, 45, 0.22)'
+        ctx.fillRect(0, h - 46, w, 46)
+        ctx.strokeStyle = 'rgba(194, 65, 45, 0.8)'
+        ctx.setLineDash([6, 5])
+        ctx.beginPath(); ctx.moveTo(0, h - 46); ctx.lineTo(w, h - 46); ctx.stroke()
+        ctx.setLineDash([])
+
+        // Throughput history as scrolling bars
+        const bars = state.history
+        const bw = w / 64
+        for(let i = 0; i < bars.length; i++)
+        {
+            const v = bars[i]
+            const bh = Math.max(2, v * (h - 20))
+            ctx.fillStyle = v > 0.34 ? '#187575' : '#c2412d'
+            ctx.fillRect(i * bw, h - bh, bw - 1.5, bh)
+        }
+
+        // p95 needle
+        const y = h - 12 - state.p95 * (h - 40)
+        ctx.strokeStyle = '#ffca62'
+        ctx.lineWidth = 2.5
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke()
+        ctx.fillStyle = '#ffca62'
+        ctx.font = 'bold 15px monospace'
+        ctx.fillText('p95', 8, y - 7)
+
+        // Request pulse on every tap
+        if(state.flash > 0.02)
+        {
+            ctx.fillStyle = `rgba(134, 222, 215, ${state.flash * 0.5})`
+            ctx.fillRect(0, 0, w, h)
+            state.flash *= 0.82
+        }
+
+        ctx.fillStyle = '#fff0d2'
+        ctx.font = 'bold 17px monospace'
+        ctx.fillText(`${(left / 1000).toFixed(1)}s`, w - 66, 26)
+    }
+
+    let last = performance.now()
     const tick = () =>
     {
-        const left = Math.max(0, duration - (performance.now() - state.started))
+        const now = performance.now()
+        const dt = Math.min((now - last) / 1000, 0.05)
+        last = now
+        const left = Math.max(0, duration - (now - state.started))
         $clock.textContent = (left / 1000).toFixed(1)
+
+        state.rate = Math.max(0, state.rate - dt * 0.72)
+        state.history.push(state.rate)
+        if(state.history.length > 64) state.history.shift()
+        // Falling behind pushes the tail latency up; keeping pace pulls it back.
+        state.p95 = Math.max(0.05, Math.min(1, state.p95 + (state.rate < 0.34 ? dt * 0.42 : - dt * 0.5)))
+        $p95.textContent = state.p95 > 0.72 ? 'blown' : state.p95 > 0.4 ? 'drifting' : 'ok'
+
+        draw(left)
+
         if(left <= 0)
         {
-            const passed = state.count >= target
+            const passed = state.count >= target && state.p95 < 0.72
             finish(state, onDone, passed, passed
-                ? `${state.count}k requests held for the full window. p95 never drifted.`
-                : `${state.count}k of ${target}k. The tail latency is where this falls over.`)
+                ? `${state.count}k served with p95 held. That is the shape of a million a day: boring, repeatedly.`
+                : state.count < target
+                    ? `${state.count}k of ${target}k. Throughput was the easy half.`
+                    : `${state.count}k served, but p95 blew out. Average latency was never the number that mattered.`)
             return
         }
         state.raf = requestAnimationFrame(tick)
     }
+    draw(duration)
 
     const key = (_event) =>
     {
@@ -84,52 +147,98 @@ export function loadTest($host, onDone)
     return { destroy() { state.done = true; cancelAnimationFrame(state.raf); window.removeEventListener('keydown', key) } }
 }
 
-// THE SIGNAL ROOM / PRODUCT — hear it before a metric agrees with you.
+// THE SIGNAL ROOM / PRODUCT — a scrolling waveform. Bars ride in from the
+// right and you hit them as they cross the playhead; the take is scored on how
+// close you were, not whether you pressed.
 export function findTheBeat($host, onDone)
 {
-    const beats = 6
-    const period = 900
-    const state = { done: false, index: 0, hits: 0, start: performance.now(), raf: 0 }
+    const beats = 8
+    const period = 850
+    const state = { done: false, index: 0, hits: 0, raf: 0, start: performance.now(), pops: [], verdict: '' }
 
     $host.innerHTML = `
-        <p class="career-game__lede">Six beats. Land each one inside the window. Tap the pad or hit <kbd>Space</kbd>.</p>
-        <div class="career-beat"><i></i><i></i><b data-head></b></div>
+        <p class="career-game__lede">Eight bars. Hit each one as it crosses the head. Tap the pad or hit <kbd>Space</kbd>.</p>
+        <canvas class="career-canvas" width="640" height="200"></canvas>
         <p class="career-game__read"><strong data-hits>0</strong> / ${beats} clean · <span data-verdict>listening</span></p>
         <button class="career-pad" type="button" data-pad>HIT</button>`
 
-    const $head = $host.querySelector('[data-head]')
+    const canvas = $host.querySelector('canvas')
+    const ctx = canvas.getContext('2d')
     const $hits = $host.querySelector('[data-hits]')
     const $verdict = $host.querySelector('[data-verdict]')
     const $pad = $host.querySelector('[data-pad]')
 
-    const phase = () => ((performance.now() - state.start) % period) / period
+    const elapsed = () => performance.now() - state.start
+    const phase = () => (elapsed() % period) / period
 
     const hit = () =>
     {
         if(state.done) return
-        const offset = Math.min(phase(), 1 - phase())
-        const clean = offset < 0.09
+        const p = phase()
+        const offset = Math.min(p, 1 - p)
+        const clean = offset < 0.085
+        const close = offset < 0.15
         if(clean) state.hits++
         state.index++
+        state.verdict = clean ? 'on it' : close ? 'close' : 'off'
+        state.pops.push({ life: 1, clean })
         $hits.textContent = state.hits
-        $verdict.textContent = clean ? 'on it' : offset < 0.16 ? 'close' : 'off'
-        $pad.classList.toggle('is-hit', clean)
-        setTimeout(() => $pad.classList.remove('is-hit'), 120)
+        $verdict.textContent = state.verdict
         if(state.index >= beats)
         {
-            const passed = state.hits >= 4
+            const passed = state.hits >= 5
             finish(state, onDone, passed, passed
-                ? `${state.hits}/${beats} clean. That is the ear that cut MusicGen before the metrics did.`
-                : `${state.hits}/${beats}. Listen again — the window is tighter than it looks.`)
+                ? `${state.hits}/${beats} clean. That is the ear that cut MusicGen months before a metric agreed.`
+                : `${state.hits}/${beats}. The window is tighter than it looks, which is the point.`)
         }
     }
 
-    const tick = () =>
+    const draw = () =>
     {
-        $head.style.left = `${phase() * 100}%`
-        state.raf = requestAnimationFrame(tick)
+        const w = canvas.width, h = canvas.height, mid = h / 2
+        ctx.clearRect(0, 0, w, h)
+        ctx.fillStyle = '#16130e'
+        ctx.fillRect(0, 0, w, h)
+
+        // Waveform: bars scroll leftwards, one per beat
+        const t = elapsed() / period
+        for(let i = -1; i < 9; i++)
+        {
+            const x = w * 0.5 + (i - (t % 1)) * (w * 0.25)
+            if(x < -30 || x > w + 30) continue
+            const strong = true
+            const bh = strong ? h * 0.34 : h * 0.2
+            ctx.fillStyle = 'rgba(147, 214, 208, 0.85)'
+            ctx.fillRect(x - 5, mid - bh, 10, bh * 2)
+        }
+
+        // Playhead and its hit window
+        ctx.fillStyle = 'rgba(24, 117, 117, 0.3)'
+        ctx.fillRect(w * 0.5 - w * 0.021, 0, w * 0.042, h)
+        ctx.strokeStyle = '#c2412d'
+        ctx.lineWidth = 3
+        ctx.beginPath(); ctx.moveTo(w * 0.5, 0); ctx.lineTo(w * 0.5, h); ctx.stroke()
+
+        // Hit feedback rings
+        for(const pop of state.pops)
+        {
+            pop.life *= 0.9
+            if(pop.life < 0.03) continue
+            ctx.strokeStyle = pop.clean ? `rgba(24,117,117,${pop.life})` : `rgba(194,65,45,${pop.life})`
+            ctx.lineWidth = 3
+            ctx.beginPath()
+            ctx.arc(w * 0.5, mid, (1 - pop.life) * 70 + 12, 0, Math.PI * 2)
+            ctx.stroke()
+        }
+        state.pops = state.pops.filter((_pop) => _pop.life >= 0.03)
+
+        ctx.fillStyle = '#fff0d2'
+        ctx.font = 'bold 15px monospace'
+        ctx.fillText(state.verdict.toUpperCase(), 12, 26)
+
+        state.raf = requestAnimationFrame(draw)
     }
-    tick()
+    draw()
 
     const key = (_event) =>
     {

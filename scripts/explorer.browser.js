@@ -15,24 +15,29 @@
     const parked = car.position.clone()
     e.firstPerson = true
     e.yaw = 0
+    // Velocity eases towards the target now rather than snapping, so let it
+    // settle before asserting the top speed.
+    const settle = (frames = 60) => { for(let i = 0; i < frames; i++) e.update() }
     w.controls.actions.up = true
-    e.update()
-    check('Walk speed', Math.abs(e.body.velocity.x - 3.2) < 0.01)
-    w.controls.actions.boost = true
-    e.update()
-    check('Run speed', Math.abs(e.body.velocity.x - 7) < 0.01)
+    settle()
+    check('Walk speed', Math.abs(e.body.velocity.x - 3.2) < 0.05)
+    e.setSkating(true)
+    settle(180)
+    check('Skateboard speed', Math.abs(e.body.velocity.x - 7.6) < 0.1)
+    check('Board is under the walker while skating', e.board.visible)
     w.controls.actions.right = true
-    e.update()
-    check('Diagonal speed is normalized', Math.abs(Math.hypot(e.body.velocity.x, e.body.velocity.y) - 7) < 0.01)
+    settle(180)
+    check('Diagonal speed is normalized', Math.abs(Math.hypot(e.body.velocity.x, e.body.velocity.y) - 7.6) < 0.1)
     if(w.controls.touch)
     {
         const joystick = w.controls.touch.joystick
         joystick.active = true
         joystick.angle.originalValue = Math.PI / 2
-        e.update()
-        check('Touch joystick forward follows the first-person view', e.body.velocity.x > 6.9 && Math.abs(e.body.velocity.y) < 0.01)
+        settle(180)
+        check('Touch joystick forward follows the first-person view', e.body.velocity.x > 7.4 && Math.abs(e.body.velocity.y) < 0.1)
         joystick.active = false
     }
+    e.setSkating(false)
     check('Car remains parked', car.position.distanceTo(parked) < 0.01)
     w.guidedTour.clearControls()
     e.body.position.set(-40, -45, 0.4)

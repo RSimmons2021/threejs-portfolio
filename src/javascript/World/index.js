@@ -36,6 +36,7 @@ import Arcade from './Arcade.js'
 import Explorer from './Explorer.js'
 import Pedestrians from './Pedestrians.js'
 import CareerRPG from './CareerRPG.js'
+import Interiors from './Interiors.js'
 
 export default class World
 {
@@ -132,6 +133,10 @@ export default class World
         // object and the avatar it rebuilds for cosmetics already exists.
         this.careerRPG = new CareerRPG(this)
         this.container.add(this.careerRPG.container)
+        // After CareerRPG: the room's stations register themselves as career
+        // zones so they share the same walk-up prompt as the street doors.
+        this.interiors = new Interiors(this)
+        this.container.add(this.interiors.container)
         this.loadDeferredContent()
     }
 
@@ -585,6 +590,7 @@ export default class World
             camera: this.camera,
             config: this.config,
             scene: this.scene,
+            floor: this.floor,
             dayNightCycle: this.dayNightCycle
         })
         // Straight onto the scene, not world.container: that container keeps

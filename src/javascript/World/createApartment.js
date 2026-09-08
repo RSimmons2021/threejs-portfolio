@@ -1,5 +1,5 @@
 import * as THREE from 'three'
-import { FACING_ANGLE, signBoard } from './createStorefront.js'
+import { FACING_ANGLE, hoverMarker, signBoard } from './createStorefront.js'
 
 /**
  * The apartment you sleep in, modelled in Blender (static/models/nyc/apartment.glb)
@@ -42,6 +42,10 @@ export default function createApartment({ resources, materials, name, sign, colo
         group.add(mesh)
     })
 
+    const marker = hoverMarker(name, colour, 'home', false)
+    marker.position.set(0, - 2.4, 5.0)
+    group.add(marker)
+
     const board = signBoard(name, sign, colour, false, 'home')
     board.position.set(0, 0.22, 3.95)
     board.rotation.set(Math.PI * 0.5, 0, Math.PI, 'ZYX')
@@ -64,8 +68,9 @@ export default function createApartment({ resources, materials, name, sign, colo
     group.userData.setLocked = () => {}
 
     let litAtNight = false
-    group.userData.update = () =>
+    group.userData.update = (_elapsed = 0) =>
     {
+        marker.position.z = 5.0 + Math.sin(_elapsed * 1.7) * 0.22
         const night = lighting ? lighting.nightFactor : 0
         const shouldGlow = night > 0.45
         if(shouldGlow === litAtNight) return

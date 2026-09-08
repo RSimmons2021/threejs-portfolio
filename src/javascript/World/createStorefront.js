@@ -29,9 +29,11 @@ const KIND_GLYPH = {
 const signTexture = (_name, _sign, _colour, _locked, _kind) =>
 {
     const canvas = document.createElement('canvas')
-    canvas.width = 1024
-    canvas.height = 256
+    // 2x the old resolution: at 3.4 world units wide the subtitle was mush.
+    canvas.width = 2048
+    canvas.height = 512
     const ctx = canvas.getContext('2d')
+    ctx.scale(2, 2)
     ctx.fillStyle = _locked ? '#2b2f38' : _colour
     ctx.fillRect(0, 0, 1024, 256)
     ctx.strokeStyle = '#16130e'
@@ -47,13 +49,68 @@ const signTexture = (_name, _sign, _colour, _locked, _kind) =>
     ctx.fillText(_locked ? '✖' : (KIND_GLYPH[_kind] || '●'), 85, 158)
 
     ctx.fillStyle = _locked ? '#8d94a3' : '#16130e'
-    ctx.font = 'bold 78px Arial, sans-serif'
-    ctx.fillText(_name, 592, 116)
-    ctx.font = 'bold 32px monospace'
-    ctx.fillText(_locked ? 'LOCKED' : _sign, 592, 182)
+    ctx.font = 'bold 76px Arial, sans-serif'
+    ctx.fillText(_name, 592, 112)
+    // Was 32px monospace, which is unreadable at this size on a coloured
+    // ground; a heavier sans at 46 with letter spacing survives the mip chain.
+    ctx.font = 'bold 46px Arial, sans-serif'
+    ctx.fillText(_locked ? 'LOCKED' : _sign, 592, 186)
     const texture = new THREE.CanvasTexture(canvas)
     texture.colorSpace = THREE.SRGBColorSpace
+    texture.anisotropy = 8
     return texture
+}
+
+// A floating marker above the door, the way an overworld map pins a building:
+// it always faces the camera, bobs, and is legible from across the street long
+// before the fascia sign is.
+export const hoverMarker = (_name, _colour, _kind, _locked) =>
+{
+    const canvas = document.createElement('canvas')
+    canvas.width = 512
+    canvas.height = 256
+    const ctx = canvas.getContext('2d')
+
+    const w = 512, pad = 12, bodyH = 150, tail = 34
+    ctx.fillStyle = _locked ? '#2b2f38' : _colour
+    ctx.strokeStyle = '#16130e'
+    ctx.lineWidth = 10
+    ctx.beginPath()
+    ctx.roundRect(pad, pad, w - pad * 2, bodyH, 26)
+    ctx.fill()
+    ctx.stroke()
+    // Pointer down towards the doorway.
+    ctx.beginPath()
+    ctx.moveTo(w / 2 - tail, pad + bodyH - 4)
+    ctx.lineTo(w / 2, pad + bodyH + 52)
+    ctx.lineTo(w / 2 + tail, pad + bodyH - 4)
+    ctx.closePath()
+    ctx.fill()
+    ctx.stroke()
+    // Re-fill the seam the pointer's stroke cuts across the body.
+    ctx.fillStyle = _locked ? '#2b2f38' : _colour
+    ctx.fillRect(w / 2 - tail + 6, pad + bodyH - 12, tail * 2 - 12, 12)
+
+    ctx.fillStyle = _locked ? '#8d94a3' : '#16130e'
+    ctx.textAlign = 'center'
+    ctx.font = 'bold 62px Arial, sans-serif'
+    ctx.fillText(_locked ? '✖' : (KIND_GLYPH[_kind] || '●'), 84, pad + 104)
+    const size = _name.length > 14 ? 44 : _name.length > 10 ? 52 : 62
+    ctx.font = `bold ${size}px Arial, sans-serif`
+    ctx.fillText(_name, 286, pad + 100)
+
+    const texture = new THREE.CanvasTexture(canvas)
+    texture.colorSpace = THREE.SRGBColorSpace
+    const sprite = new THREE.Sprite(new THREE.SpriteMaterial({
+        map: texture,
+        transparent: true,
+        depthWrite: false,
+        // A wayfinding marker is useless when the wall it labels cuts it in half.
+        depthTest: false
+    }))
+    sprite.renderOrder = 30
+    sprite.scale.set(4.4, 2.2, 1)
+    return sprite
 }
 
 // Shared by createApartment so every enterable building signs itself the same way.
@@ -88,6 +145,8 @@ export default function createStorefront({ materials, name, sign, colour, facing
         return mesh
     }
 
+    // Offsetting each marker's bob keeps a row of doors from pulsing in lockstep.
+    const bob = Math.random() * Math.PI * 2
     const trim = locked ? '#39404d' : '#16130e'
     // Recessed doorway at walking scale: the opening is 2.3 units tall against a
     // 1.87 eye height, so it reads as a door rather than a loading bay.
@@ -116,6 +175,10 @@ export default function createStorefront({ materials, name, sign, colour, facing
     const decal = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 1.9), mat)
     decal.position.set(0, - 1.05, 0.03)
     group.add(decal)
+
+    const marker = hoverMarker(name, colour, kind, locked)
+    marker.position.set(0, - 2.4, 5.2)
+    group.add(marker)
 
     const board = signBoard(name, sign, colour, locked, kind)
     board.position.set(0, 0.42, 3.5)
@@ -156,6 +219,7 @@ export default function createStorefront({ materials, name, sign, colour, facing
     // A slow pulse on the doorway decal reads as "live" without being a beacon.
     group.userData.update = (_elapsed) =>
     {
+        marker.position.z = 5.2 + Math.sin(_elapsed * 1.7 + bob) * 0.22
         if(locked) return
         mat.opacity = 0.45 + Math.sin(_elapsed * 1.6) * 0.14
     }
@@ -172,6 +236,9 @@ export default function createStorefront({ materials, name, sign, colour, facing
         mat.color.set(locked ? '#39404d' : colour)
         mat.opacity = locked ? 0.25 : 0.6
         for(const mesh of glow) mesh.visible = !locked
+        marker.material.map.dispose()
+        marker.material.map = hoverMarker(name, colour, kind, locked).material.map
+        marker.material.needsUpdate = true
     }
 
     return group

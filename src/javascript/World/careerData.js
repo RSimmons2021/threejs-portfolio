@@ -376,11 +376,13 @@ export const SHOP = [
         name: 'Field jacket',
         cost: 60,
         kind: 'cosmetic',
+        slot: 'body',
         detail: 'Swaps the walker to studio orange.',
         apply: { colour: '#ff8a3d' }
     },
     {
         id: 'headphones',
+        slot: 'head',
         name: 'Studio headphones',
         cost: 80,
         kind: 'cosmetic',
@@ -389,6 +391,7 @@ export const SHOP = [
     },
     {
         id: 'hardhat',
+        slot: 'head',
         name: 'Plant hard hat',
         cost: 70,
         kind: 'cosmetic',
@@ -397,6 +400,7 @@ export const SHOP = [
     },
     {
         id: 'lanyard',
+        slot: 'neck',
         name: 'Contractor lanyard',
         cost: 50,
         kind: 'cosmetic',
@@ -405,6 +409,7 @@ export const SHOP = [
     },
     {
         id: 'sitemap',
+        slot: 'kit',
         name: 'Site map',
         cost: 90,
         kind: 'utility',

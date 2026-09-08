@@ -17,6 +17,8 @@ const BLANK = () => ({
     npcs: [],
     trained: [],
     owned: [],
+    equipped: [],
+    espresso: 0,
     quests: [],
     visited: [],
     containment: 0
@@ -42,8 +44,8 @@ export default class CareerRPG
         try { this.storage = window.localStorage } catch { this.storage = null }
         this.state = this.read()
 
-        this.setDoors()
         this.setInterface()
+        this.setDoors()
         this.setDialog()
         this.npcs = new CareerNPCs(_world, this)
         this.container.add(this.npcs.container)
@@ -75,6 +77,7 @@ export default class CareerRPG
                 npcs: Array.isArray(raw.npcs) ? raw.npcs : [],
                 trained: Array.isArray(raw.trained) ? raw.trained : [],
                 owned: Array.isArray(raw.owned) ? raw.owned : [],
+                equipped: Array.isArray(raw.equipped) ? raw.equipped : [],
                 quests: Array.isArray(raw.quests) ? raw.quests : [],
                 visited: Array.isArray(raw.visited) ? raw.visited : []
             }
@@ -203,9 +206,9 @@ export default class CareerRPG
 
     // Touch devices have no E key, and tapping an area's floor patch is blocked
     // in first person, so every career zone also drives an on-screen prompt.
-    registerZone(_area, _label, _run)
+    registerZone(_area, _label, _run, _verb = 'Enter')
     {
-        this.zones.push({ area: _area, label: _label, run: _run })
+        this.zones.push({ area: _area, label: _label, run: _run, verb: _verb })
     }
 
     syncDoorLocks()
@@ -214,16 +217,31 @@ export default class CareerRPG
         {
             storefront.userData.setLocked(!this.meets(building.requires))
         }
-        if(this.world.minimap) this.world.minimap.doors = this.state.owned.includes('sitemap')
-            ? BUILDINGS.map((_b) => ({ x: _b.door.x, y: _b.door.y, open: this.meets(_b.requires) }))
-            : []
+        const minimap = this.world.minimap
+        if(minimap)
+        {
+            // Reachable doors always show. The Site Map adds the locked ones,
+            // so the purchase reveals what you still cannot get into.
+            const hasMap = this.state.equipped.includes('sitemap')
+            minimap.doors = BUILDINGS
+                .filter((_b) => hasMap || this.meets(_b.requires))
+                .map((_b) => ({
+                    x: _b.door.x,
+                    y: _b.door.y,
+                    open: this.meets(_b.requires),
+                    colour: _b.colour,
+                    visited: this.state.visited.includes(_b.id)
+                }))
+            minimap.people = NPCS.map((_npc) => ({ x: _npc.position.x, y: _npc.position.y, met: this.state.npcs.includes(_npc.id) }))
+        }
     }
 
     /* ----------------------------------------------------------- cosmetics */
 
     applyCosmetics()
     {
-        const owned = this.state.owned
+        // Worn, not merely owned: the bag decides what the walker has on.
+        const owned = this.state.equipped
         const jacket = owned.includes('jacket') ? '#ff8a3d' : '#ffb627'
         const explorer = this.world.explorer
         if(!explorer) return
@@ -272,7 +290,8 @@ export default class CareerRPG
             <div class="career-hud__top">
                 <span class="career-hud__day" data-day>DAY 1</span>
                 <span class="career-hud__credits"><strong data-credits>0</strong> cr</span>
-                <button type="button" data-career="log" aria-expanded="false">Objectives</button>
+                <button type="button" data-career="log" aria-expanded="false">Goals</button>
+                <button type="button" data-career="bag" aria-expanded="false">Bag</button>
             </div>
             <div class="career-hud__focus"><i data-focus></i></div>
             <div class="career-hud__stats">${STATS.map((_stat) => `
@@ -281,12 +300,18 @@ export default class CareerRPG
                     <b data-bar><i></i></b>
                     <em data-value>0</em>
                 </div>`).join('')}</div>
-            <ol class="career-hud__log" data-log hidden></ol>`
+            <ol class="career-hud__log" data-log hidden></ol>
+            <div class="career-hud__bag" data-bag hidden></div>`
         document.body.appendChild(this.$panel)
 
         this.$panel.addEventListener('click', (_event) =>
         {
-            if(_event.target.closest('[data-career="log"]')) this.toggleLog()
+            if(_event.target.closest('[data-career="log"]')) this.togglePanel('log')
+            if(_event.target.closest('[data-career="bag"]')) this.togglePanel('bag')
+            const equip = _event.target.closest('[data-equip]')
+            if(equip) this.toggleEquip(equip.dataset.equip)
+            const use = _event.target.closest('[data-use]')
+            if(use) this.useItem(use.dataset.use)
         })
 
         this.$prompt = document.createElement('button')
@@ -297,12 +322,53 @@ export default class CareerRPG
         document.body.appendChild(this.$prompt)
     }
 
-    toggleLog()
+    // One drawer at a time: the HUD sits over the city and should not grow into
+    // a wall of text.
+    togglePanel(_which)
     {
-        const $log = this.$panel.querySelector('[data-log]')
-        const $button = this.$panel.querySelector('[data-career="log"]')
-        $log.hidden = !$log.hidden
-        $button.setAttribute('aria-expanded', String(!$log.hidden))
+        for(const name of ['log', 'bag'])
+        {
+            const $el = this.$panel.querySelector(`[data-${name}]`)
+            const $button = this.$panel.querySelector(`[data-career="${name}"]`)
+            const open = name === _which ? $el.hidden : false
+            $el.hidden = !open
+            $button.setAttribute('aria-expanded', String(open))
+            $button.classList.toggle('is-on', open)
+        }
+        this.render()
+    }
+
+    toggleEquip(_id)
+    {
+        const item = SHOP.find((_item) => _item.id === _id)
+        if(!item || !this.state.owned.includes(_id)) return
+        const equipped = this.state.equipped
+        if(equipped.includes(_id)) equipped.splice(equipped.indexOf(_id), 1)
+        else
+        {
+            // One item per slot, so a hard hat and headphones cannot share a head.
+            for(const other of SHOP)
+            {
+                if(other.slot && other.slot === item.slot && equipped.includes(other.id))
+                    equipped.splice(equipped.indexOf(other.id), 1)
+            }
+            equipped.push(_id)
+        }
+        this.save()
+        this.applyCosmetics()
+        this.syncDoorLocks()
+        this.render()
+    }
+
+    useItem(_id)
+    {
+        if(_id !== 'espresso' || this.state.espresso < 1) return
+        this.state.espresso -= 1
+        this.state.focus = Math.min(MAX_FOCUS, this.state.focus + 40)
+        this.save()
+        this.notify(`Espresso. +40 focus, ${this.state.espresso} left.`, 'project')
+        this.render()
+        this.renderFoot()
     }
 
     render()
@@ -319,6 +385,23 @@ export default class CareerRPG
             const $stat = this.$panel.querySelector(`[data-stat="${stat.id}"]`)
             $stat.querySelector('[data-bar] i').style.transform = `scaleX(${this.stat(stat.id) / MAX_STAT})`
             $stat.querySelector('[data-value]').textContent = this.stat(stat.id)
+        }
+
+        const $bag = this.$panel.querySelector('[data-bag]')
+        if(!$bag.hidden)
+        {
+            const owned = SHOP.filter((_item) => s.owned.includes(_item.id) || (_item.id === 'espresso' && s.espresso > 0))
+            $bag.innerHTML = owned.length
+                ? owned.map((_item) =>
+                {
+                    if(_item.kind === 'consumable')
+                        return `<div class="career-bag__item"><span>${_item.name} ×${s.espresso}</span>
+                            <button type="button" data-use="${_item.id}"${s.espresso ? '' : ' disabled'}>Use</button></div>`
+                    const on = s.equipped.includes(_item.id)
+                    return `<div class="career-bag__item" data-on="${on}"><span>${_item.name}</span>
+                        <button type="button" data-equip="${_item.id}">${on ? 'Worn' : 'Wear'}</button></div>`
+                }).join('')
+                : '<p class="career-bag__empty">Nothing yet. Supply is north of the start, past the Home Lab.</p>'
         }
 
         this.$panel.querySelector('[data-log]').innerHTML = QUESTS.map((_quest) =>
@@ -346,7 +429,7 @@ export default class CareerRPG
             this.nearest = zone
             this.$prompt.hidden = !zone
             // No key hint on touch: there is no keyboard to press E on.
-            if(zone) this.$prompt.innerHTML = `Enter <strong>${zone.label}</strong>`
+            if(zone) this.$prompt.innerHTML = `${zone.verb || 'Enter'} <strong>${zone.label}</strong>`
                 + (this.world.config.touch ? '' : '<kbd>E</kbd>')
         }
 
@@ -357,7 +440,7 @@ export default class CareerRPG
         {
             this.touchInput = touch
             document.body.classList.toggle('is-touch-input', touch)
-            if(this.nearest) this.$prompt.innerHTML = `Enter <strong>${this.nearest.label}</strong>`
+            if(this.nearest) this.$prompt.innerHTML = `${this.nearest.verb || 'Enter'} <strong>${this.nearest.label}</strong>`
                 + (touch ? '' : '<kbd>E</kbd>')
         }
 
@@ -406,6 +489,21 @@ export default class CareerRPG
     open(_building)
     {
         if(this.$dialog.open || this.world.arcade?.state !== 'idle') return
+
+        // A building with a modelled interior is walked into, not read about.
+        // This has to come before the interaction lock: the lock freezes the
+        // walker for a dialog, and there is no dialog to release it here.
+        if(_building.kind === 'home' && this.world.interiors)
+        {
+            this.world.interiors.enter(_building)
+            if(!this.state.visited.includes(_building.id))
+            {
+                this.state.visited.push(_building.id)
+                this.save()
+            }
+            return
+        }
+
         this.building = _building
         this.world.experienceDirector?.setInteractionLock('career', true)
         document.body.classList.add('has-career-dialog')
@@ -455,6 +553,7 @@ export default class CareerRPG
         {
             this.state.npcs.push(_npc.id)
             this.grant({ credits: _npc.credits, gain: _npc.gain })
+            this.syncDoorLocks()
             const gained = Object.entries(_npc.gain || {}).map(([id, v]) => `+${v} ${id.toUpperCase()}`).join(' · ')
             this.$body.insertAdjacentHTML('beforeend', `<p class="career-reward">+${_npc.credits} cr${gained ? ` · ${gained}` : ''}</p>`)
         }
@@ -593,6 +692,31 @@ export default class CareerRPG
         this.renderFoot()
     }
 
+    sleep()
+    {
+        this.state.day += 1
+        this.state.focus = MAX_FOCUS
+        this.save()
+        this.notify(`Day ${this.state.day}. Focus restored.`, 'project')
+        this.render()
+    }
+
+    openHomeLab()
+    {
+        const building = BUILDINGS.find((_b) => _b.kind === 'home')
+        if(!building || this.$dialog.open) return
+        this.building = building
+        this.world.experienceDirector?.setInteractionLock('career', true)
+        document.body.classList.add('has-career-dialog')
+        this.$dialog.querySelector('[data-eyebrow]').textContent = building.eyebrow
+        this.$dialog.querySelector('[data-title]').innerHTML = `${building.name}<span>${building.sign}</span>`
+        this.$dialog.querySelector('[data-intro]').textContent = building.intro
+        this.renderHome()
+        this.renderFoot()
+        this.$dialog.showModal()
+        this.render()
+    }
+
     renderHome()
     {
         this.$body.innerHTML = `
@@ -605,13 +729,9 @@ export default class CareerRPG
 
         this.$body.querySelector('[data-sleep]').addEventListener('click', () =>
         {
-            this.state.day += 1
-            this.state.focus = MAX_FOCUS
-            this.save()
-            this.notify(`Day ${this.state.day}. Focus restored.`, 'project')
+            this.sleep()
             this.renderHome()
             this.renderFoot()
-            this.render()
         })
         this.$body.querySelector('[data-reset]').addEventListener('click', () => this.reset())
     }
@@ -647,14 +767,16 @@ export default class CareerRPG
         this.state.credits -= item.cost
         if(item.kind === 'consumable')
         {
-            this.state.focus = Math.min(MAX_FOCUS, this.state.focus + 40)
+            this.state.espresso += 1
             if(!this.state.owned.includes(_id)) this.state.owned.push(_id)
-            this.notify('Espresso. +40 focus.', 'project')
+            this.notify(`Espresso in the bag. ${this.state.espresso} on hand.`, 'project')
         }
         else
         {
             this.state.owned.push(_id)
-            this.notify(`${item.name} acquired.`, 'project')
+            // Wear it straight away; the bag can take it off again.
+            this.toggleEquip(_id)
+            this.notify(`${item.name} acquired and worn.`, 'project')
         }
 
         this.save()

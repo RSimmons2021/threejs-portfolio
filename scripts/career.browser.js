@@ -73,16 +73,38 @@
     check('Purchase rebuilds the avatar with the cosmetic', e.avatar.children.length > partsBefore)
     check('Owned cosmetics cannot be rebought', r.$dialog.querySelector('[data-buy="headphones"]').disabled)
     r.$dialog.querySelector('[data-buy="sitemap"]').click()
-    check('Site map marks every door on the minimap', w.minimap.doors.length === 12)
+    check('Site map reveals the locked doors too', w.minimap.doors.length === 12)
     r.close()
 
-    // Sleep advances the day and restores focus
+    // The apartment is a modelled interior you walk into, not a card
     r.state.focus = 10; r.save()
+    if(e.firstPerson) e.toggleView()
     at('homelab').area.interact()
-    r.$dialog.querySelector('[data-sleep]').click()
+    check('Apartment door walks you inside', Boolean(w.interiors.active))
+    check('Indoors forces first person', e.firstPerson)
+    check('Entering an interior holds no interaction lock', !e.blocked && !w.experienceDirector.locks.has('career'))
+    check('Indoor bar is showing', !w.interiors.$panel.hidden)
+    w.interiors.$panel.querySelector('[data-interior="sleep"]').click()
     check('Sleep advances the day', r.state.day === 2)
     check('Sleep restores focus', r.state.focus === 100)
+    w.interiors.$panel.querySelector('[data-interior="leave"]').click()
+    check('Leaving puts you back on the street', !w.interiors.active && w.interiors.$panel.hidden)
+    check('Leaving restores the view you arrived in', !e.firstPerson)
+
+    // Skateboard replaces the old sprint
+    e.setSkating(true)
+    check('Skateboard shows under the walker', e.skating && e.board.visible)
+    e.setSkating(false)
+    check('Stepping off hides the board', !e.skating && !e.board.visible)
+
+    // Bag: buying wears the item, and the bag can take it off again
+    r.state.credits = 300; r.save()
+    at('supply').area.interact()
+    r.$dialog.querySelector('[data-buy="hardhat"]').click()
+    check('Buying wears the item', r.state.equipped.includes('hardhat'))
     r.close()
+    r.toggleEquip('hardhat')
+    check('Bag can take an item off', !r.state.equipped.includes('hardhat') && r.state.owned.includes('hardhat'))
 
     // Persistence
     check('State round-trips through localStorage', JSON.stringify(r.read()) === JSON.stringify(r.state))

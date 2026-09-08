@@ -118,7 +118,7 @@ export default class ExperienceHUD
 
         if(this.physics?.onFoot)
         {
-            this.$controlsTip.textContent = 'WASD / arrows walk · Shift runs · F enters nearby car · V changes view'
+            this.$controlsTip.textContent = 'WASD / arrows walk · Shift grabs the skateboard · F enters nearby car · V changes view'
         }
         else if(this.isMobile)
         {

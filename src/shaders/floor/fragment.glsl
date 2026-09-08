@@ -7,13 +7,27 @@ uniform vec2 uSpotPosition;
 uniform vec3 uSpotColor;
 uniform float uSpotIntensity;
 uniform float uSpotRadius;
+uniform vec3 uSkyHorizon;
+uniform vec3 uSkyMid;
+uniform vec3 uSkyZenith;
+uniform vec3 uSunDirection;
+uniform vec3 uSunColor;
+uniform float uSunStrength;
 varying vec2 vUv;
 
 void main()
 {
     vec4 farPoint = uInverseViewProjection * vec4(vUv * 2.0 - 1.0, 1.0, 1.0);
     vec3 ray = normalize(farPoint.xyz / farPoint.w - uCameraPosition);
-    vec3 color = vec3(0.018, 0.025, 0.055);
+    // Sky: every ray above the horizon. This used to be one hardcoded navy
+    // constant, which is why the sky never changed with the time of day.
+    float height = clamp(ray.z, 0.0, 1.0);
+    vec3 color = mix(uSkyHorizon, uSkyMid, smoothstep(0.0, 0.24, height));
+    color = mix(color, uSkyZenith, smoothstep(0.22, 0.72, height));
+    float sun = max(dot(ray, normalize(uSunDirection)), 0.0);
+    color += uSunColor * pow(sun, 8.0) * uSunStrength * 0.5;
+    color += uSunColor * pow(sun, 180.0) * uSunStrength;
+
     if(ray.z < -0.0001)
     {
         vec2 p = uCameraPosition.xy + ray.xy * (-uCameraPosition.z / ray.z);

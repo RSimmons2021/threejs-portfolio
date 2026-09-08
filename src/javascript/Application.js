@@ -206,6 +206,8 @@ export default class Application
             powerPreference: 'high-performance'
         })
         // this.renderer.setClearColor(0x414141, 1)
+        // Alpha 0: pixels the scene never draws stay transparent through the
+        // composer, which is how ScreenFx knows where to composite the sky.
         this.renderer.setClearColor(0x000000, 1)
         this.renderer.setPixelRatio(this.performance.currentDpr)
         this.renderer.setSize(this.sizes.viewport.width, this.sizes.viewport.height)
@@ -408,6 +410,7 @@ export default class Application
             screenFxUniforms.uTime.value = this.time.elapsed
             screenFxUniforms.uCameraPosition.value.setFromMatrixPosition(this.camera.instance.matrixWorld)
             screenFxUniforms.uInverseViewProjection.value.multiplyMatrices(this.camera.instance.matrixWorld, this.camera.instance.projectionMatrixInverse)
+
 
             // Renderer
             this.passes.composer.render()

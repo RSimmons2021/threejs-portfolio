@@ -27,8 +27,18 @@ export default class Minimap
             { x: - 38, y: - 34, label: 'Play' }
         ]
 
-        // Populated by CareerRPG once the Site Map is bought; empty until then.
+        // Populated by CareerRPG. Doors always show; the Site Map upgrade adds
+        // the ones still locked, so buying it genuinely reveals something.
         this.doors = []
+        this.people = []
+
+        // The avenues the city is actually laid out on, so the map reads as a
+        // street plan rather than four dots floating in a void.
+        this.roads = [
+            [0, 16, 0, -68], [-9, 14, -9, -60], [9, 14, 9, -60],
+            [-58, -26, 20, -26], [-58, -38, 170, -38], [-58, -52, 20, -52],
+            [-38, -20, -38, -60], [20, -14, 170, -14]
+        ]
 
         this.updateInterval = 100
         this.lastUpdateAt = 0
@@ -55,7 +65,7 @@ export default class Minimap
         const worldWidth = this.bounds.maxX - this.bounds.minX
         const worldHeight = this.bounds.maxY - this.bounds.minY
 
-        this.width = 168
+        this.width = 196
         this.height = Math.round(this.width * (worldHeight / worldWidth))
 
         this.canvas = document.createElement('canvas')
@@ -86,6 +96,20 @@ export default class Minimap
         const ctx = this.context
         ctx.clearRect(0, 0, this.width, this.height)
 
+        // Street plan underneath everything
+        ctx.strokeStyle = 'rgba(150, 178, 205, 0.22)'
+        ctx.lineWidth = 2.5
+        ctx.lineCap = 'round'
+        for(const [ax, ay, bx, by] of this.roads)
+        {
+            const a = this.worldToMap(ax, ay)
+            const b = this.worldToMap(bx, by)
+            ctx.beginPath()
+            ctx.moveTo(a.x, a.y)
+            ctx.lineTo(b.x, b.y)
+            ctx.stroke()
+        }
+
         // Section markers
         ctx.font = '700 9px Amulya, sans-serif'
         ctx.textAlign = 'center'
@@ -103,12 +127,36 @@ export default class Minimap
             ctx.fillText(section.label, point.x, point.y - 6)
         }
 
-        // Career doors, only once the Site Map has been bought
+        // People you can talk to
+        for(const person of this.people)
+        {
+            const point = this.worldToMap(person.x, person.y)
+            ctx.fillStyle = person.met ? 'rgba(134, 222, 215, 0.5)' : 'rgba(134, 222, 215, 0.95)'
+            ctx.beginPath()
+            ctx.arc(point.x, point.y, 2, 0, Math.PI * 2)
+            ctx.fill()
+        }
+
+        // Career doors, coloured by the building so the map matches the street
         for(const door of this.doors)
         {
             const point = this.worldToMap(door.x, door.y)
-            ctx.fillStyle = door.open ? 'rgba(255, 182, 39, 0.9)' : 'rgba(141, 148, 163, 0.7)'
-            ctx.fillRect(point.x - 1.5, point.y - 1.5, 3, 3)
+            if(!door.open)
+            {
+                // Locked doors read as hollow, so "what is left" is visible at a glance.
+                ctx.strokeStyle = 'rgba(141, 148, 163, 0.85)'
+                ctx.lineWidth = 1.2
+                ctx.strokeRect(point.x - 2.2, point.y - 2.2, 4.4, 4.4)
+                continue
+            }
+            ctx.fillStyle = door.colour || 'rgba(255, 182, 39, 0.9)'
+            ctx.fillRect(point.x - 2.2, point.y - 2.2, 4.4, 4.4)
+            if(door.visited)
+            {
+                ctx.strokeStyle = 'rgba(20, 26, 34, 0.9)'
+                ctx.lineWidth = 1
+                ctx.strokeRect(point.x - 1, point.y - 1, 2, 2)
+            }
         }
 
         // Car arrow
@@ -124,13 +172,26 @@ export default class Minimap
             ctx.translate(point.x, point.y)
             // World angle 0 points +x (map right); canvas rotation is clockwise
             ctx.rotate(- angle)
-            ctx.fillStyle = '#f2fbff'
+            const onFoot = Boolean(this.physics.onFoot)
+            ctx.fillStyle = onFoot ? '#ffb627' : '#f2fbff'
             ctx.beginPath()
-            ctx.moveTo(5.5, 0)
-            ctx.lineTo(- 3.5, 3.2)
-            ctx.lineTo(- 3.5, - 3.2)
-            ctx.closePath()
+            if(onFoot)
+            {
+                // A dot for the walker: an arrow implies a heading the walker
+                // does not really have in third person.
+                ctx.arc(0, 0, 3.2, 0, Math.PI * 2)
+            }
+            else
+            {
+                ctx.moveTo(5.5, 0)
+                ctx.lineTo(- 3.5, 3.2)
+                ctx.lineTo(- 3.5, - 3.2)
+                ctx.closePath()
+            }
             ctx.fill()
+            ctx.strokeStyle = 'rgba(11, 16, 24, 0.9)'
+            ctx.lineWidth = 1
+            ctx.stroke()
             ctx.restore()
         }
     }
