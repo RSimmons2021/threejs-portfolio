@@ -21,6 +21,7 @@ import EasterEggs from './EasterEggs.js'
 import ParticleTrails from './ParticleTrails.js'
 import AdvancedLighting from './AdvancedLighting.js'
 import DayNightCycle from './DayNightCycle.js'
+import Sky from './Sky.js'
 import Fireflies from './Fireflies.js'
 import Weather from './Weather.js'
 import TireEffects from './TireEffects.js'
@@ -112,6 +113,7 @@ export default class World
         this.city = new City({ resources: this.resources, materials: this.materials, physics: this.physics, time: this.time, lighting: this.advancedLighting })
         this.container.add(this.city.container)
         this.setDayNightCycle()
+        this.setSky()
         this.setWeather()
         this.setFireflies()
         this.setTireEffects()
@@ -574,6 +576,20 @@ export default class World
         {
             this.car.dayNightCycle = this.dayNightCycle
         }
+    }
+
+    setSky()
+    {
+        this.sky = new Sky({
+            time: this.time,
+            camera: this.camera,
+            config: this.config,
+            scene: this.scene,
+            dayNightCycle: this.dayNightCycle
+        })
+        // Straight onto the scene, not world.container: that container keeps
+        // matrixAutoUpdate off, and the dome has to track the camera every frame.
+        this.scene.add(this.sky.container)
     }
 
     setWeather()

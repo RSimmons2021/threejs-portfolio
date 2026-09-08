@@ -211,13 +211,14 @@ export const BUILDINGS = [
     },
     {
         id: 'homelab',
-        name: 'THE HOME LAB',
-        sign: 'SELF-HOSTED · LOCAL-FIRST',
+        name: 'THE APARTMENT',
+        sign: 'HOME LAB · 3F',
         kind: 'home',
-        colour: '#8fb56b',
+        colour: '#c9563c',
+        model: 'apartment',
         door: { x: -9, y: 8.6, facing: 'south' },
         eyebrow: 'OUTSIDE THE JOB DESCRIPTION',
-        intro: 'Self-hosted, local-first. Design obsessive: Dieter Rams, Zaha Hadid, Grasshopper. Sleep here to start the next day.'
+        intro: 'Third floor walk-up. The home lab is self-hosted and local-first, the monitors are still warm, and the day ends when you say it does.'
     },
     {
         id: 'supply',

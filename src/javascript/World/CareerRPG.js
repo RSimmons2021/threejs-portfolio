@@ -1,5 +1,6 @@
 import * as THREE from 'three'
 import createStorefront, { facingNormal } from './createStorefront.js'
+import createApartment from './createApartment.js'
 import { createPerson } from './Pedestrians.js'
 import CareerNPCs from './CareerNPCs.js'
 import { containment, findTheBeat, loadTest, sitTheEval } from './CareerGames.js'
@@ -162,14 +163,27 @@ export default class CareerRPG
         for(const building of BUILDINGS)
         {
             const locked = !this.meets(building.requires)
-            const storefront = createStorefront({
-                materials: this.world.materials,
-                name: building.name,
-                sign: building.sign,
-                colour: building.colour,
-                facing: building.door.facing,
-                locked
-            })
+            // A building with a `model` gets its Blender asset; everything else
+            // gets the procedural storefront. Both expose the same userData API.
+            const storefront = building.model === 'apartment'
+                ? createApartment({
+                    resources: this.world.resources,
+                    materials: this.world.materials,
+                    name: building.name,
+                    sign: building.sign,
+                    colour: building.colour,
+                    facing: building.door.facing,
+                    lighting: this.world.advancedLighting
+                })
+                : createStorefront({
+                    materials: this.world.materials,
+                    name: building.name,
+                    sign: building.sign,
+                    colour: building.colour,
+                    facing: building.door.facing,
+                    kind: building.kind,
+                    locked
+                })
             storefront.position.set(building.door.x, building.door.y, 0)
             this.container.add(storefront)
 
@@ -346,6 +360,9 @@ export default class CareerRPG
             if(this.nearest) this.$prompt.innerHTML = `Enter <strong>${this.nearest.label}</strong>`
                 + (touch ? '' : '<kbd>E</kbd>')
         }
+
+        const elapsed = this.world.time.elapsed / 1000
+        for(const { storefront } of this.doors.values()) storefront.userData.update?.(elapsed)
 
         const firstPerson = Boolean(this.world.camera.firstPerson)
         if(firstPerson !== this.firstPersonView)

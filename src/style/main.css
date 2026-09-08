@@ -2423,3 +2423,15 @@ body.is-touch-input .career-game__lede kbd { display: none; }
     /* Clear of the joystick (bottom-left) and the drive buttons (bottom-right). */
     .career-prompt { bottom: 200px; font-size: 12px; padding: 10px 13px; }
 }
+
+/* Sky gradient. The WebGL canvas is transparent wherever the scene draws
+   nothing, so this sits behind it and reads as the sky; Sky.js repaints it as
+   the day/night cycle moves. */
+.sky-backdrop
+{
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background-image: linear-gradient(to bottom, #2f7bc4 0%, #7cc0e8 42%, #cfe9f7 72%, #cfe9f7 100%);
+}
