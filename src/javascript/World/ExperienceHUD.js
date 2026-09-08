@@ -71,7 +71,7 @@ export default class ExperienceHUD
             </div>
             <div class="experience-hud__row experience-hud__row--secondary">
                 <div class="experience-hud__tip js-hud-tip-controls"></div>
-                <div class="experience-hud__tip js-hud-tip-goal is-hidden">Free play: race your ghost or bowl three frames at the arcade</div>
+                <div class="experience-hud__tip js-hud-tip-goal is-hidden">Free play: run the sprint or bowl three frames at the arcade</div>
             </div>
         `
 
@@ -116,7 +116,11 @@ export default class ExperienceHUD
             return
         }
 
-        if(this.isMobile)
+        if(this.physics?.onFoot)
+        {
+            this.$controlsTip.textContent = 'WASD / arrows walk · Shift runs · F enters nearby car · V changes view'
+        }
+        else if(this.isMobile)
         {
             this.$controlsTip.textContent = 'Mobile: use left joystick + right pedals. Tap prompts to interact.'
         }
@@ -254,7 +258,7 @@ export default class ExperienceHUD
             this.speedDisplay.currentMph += (targetMph - this.speedDisplay.currentMph) * smoothing
 
             const mph = Math.round(this.speedDisplay.currentMph)
-            this.$speed.textContent = `${mph} mph`
+            this.$speed.textContent = this.physics.onFoot ? 'On foot' : `${mph} mph`
         }
     }
 }

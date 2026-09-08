@@ -43,8 +43,9 @@ export default class Areas
         })
 
         // Mouse click event
-        window.addEventListener('mousedown', () =>
+        window.addEventListener('mousedown', (event) =>
         {
+            if(event.target !== this.renderer.domElement || this.camera.firstPerson) return
             if(this.mouse.currentArea)
             {
                 this.mouse.currentArea.interact(false)

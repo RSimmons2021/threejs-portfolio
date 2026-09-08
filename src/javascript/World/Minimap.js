@@ -27,6 +27,9 @@ export default class Minimap
             { x: - 38, y: - 34, label: 'Play' }
         ]
 
+        // Populated by CareerRPG once the Site Map is bought; empty until then.
+        this.doors = []
+
         this.updateInterval = 100
         this.lastUpdateAt = 0
 
@@ -100,12 +103,21 @@ export default class Minimap
             ctx.fillText(section.label, point.x, point.y - 6)
         }
 
+        // Career doors, only once the Site Map has been bought
+        for(const door of this.doors)
+        {
+            const point = this.worldToMap(door.x, door.y)
+            ctx.fillStyle = door.open ? 'rgba(255, 182, 39, 0.9)' : 'rgba(141, 148, 163, 0.7)'
+            ctx.fillRect(point.x - 1.5, point.y - 1.5, 3, 3)
+        }
+
         // Car arrow
         const car = this.physics && this.physics.car
         const chassisBody = car && car.chassis ? car.chassis.body : null
         if(chassisBody)
         {
-            const point = this.worldToMap(chassisBody.position.x, chassisBody.position.y)
+            const position = this.physics.getPlayerPosition?.() || chassisBody.position
+            const point = this.worldToMap(position.x, position.y)
             const angle = car.angle || 0
 
             ctx.save()

@@ -262,8 +262,9 @@ export default class Application
                 }
                 else
                 {
-                    this.camera.target.x = this.world.car.chassis.object.position.x
-                    this.camera.target.y = this.world.car.chassis.object.position.y
+                    const position = this.world.explorer?.position || this.world.car.chassis.object.position
+                    this.camera.target.x = position.x
+                    this.camera.target.y = position.y
                 }
 
                 // Feed normalized speed into the FOV kick (boost max speed ≈ 0.017
@@ -399,6 +400,10 @@ export default class Application
             }
 
             // Ground-mist reconstruction uniforms (world-anchored fog in ScreenFx)
+            this.world?.explorer?.updateCamera()
+            const firstPerson = this.world?.explorer?.firstPerson && !this.world.explorer.blocked
+            this.passes.horizontalBlurPass.enabled = !firstPerson
+            this.passes.verticalBlurPass.enabled = !firstPerson
             const screenFxUniforms = this.passes.screenFxPass.material.uniforms
             screenFxUniforms.uTime.value = this.time.elapsed
             screenFxUniforms.uCameraPosition.value.setFromMatrixPosition(this.camera.instance.matrixWorld)

@@ -11,15 +11,12 @@ export default class ExperienceDirector
         this.controls = _options.controls
         this.sounds = _options.sounds
         this.dayNightCycle = _options.dayNightCycle
-        this.visitGhost = _options.visitGhost
         this.diagnostics = _options.diagnostics
         this.projects = _options.projects || []
 
         this.locks = new Set()
         this.activeProjectZone = null
         this.toastTimeout = null
-        this.replayLastUpdateAt = 0
-        this.replayZoomBeforeWatch = null
 
         this.portal = {
             project: null,
@@ -54,30 +51,8 @@ export default class ExperienceDirector
                 <button type="button" data-experience-action="xray" aria-pressed="false">
                     <span>X</span> System X-ray
                 </button>
-                <button type="button" data-experience-action="replay" aria-expanded="false">
-                    <span>R</span> Replay
-                </button>
             </nav>
 
-            <section class="replay-console" aria-label="Previous visit replay" hidden>
-                <div class="replay-console__heading">
-                    <div><span>Previous visit</span><strong class="js-replay-status">Checking replay…</strong></div>
-                    <button type="button" data-replay-action="close">Close</button>
-                </div>
-                <div class="replay-console__progress"><span class="js-replay-progress"></span></div>
-                <p class="js-replay-meta">No stored route yet. Drive for at least ten seconds and return later.</p>
-                <div class="replay-console__actions">
-                    <button type="button" data-replay-action="play">Pause</button>
-                    <button type="button" data-replay-action="restart">Restart</button>
-                    <button type="button" data-replay-action="watch" aria-pressed="false">Watch camera</button>
-                    <button type="button" data-replay-action="share">Copy route</button>
-                </div>
-                <div class="replay-console__speeds" aria-label="Replay speed">
-                    <button type="button" data-replay-speed="0.5">½×</button>
-                    <button type="button" data-replay-speed="1" class="is-active">1×</button>
-                    <button type="button" data-replay-speed="2">2×</button>
-                </div>
-            </section>
 
             <div class="world-toast" role="status" aria-live="polite" hidden></div>
         `
@@ -140,11 +115,6 @@ export default class ExperienceDirector
 
         this.$tools = this.$root.querySelector('.experience-tools')
         this.$xrayButton = this.$root.querySelector('[data-experience-action="xray"]')
-        this.$replayButton = this.$root.querySelector('[data-experience-action="replay"]')
-        this.$replay = this.$root.querySelector('.replay-console')
-        this.$replayStatus = this.$root.querySelector('.js-replay-status')
-        this.$replayProgress = this.$root.querySelector('.js-replay-progress')
-        this.$replayMeta = this.$root.querySelector('.js-replay-meta')
         this.$toast = this.$root.querySelector('.world-toast')
 
         this.$portalProject = this.$portal.querySelector('.js-portal-project')
@@ -211,7 +181,6 @@ export default class ExperienceDirector
             if(!button) return
 
             if(button.dataset.experienceAction === 'xray') this.diagnostics.toggle()
-            if(button.dataset.experienceAction === 'replay') this.toggleReplayPanel()
         })
 
         this.$portal.addEventListener('click', (_event) =>
@@ -261,15 +230,7 @@ export default class ExperienceDirector
 
         this.$root.addEventListener('click', (_event) =>
         {
-            const replayAction = _event.target.closest('[data-replay-action]')?.dataset.replayAction
-            if(replayAction) this.handleReplayAction(replayAction)
 
-            const replaySpeed = _event.target.closest('[data-replay-speed]')
-            if(replaySpeed)
-            {
-                this.visitGhost.setPlaybackSpeed(Number(replaySpeed.dataset.replaySpeed))
-                this.updateReplayPanel(true)
-            }
 
         })
     }
@@ -696,79 +657,9 @@ export default class ExperienceDirector
         }
     }
 
-    toggleReplayPanel()
-    {
-        const willOpen = this.$replay.hidden
-        this.$replay.hidden = !willOpen
-        this.$replayButton.setAttribute('aria-expanded', `${willOpen}`)
-        if(willOpen) this.updateReplayPanel(true)
-    }
 
-    async handleReplayAction(_action)
-    {
-        const status = this.visitGhost.getStatus()
 
-        if(_action === 'close')
-        {
-            if(status.watching) this.setReplayWatching(false)
-            this.toggleReplayPanel()
-        }
-        if(_action === 'play') status.playing ? this.visitGhost.pause() : this.visitGhost.play()
-        if(_action === 'restart') this.visitGhost.restart()
-        if(_action === 'watch') this.setReplayWatching(!status.watching)
-        if(_action === 'share')
-        {
-            const copied = await this.visitGhost.copyShareUrl()
-            this.notify(copied ? 'Replay route copied. Anyone with the link can load the ghost.' : 'A replay must be recorded before it can be shared.', copied ? 'project' : 'warning')
-        }
 
-        this.updateReplayPanel(true)
-    }
-
-    setReplayWatching(_watching)
-    {
-        const watching = Boolean(_watching)
-        if(watching === this.visitGhost.playback.watching) return
-        if(watching && !this.visitGhost.hasReplay()) return
-
-        if(watching)
-        {
-            this.replayZoomBeforeWatch = this.camera.zoom.targetValue
-        }
-
-        this.visitGhost.playback.watching = watching
-        this.camera.targetOverride = watching ? this.visitGhost.model.position : null
-        this.camera.zoom.targetValue = watching ? 0.22 : (this.replayZoomBeforeWatch ?? 0.5)
-        if(!watching) this.replayZoomBeforeWatch = null
-        this.setInteractionLock('replay-watch', watching)
-        document.body.classList.toggle('is-watching-replay', watching)
-    }
-
-    updateReplayPanel(_force = false)
-    {
-        if(this.$replay.hidden || (!_force && this.time.elapsed - this.replayLastUpdateAt < 250)) return
-
-        const status = this.visitGhost.getStatus()
-        this.replayLastUpdateAt = this.time.elapsed
-        this.$replayStatus.textContent = status.available ? (status.playing ? 'Ghost running' : 'Ghost paused') : 'No replay recorded'
-        this.$replayProgress.style.transform = `scaleX(${status.progress})`
-        this.$replayMeta.textContent = status.available
-            ? `${Math.round(status.duration / 1000)} sec · ${Math.round(status.distance)} m${status.shared ? ' · shared route' : ''}`
-            : 'Drive for at least ten seconds, then return or reload to race your previous route.'
-
-        const playButton = this.$replay.querySelector('[data-replay-action="play"]')
-        const watchButton = this.$replay.querySelector('[data-replay-action="watch"]')
-        playButton.textContent = status.playing ? 'Pause' : 'Play'
-        playButton.disabled = !status.available
-        watchButton.disabled = !status.available
-        watchButton.setAttribute('aria-pressed', `${status.watching}`)
-
-        for(const button of this.$replay.querySelectorAll('[data-replay-speed]'))
-        {
-            button.classList.toggle('is-active', Number(button.dataset.replaySpeed) === status.speed)
-            button.disabled = !status.available
-        }
-    }
 
     updateXrayButton(_enabled)
     {
@@ -897,6 +788,5 @@ export default class ExperienceDirector
                 }
             }
         }
-        this.updateReplayPanel()
     }
 }

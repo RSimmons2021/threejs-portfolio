@@ -21,19 +21,20 @@ import EasterEggs from './EasterEggs.js'
 import ParticleTrails from './ParticleTrails.js'
 import AdvancedLighting from './AdvancedLighting.js'
 import DayNightCycle from './DayNightCycle.js'
-import GhostCar from './GhostCar.js'
 import Fireflies from './Fireflies.js'
 import Weather from './Weather.js'
 import TireEffects from './TireEffects.js'
 import AmbientSounds from './AmbientSounds.js'
 import Minimap from './Minimap.js'
-import VisitGhost from './VisitGhost.js'
 import ExperienceHUD from './ExperienceHUD.js'
 import GuidedTour from './GuidedTour.js'
 import WorldDiagnostics from './WorldDiagnostics.js'
 import ExperienceDirector from './ExperienceDirector.js'
 import City from './City.js'
 import Arcade from './Arcade.js'
+import Explorer from './Explorer.js'
+import Pedestrians from './Pedestrians.js'
+import CareerRPG from './CareerRPG.js'
 
 export default class World
 {
@@ -117,13 +118,18 @@ export default class World
         this.setAmbientSounds()
         this.setExperienceHUD()
         this.setMinimap()
-        this.setGhostCar()
-        this.setVisitGhost()
         this.setGuidedTour()
         this.setDiagnostics()
         this.setExperienceDirector()
         this.arcade = new Arcade(this)
         this.container.add(this.arcade.container)
+        this.explorer = new Explorer(this)
+        this.pedestrians = new Pedestrians(this)
+        this.container.add(this.pedestrians.container)
+        // After Explorer, so the career areas inherit the walker-aware proximity
+        // object and the avatar it rebuilds for cosmetics already exists.
+        this.careerRPG = new CareerRPG(this)
+        this.container.add(this.careerRPG.container)
         this.loadDeferredContent()
     }
 
@@ -616,16 +622,6 @@ export default class World
         })
     }
 
-    setVisitGhost()
-    {
-        this.visitGhost = new VisitGhost({
-            time: this.time,
-            resources: this.resources,
-            physics: this.physics,
-            debug: this.debugFolder
-        })
-        this.container.add(this.visitGhost.container)
-    }
 
     setFireflies()
     {
@@ -649,27 +645,13 @@ export default class World
         })
     }
 
-    setGhostCar()
-    {
-        this.ghostCar = new GhostCar({
-            time: this.time,
-            resources: this.resources,
-            car: this.car,
-            physics: this.physics,
-            materials: this.materials,
-            sounds: this.sounds,
-            debug: this.debugFolder
-        })
-        this.container.add(this.ghostCar.container)
-    }
 
     setGuidedTour()
     {
         this.guidedTour = new GuidedTour({
             camera: this.camera,
             physics: this.physics,
-            controls: this.controls,
-            ghostCar: this.ghostCar
+            controls: this.controls
         })
     }
 
@@ -697,7 +679,6 @@ export default class World
             controls: this.controls,
             sounds: this.sounds,
             dayNightCycle: this.dayNightCycle,
-            visitGhost: this.visitGhost,
             diagnostics: this.diagnostics,
             projects: this.sections.projects.items
         })

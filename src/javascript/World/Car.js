@@ -93,7 +93,7 @@ export default class Car
 
             // Sound
             this.sounds.engine.speed = this.movement.localSpeed.x
-            this.sounds.engine.acceleration = this.controls.actions.up ? (this.controls.actions.boost ? 1 : 0.5) : 0
+            this.sounds.engine.acceleration = !this.physics.onFoot && this.controls.actions.up ? (this.controls.actions.boost ? 1 : 0.5) : 0
 
             if(this.movement.localAcceleration.x > 0.03 && this.time.elapsed - this.movement.lastScreech > 5000)
             {

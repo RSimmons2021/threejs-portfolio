@@ -195,6 +195,6 @@ export default class WorldDiagnostics extends EventEmitter
         this.$calls.textContent = `${info.calls}`
         this.$triangles.textContent = Number(info.triangles || 0).toLocaleString()
         this.$bodies.textContent = `${this.physics.world.bodies.length}`
-        this.$camera.textContent = this.camera.targetOverride ? 'replay' : 'vehicle'
+        this.$camera.textContent = this.camera.targetOverride ? 'override' : 'vehicle'
     }
 }

@@ -491,6 +491,15 @@ export default class Physics
             /**
              * Steering
              */
+            if(this.onFoot)
+            {
+                for(let i = 0; i < 4; i++)
+                {
+                    this.car.vehicle.applyEngineForce(0, i)
+                    this.car.vehicle.setBrake(1, i)
+                }
+                return
+            }
             if(this.controls.touch)
             {
                 let deltaAngle = 0

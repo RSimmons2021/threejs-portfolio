@@ -8,7 +8,6 @@ export default class GuidedTour
         this.camera = _options.camera
         this.physics = _options.physics
         this.controls = _options.controls
-        this.ghostCar = _options.ghostCar
 
         this.targets = [
             { id: 'intro', label: 'Intro', x: 0, y: 2, z: 3, heading: - Math.PI * 0.5, cameraAngle: 'default', zoom: 0.8 },
@@ -69,11 +68,6 @@ export default class GuidedTour
         }
 
         this.clearControls()
-
-        if(this.ghostCar)
-        {
-            this.ghostCar.settings.autoTour = false
-        }
 
         body.position.set(_target.x, _target.y, _target.z)
         body.velocity.set(0, 0, 0)

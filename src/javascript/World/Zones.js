@@ -37,8 +37,9 @@ export default class Zones
 
         this.time.on('tick', () =>
         {
-            this.tester.x = this.physics.car.chassis.body.position.x
-            this.tester.y = this.physics.car.chassis.body.position.y
+            const position = this.physics.getPlayerPosition?.() || this.physics.car.chassis.body.position
+            this.tester.x = position.x
+            this.tester.y = position.y
         })
     }
 

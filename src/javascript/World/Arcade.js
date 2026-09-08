@@ -12,17 +12,19 @@ export default class Arcade
         this.container.name = 'After Hours Arcade'
         this.body = world.physics.car.chassis.body
         this.bowling = world.sections.playground.bowling
+        // The sprint's own pace ghost: a translucent replay of your best lap,
+        // scoped to this game only. Unrelated to the removed tour/visit ghosts.
+        this.ghost = createGhostF1(world.resources, new THREE.MeshBasicMaterial({ color: '#167f87', transparent: true, opacity: 0.38, depthWrite: false }))
+        this.ghost.visible = false
         try { this.storage = window.localStorage } catch { this.storage = null }
         this.best = readBest(this.storage)
         this.state = 'idle'
         this.game = 'sprint'
         this.lastTick = performance.now()
+        this.container.add(this.ghost)
         this.setCourtyard()
         this.setInterface()
         this.setGates()
-        this.ghost = createGhostF1(world.resources, new THREE.MeshBasicMaterial({ color: '#167f87', transparent: true, opacity: 0.38, depthWrite: false }))
-        this.ghost.visible = false
-        this.container.add(this.ghost)
         world.time.on('tick', () => this.update())
         document.addEventListener('visibilitychange', () => { if(document.hidden) this.pause() })
         window.addEventListener('blur', () => this.pause())
@@ -209,17 +211,13 @@ export default class Arcade
 
     start(game)
     {
+        this.world.explorer?.enterCar(true)
         this.releaseRound()
         const w = this.world
         this.game = game
         this.savedWeather = { autoCycle: w.weather.settings.autoCycle, state: w.weather.state }
         w.weather.settings.autoCycle = false
         w.weather.setWeather('clear')
-        this.savedGuide = w.ghostCar.settings.autoTour
-        w.ghostCar.settings.autoTour = false
-        this.savedGhostVisibility = [w.ghostCar.container.visible, w.visitGhost.container.visible]
-        w.ghostCar.container.visible = false
-        w.visitGhost.container.visible = false
         this.savedCameraTarget = w.camera.targetOverride
         w.camera.targetOverride = game === 'bowling' ? new THREE.Vector3(-38, -45, 0) : null
         this.savedAreas = w.areas.items.map(area => ({ area, active: area.active }))
@@ -276,13 +274,6 @@ export default class Arcade
             w.weather.setWeather(this.savedWeather.state)
             this.savedWeather = null
         }
-        if(this.savedGuide !== undefined) { w.ghostCar.settings.autoTour = this.savedGuide; this.savedGuide = undefined }
-        if(this.savedGhostVisibility)
-        {
-            w.ghostCar.container.visible = this.savedGhostVisibility[0]
-            w.visitGhost.container.visible = this.savedGhostVisibility[1]
-            this.savedGhostVisibility = null
-        }
         if(this.savedCameraTarget !== undefined) { w.camera.targetOverride = this.savedCameraTarget; this.savedCameraTarget = undefined }
         this.savedAreas?.forEach(({area, active}) => { if(active) area.activate() })
         this.savedAreas = null
@@ -325,6 +316,7 @@ export default class Arcade
         this.$panel.querySelector('[data-action="retry"]').focus({ preventScroll: true })
     }
 
+
     updateGhost()
     {
         const path = this.best.ghost
@@ -344,7 +336,7 @@ export default class Arcade
         this.lastTick = now
         if(this.state === 'idle')
         {
-            const inArcade = isInsideArcade(this.body.position)
+            const inArcade = isInsideArcade(this.world.explorer?.position || this.body.position)
             if(!inArcade) this.dismissed = false
             this.$panel.hidden = !(inArcade && !this.dismissed)
             return
@@ -407,7 +399,7 @@ export default class Arcade
     render()
     {
         const idle = this.state === 'idle'
-        this.$panel.hidden = idle ? !(isInsideArcade(this.body.position) && !this.dismissed) : false
+        this.$panel.hidden = idle ? !(isInsideArcade(this.world.explorer?.position || this.body.position) && !this.dismissed) : false
         this.$menu.hidden = !idle
         this.$round.hidden = idle
         this.$panel.querySelector('.arcade-best').textContent = `LOCAL BESTS / Sprint: ${this.best.sprint ? this.best.sprint.toFixed(2) + 's' : 'set the first time'} · Bowling: ${this.best.bowling}/30`
