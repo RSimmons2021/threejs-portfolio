@@ -58,7 +58,24 @@ export default class AmbientSounds
         // Master ambient gain
         this.masterGain = ctx.createGain()
         this.masterGain.gain.value = 0
-        this.masterGain.connect(this.destination)
+
+        // Enclosure: everything outdoors runs through a lowpass on its way out,
+        // so stepping inside can close the street down to a muffled bleed
+        // through the window instead of continuing at full brightness. This is
+        // the strongest "you are somewhere else" cue available and it costs one
+        // filter and one gain.
+        this.enclosure = { amount: 0, target: 0 }
+        this.enclosureFilter = ctx.createBiquadFilter()
+        this.enclosureFilter.type = 'lowpass'
+        this.enclosureFilter.frequency.value = 20000
+        this.enclosureFilter.Q.value = 0.4
+        this.enclosureGain = ctx.createGain()
+        this.enclosureGain.gain.value = 1
+
+        this.masterGain.connect(this.enclosureFilter)
+        this.enclosureFilter.connect(this.enclosureGain)
+        this.enclosureGain.connect(this.destination)
+
 
         // Shared 2s looping white-noise buffer
         const sampleCount = ctx.sampleRate * 2
@@ -71,6 +88,20 @@ export default class AmbientSounds
 
         // Rain: noise -> lowpass -> gain
         this.rainSource = ctx.createBufferSource()
+        // A room needs its own quiet floor or "indoors" just sounds broken.
+        this.roomTone = ctx.createBufferSource()
+        this.roomTone.buffer = this.noiseBuffer
+        this.roomTone.loop = true
+        this.roomFilter = ctx.createBiquadFilter()
+        this.roomFilter.type = 'lowpass'
+        this.roomFilter.frequency.value = 240
+        this.roomGain = ctx.createGain()
+        this.roomGain.gain.value = 0
+        this.roomTone.connect(this.roomFilter)
+        this.roomFilter.connect(this.roomGain)
+        this.roomGain.connect(this.destination)
+        this.roomTone.start()
+
         this.rainSource.buffer = this.noiseBuffer
         this.rainSource.loop = true
         this.rainFilter = ctx.createBiquadFilter()
@@ -168,8 +199,31 @@ export default class AmbientSounds
         }
     }
 
+    // 0 outdoors, 1 fully enclosed.
+    setEnclosure(_amount)
+    {
+        if(!this.enclosure) return
+        this.enclosure.target = Math.min(Math.max(_amount, 0), 1)
+    }
+
+    updateEnclosure()
+    {
+        if(!this.enclosure) return
+        const e = this.enclosure
+        e.amount += (e.target - e.amount) * 0.09
+        // Street drops to a quarter and loses its top end; the room floor lifts
+        // in behind it.
+        this.enclosureFilter.frequency.value = 20000 - e.amount * 19600
+        this.enclosureGain.gain.value = 1 - e.amount * 0.76
+        this.roomGain.gain.value = e.amount * 0.012
+    }
+
     update()
     {
+        // Ahead of the started guard: walking indoors has to close the space
+        // down whether or not the ambient bed happens to be running.
+        this.updateEnclosure()
+
         if(!this.started)
         {
             return

@@ -308,7 +308,7 @@ export function sitTheEval($host, onDone)
 
 // THE CABINET / CONTAINMENT — Agent Relay as a coin-op. One wrong ruling ends
 // the run, because a permission layer that is right most of the time is not one.
-export function containment($host, onDone)
+export function containment($host, onDone, cues = null)
 {
     const cases = shuffle(CONTAINMENT_CASES)
     const state = { done: false, index: 0, locked: false }
@@ -337,6 +337,7 @@ export function containment($host, onDone)
                 if(state.locked) return
                 state.locked = true
                 const right = $button.dataset.verdict === item.verdict
+                cues?.[right ? 'rulingCorrect' : 'rulingWrong']?.()
                 $host.querySelectorAll('[data-verdict]').forEach(($other) =>
                 {
                     $other.disabled = true
@@ -348,11 +349,13 @@ export function containment($host, onDone)
                 {
                     if(!right)
                     {
+                        cues?.breach?.()
                         finish(state, onDone, false, `Containment broke on call ${state.index + 1} of ${cases.length}. In CI this is a failed gate, not a warning.`)
                         return
                     }
                     state.locked = false
                     state.index++
+                    if(state.index >= cases.length) cues?.contained?.()
                     if(state.index >= cases.length) finish(state, onDone, true, `${cases.length}/${cases.length}. Containment held at 100%, which is exactly where Agent Relay gates it.`)
                     else render()
                 }, 1500)

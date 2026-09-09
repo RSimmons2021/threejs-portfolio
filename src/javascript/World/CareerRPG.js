@@ -111,6 +111,10 @@ export default class CareerRPG
 
     grant({ credits = 0, gain = null, focus = 0 })
     {
+        // Which project doors were shut before this, so an unlock can be heard
+        // rather than silently discovered later.
+        const wasLocked = BUILDINGS.filter((_b) => _b.requires && !this.meets(_b.requires))
+
         if(credits) this.state.credits += credits
         if(focus) this.state.focus = Math.max(0, Math.min(MAX_FOCUS, this.state.focus + focus))
         if(gain) for(const [id, value] of Object.entries(gain))
@@ -120,6 +124,13 @@ export default class CareerRPG
         this.save()
         this.syncDoorLocks()
         this.render()
+
+        const cues = this.world.sounds?.cues
+        const opened = wasLocked.filter((_b) => this.meets(_b.requires))
+        // A gated project opening outranks the stat that opened it, so it takes
+        // the cue and the stat gain stays quiet underneath it.
+        if(opened.length) cues?.unlock()
+        else if(gain && Object.keys(gain).length) cues?.statGain()
     }
 
     notify(_message, _tone = 'project')
@@ -154,6 +165,7 @@ export default class CareerRPG
         {
             if(this.state.quests.includes(quest.id) || !this.questDone(quest.id)) continue
             this.state.quests.push(quest.id)
+            this.world.sounds?.cues?.objective()
             this.notify(`Objective complete — ${quest.label}`, 'project')
         }
         this.save()
@@ -355,6 +367,7 @@ export default class CareerRPG
             equipped.push(_id)
         }
         this.save()
+        this.world.sounds?.cues?.equip()
         this.applyCosmetics()
         this.syncDoorLocks()
         this.render()
@@ -375,6 +388,10 @@ export default class CareerRPG
     {
         this.checkQuests()
         const s = this.state
+
+        const low = s.focus < 20
+        if(low && !this.warnedLowFocus) this.world.sounds?.cues?.lowFocus()
+        this.warnedLowFocus = low
         this.$panel.querySelector('[data-day]').textContent = `DAY ${s.day}`
         this.$panel.querySelector('[data-credits]').textContent = s.credits
         this.$panel.querySelector('[data-focus]').style.transform = `scaleX(${s.focus / MAX_FOCUS})`
@@ -490,6 +507,10 @@ export default class CareerRPG
     {
         if(this.$dialog.open || this.world.arcade?.state !== 'idle') return
 
+        const cues = this.world.sounds?.cues
+        if(!this.meets(_building.requires)) cues?.doorLocked()
+        else if(_building.kind !== 'home') cues?.door(_building.kind)
+
         // A building with a modelled interior is walked into, not read about.
         // This has to come before the interaction lock: the lock freezes the
         // walker for a dialog, and there is no dialog to release it here.
@@ -507,6 +528,7 @@ export default class CareerRPG
         this.building = _building
         this.world.experienceDirector?.setInteractionLock('career', true)
         document.body.classList.add('has-career-dialog')
+        this.world.sounds?.setWorldDuck(0.7)
 
         const locked = !this.meets(_building.requires)
         this.$dialog.querySelector('[data-eyebrow]').textContent = _building.eyebrow || ''
@@ -578,6 +600,8 @@ export default class CareerRPG
         this.game = null
         this.building = null
         document.body.classList.remove('has-career-dialog')
+        // Indoors keeps its own duck; outdoors the city comes back.
+        this.world.sounds?.setWorldDuck(this.world.interiors?.active ? 0.55 : 0)
         this.world.experienceDirector?.setInteractionLock('career', false)
     }
 
@@ -633,6 +657,7 @@ export default class CareerRPG
         if(!shift || this.state.shifts.includes(_id) || this.state.focus < shift.focus) return
         this.state.shifts.push(_id)
         this.state.focus -= shift.focus
+        this.world.sounds?.cues?.shift()
         this.grant({ credits: shift.credits, gain: shift.gain })
         const gains = Object.entries(shift.gain).map(([id, v]) => `+${v} ${id.toUpperCase()}`).join(' · ')
         this.notify(`${shift.title} — +${shift.credits} cr · ${gains}`, 'project')
@@ -765,6 +790,7 @@ export default class CareerRPG
         if(item.kind !== 'consumable' && this.state.owned.includes(_id)) return
 
         this.state.credits -= item.cost
+        this.world.sounds?.cues?.purchase()
         if(item.kind === 'consumable')
         {
             this.state.espresso += 1
@@ -803,7 +829,7 @@ export default class CareerRPG
         $host.className = 'career-game'
         this.$body.innerHTML = ''
         this.$body.appendChild($host)
-        this.game = containment($host, (_passed, _summary) => this.finishArcade(_passed, _summary))
+        this.game = containment($host, (_passed, _summary) => this.finishArcade(_passed, _summary), this.world.sounds?.cues)
     }
 
     finishArcade(_passed, _summary)

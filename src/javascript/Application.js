@@ -173,10 +173,15 @@ export default class Application
         this.performance = {}
         // Never supersample a standard-density display. Allow the 3D canvas
         // to scale down on integrated GPUs; the DOM stays native-resolution.
-        this.performance.minDpr = 0.75
+        this.performance.minDpr = 0.6
+        // Multisampling is the single most expensive thing this renderer asks
+        // of a weak integrated GPU: on an Intel UHD 620 dropping it is worth
+        // ~30% of the frame. Shed it before starving resolution, and never turn
+        // it back on in a session — rebuilding the targets costs a visible hitch.
+        this.performance.msaaDropped = false
         this.performance.maxDpr = Math.min(window.devicePixelRatio, touchDevice ? 1.25 : 1.5)
         this.performance.currentDpr = Math.min(window.devicePixelRatio, this.performance.maxDpr)
-        this.performance.sampleSize = 90
+        this.performance.sampleSize = 45
         this.performance.samples = []
     }
 
@@ -264,7 +269,10 @@ export default class Application
                 }
                 else
                 {
-                    const position = this.world.explorer?.position || this.world.car.chassis.object.position
+                    // renderPosition, not position: the car mesh and walker are
+                    // drawn from the interpolated pose, and a camera tracking the
+                    // raw one lags them by a fraction of a step.
+                    const position = this.world.explorer?.renderPosition || this.world.car.chassis.object.position
                     this.camera.target.x = position.x
                     this.camera.target.y = position.y
                 }
@@ -384,9 +392,10 @@ export default class Application
                 let nextDpr = this.performance.currentDpr
                 if(averageDelta > 21)
                 {
-                    nextDpr = Math.max(this.performance.minDpr, this.performance.currentDpr - 0.1)
+                    if(!this.performance.msaaDropped) this.dropMultisampling()
+                    else nextDpr = Math.max(this.performance.minDpr, this.performance.currentDpr - 0.1)
                 }
-                else if(averageDelta < 17)
+                else if(averageDelta < 17 && this.performance.msaaDropped)
                 {
                     nextDpr = Math.min(this.performance.maxDpr, this.performance.currentDpr + 0.1)
                 }
@@ -434,6 +443,19 @@ export default class Application
     /**
      * Set world
      */
+    // Rebuild the composer targets without multisampling. Disposing forces the
+    // renderer to allocate them again on the next pass.
+    dropMultisampling()
+    {
+        this.performance.msaaDropped = true
+        for(const target of [this.passes.composer.renderTarget1, this.passes.composer.renderTarget2])
+        {
+            if(!target || !target.samples) continue
+            target.samples = 0
+            target.dispose()
+        }
+    }
+
     setWorld()
     {
         this.world = new World({

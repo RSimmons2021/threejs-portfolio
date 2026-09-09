@@ -251,8 +251,22 @@ export default class World
         this.startingScreen.loadingLabel.texture = new THREE.Texture(this.startingScreen.loadingLabel.image)
         this.startingScreen.loadingLabel.texture.magFilter = THREE.NearestFilter
         this.startingScreen.loadingLabel.texture.minFilter = THREE.LinearFilter
-        this.startingScreen.loadingLabel.texture.needsUpdate = true
-        this.startingScreen.loadingLabel.material = new THREE.MeshBasicMaterial({ transparent: true, depthWrite: false, color: 0xffffff, alphaMap: this.startingScreen.loadingLabel.texture })
+        // Wait for the data URI to decode. Flagging the texture before the
+        // pixels exist leaves an opaque alphaMap, which draws as a white box.
+        this.startingScreen.loadingLabel.texture.needsUpdate = false
+        this.startingScreen.loadingLabel.image.onload = () =>
+        {
+            this.startingScreen.loadingLabel.texture.needsUpdate = true
+        }
+        if(this.startingScreen.loadingLabel.image.complete && this.startingScreen.loadingLabel.image.naturalWidth)
+        {
+            this.startingScreen.loadingLabel.texture.needsUpdate = true
+        }
+        this.startingScreen.loadingLabel.material = new THREE.MeshBasicMaterial({ transparent: true, depthWrite: false, color: 0xffffff, alphaMap: this.startingScreen.loadingLabel.texture, opacity: 0 })
+        this.startingScreen.loadingLabel.image.addEventListener('load', () =>
+        {
+            gsap.to(this.startingScreen.loadingLabel.material, { opacity: 1, duration: 0.2 })
+        })
         this.startingScreen.loadingLabel.mesh = new THREE.Mesh(this.startingScreen.loadingLabel.geometry, this.startingScreen.loadingLabel.material)
         this.startingScreen.loadingLabel.mesh.matrixAutoUpdate = false
         this.container.add(this.startingScreen.loadingLabel.mesh)
@@ -265,7 +279,17 @@ export default class World
         this.startingScreen.startLabel.texture = new THREE.Texture(this.startingScreen.startLabel.image)
         this.startingScreen.startLabel.texture.magFilter = THREE.NearestFilter
         this.startingScreen.startLabel.texture.minFilter = THREE.LinearFilter
-        this.startingScreen.startLabel.texture.needsUpdate = true
+        // Wait for the data URI to decode. Flagging the texture before the
+        // pixels exist leaves an opaque alphaMap, which draws as a white box.
+        this.startingScreen.startLabel.texture.needsUpdate = false
+        this.startingScreen.startLabel.image.onload = () =>
+        {
+            this.startingScreen.startLabel.texture.needsUpdate = true
+        }
+        if(this.startingScreen.startLabel.image.complete && this.startingScreen.startLabel.image.naturalWidth)
+        {
+            this.startingScreen.startLabel.texture.needsUpdate = true
+        }
         this.startingScreen.startLabel.material = new THREE.MeshBasicMaterial({ transparent: true, depthWrite: false, color: 0xffffff, alphaMap: this.startingScreen.startLabel.texture })
         this.startingScreen.startLabel.material.opacity = 0
         this.startingScreen.startLabel.mesh = new THREE.Mesh(this.startingScreen.startLabel.geometry, this.startingScreen.startLabel.material)
@@ -560,7 +584,10 @@ export default class World
 
         this.sounds.setVehicleStateProvider(() => ({
             speed: this.advancedLighting.dynamicState.speedFactor,
-            braking: this.controls.actions.brake ? 1 : 0
+            braking: this.controls.actions.brake ? 1 : 0,
+            // Normalised steering angle, so the tyre layer can tell a hard
+            // corner from a lane change rather than squealing at any input.
+            cornering: Math.min(Math.abs(this.physics.car.steering) / this.physics.car.options.controlsSteeringMax, 1)
         }))
     }
 

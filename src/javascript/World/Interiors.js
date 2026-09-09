@@ -172,6 +172,10 @@ export default class Interiors
         explorer.body.velocity.set(0, 0, 0)
         explorer.yaw = Math.PI * 0.5
         document.body.classList.add('is-indoors')
+        // The street drops to a muffled bleed and the room floor lifts in.
+        this.world.ambientSounds?.setEnclosure(1)
+        this.world.sounds?.setWorldDuck(0.55)
+        this.world.sounds?.cues?.door('home')
         this.$panel.hidden = false
         this.$panel.querySelector('[data-where]').textContent = `${_building.name} · third floor`
         this.world.careerRPG?.render()
@@ -188,6 +192,9 @@ export default class Interiors
         this.active = null
         this.returnTo = null
         document.body.classList.remove('is-indoors')
+        this.world.ambientSounds?.setEnclosure(0)
+        this.world.sounds?.setWorldDuck(0)
+        this.world.sounds?.cues?.door('home')
         this.$panel.hidden = true
     }
 

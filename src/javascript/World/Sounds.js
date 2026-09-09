@@ -1,4 +1,5 @@
 import { Howl, Howler } from 'howler'
+import createSoundCues, { CUE_SAMPLES } from './soundCues.js'
 
 export default class Sounds
 {
@@ -22,6 +23,8 @@ export default class Sounds
         this.setMasterVolume()
         this.setMute()
         this.setEngine()
+        this.setCues()
+        this.setBoard()
     }
 
     setSettings()
@@ -227,6 +230,7 @@ export default class Sounds
         // loop whose pitch and volume follow the car without clip switching.
         this.engine = {}
         this.engine.started = false
+        this.engine.running = true
         this.engine.ready = false
         this.engine.failed = false
         this.engine.soundId = null
@@ -251,7 +255,8 @@ export default class Sounds
         this.engine.volume.master = 0
 
         this.engine.sound = new Howl({
-            src: ['./sounds/engines/1/low_off.mp3'],
+            // One steady loop, pitch-shifted across the rev range by rate below.
+            src: ['./sounds/engines/1/engine-loop.mp3'],
             loop: true,
             onload: () =>
             {
@@ -280,16 +285,14 @@ export default class Sounds
             ready: false,
             soundId: null,
             currentVolume: 0,
-            spriteName: 'squeal'
         }
         this.engine.tire.sound = new Howl({
-            src: ['./sounds/screeches/screech-1.mp3'],
+            // Its own sustained loop rather than a sprite window into the
+            // one-shot chirp: that window was a hardcoded 272ms and broke the
+            // moment the chirp was regenerated at a different length.
+            src: ['./sounds/tires/tire-loop.mp3'],
             volume: 0,
-            // The source has about 39ms of trailing silence. Loop only its
-            // audible region so sustained slides do not pulse or hesitate.
-            sprite: {
-                squeal: [0, 272, true]
-            },
+            loop: true,
             onload: () =>
             {
                 this.engine.tire.ready = true
@@ -309,6 +312,12 @@ export default class Sounds
         // Time tick
         this.time.on('tick', () =>
         {
+            // Ease the world duck so stepping indoors or opening a dialog is a
+            // fade, not a cut.
+            this.duck.value += (this.duck.target - this.duck.value) * 0.12
+            if(this.cueGain) this.cueGain.gain.value = 0.35 + this.duck.value * 0.65
+            this.updateBoardAudio()
+
             if(this.engine.started)
             {
                 this.updateVehicleAudio()
@@ -380,7 +389,7 @@ export default class Sounds
             return
         }
 
-        tire.soundId = tire.sound.play(tire.spriteName)
+        tire.soundId = tire.sound.play()
         tire.sound.volume(0, tire.soundId)
     }
 
@@ -451,29 +460,165 @@ export default class Sounds
         const state = this.engine.vehicleStateProvider ? this.engine.vehicleStateProvider() : null
         const speed = Math.min(Math.max(state?.speed ?? this.engine.progress, 0), 1)
         const braking = Math.min(Math.max(state?.braking ?? 0, 0), 1)
+        const cornering = Math.min(Math.max(state?.cornering ?? 0, 0), 1)
 
         const tire = this.engine.tire
         if(tire.soundId !== null)
         {
-            // Steering and lateral slip must stay silent. The squeal is now a
-            // braking-only cue, with a low-speed dead zone to prevent chirps.
-            const brakingSpeed = Math.max((speed - 0.12) / 0.88, 0)
-            const tireTarget = braking * brakingSpeed * 0.12 * this.engine.volume.master
-            const response = tireTarget > tire.currentVolume ? 0.62 : 0.36
+            // Tyres protest when the car is genuinely asking too much of them:
+            // a hard corner carried at speed, or heavy braking at speed. Both
+            // factors have to be high at once, so ordinary steering and gentle
+            // slowing stay silent. Previously any braking at all squealed.
+            const ramp = (_value, _from, _to) => Math.min(Math.max((_value - _from) / (_to - _from), 0), 1)
+
+            const fast = ramp(speed, 0.42, 0.8)
+            const hardTurn = ramp(cornering, 0.55, 0.95)
+            const hardBrake = ramp(braking * speed, 0.5, 0.85)
+
+            // Cornering is the main voice; braking can only add to it.
+            const slip = Math.min(fast * hardTurn + hardBrake * 0.45, 1)
+            const tireTarget = slip * 0.16 * this.engine.volume.master * this.duck.value
+
+            // Fade in quickly when the slide starts, out slowly as grip returns.
+            const response = tireTarget > tire.currentVolume ? 0.5 : 0.14
             tire.currentVolume += (tireTarget - tire.currentVolume) * response
             tire.sound.volume(tire.currentVolume, tire.soundId)
-            tire.sound.rate(0.88 + speed * 0.24, tire.soundId)
+            tire.sound.rate(0.9 + slip * 0.28, tire.soundId)
         }
 
         if(this.engine.noise.ready)
         {
-            const windTarget = speed * speed * 0.035 * this.engine.volume.master
-            const brakeTarget = braking * speed * 0.018 * this.engine.volume.master
+            const windTarget = speed * speed * 0.035 * this.engine.volume.master * this.duck.value
+            const brakeTarget = braking * speed * 0.018 * this.engine.volume.master * this.duck.value
             this.engine.noise.wind.value += (windTarget - this.engine.noise.wind.value) * 0.08
             this.engine.noise.brake.value += (brakeTarget - this.engine.noise.brake.value) * 0.18
             this.engine.noise.wind.gain.gain.value = this.engine.noise.wind.value
             this.engine.noise.brake.gain.gain.value = this.engine.noise.brake.value
             this.engine.noise.wind.filter.frequency.value = 480 + speed * 1100
+        }
+    }
+
+    // Synthesised cues for the walking layer, plus the ducking bus that lets
+    // the world drop back when a dialog opens or you step indoors.
+    setCues()
+    {
+        this.cues = null
+        this.duck = { target: 1, value: 1, gain: null }
+
+        const context = Howler.ctx
+        if(!context || !Howler.masterGain) return
+
+        // Cues sit behind their own gain so a dialog can duck the world
+        // without muting the thing the visitor just did.
+        this.cueGain = context.createGain()
+        this.cueGain.gain.value = 1
+        this.cueGain.connect(Howler.masterGain)
+
+        // Load the generated cue samples. Each is a plain one-shot: no velocity
+        // scaling, no rate variation — these carry meaning, so they should sound
+        // the same every time rather than being randomised like an impact.
+        this.cueSamples = {}
+        for(const [name, file] of Object.entries(CUE_SAMPLES))
+        {
+            const sound = new Howl({ src: [`./sounds/${file}`], volume: 0.55, preload: true })
+            this.cueSamples[name] = sound
+        }
+
+        // Cues prefer their sample and fall back to synthesis until it loads,
+        // so the walking layer is never silent mid-download or if a file is
+        // missing entirely.
+        this.cues = createSoundCues(context, this.cueGain, (_name) =>
+        {
+            const sound = this.cueSamples[_name]
+            if(!sound || sound.state() !== 'loaded') return false
+            sound.volume(0.55 * this.duck.value)
+            sound.play()
+            return true
+        })
+    }
+
+    // amount 0 = full world, 1 = fully ducked. Used indoors and behind dialogs.
+    setWorldDuck(_amount)
+    {
+        this.duck.target = 1 - Math.min(Math.max(_amount, 0), 1)
+    }
+
+    play(_name, _velocity)
+    {
+        // Kept for callers that reach for a cue by name.
+        if(this.cues && typeof this.cues[_name] === 'function' && !this.muted)
+        {
+            this.cues[_name]()
+            return
+        }
+        return this.playItem(_name, _velocity)
+    }
+
+    // Rolling board noise from the generated loop, with volume and pitch tied
+    // to real speed so kerbs and corners are audible rather than a flat drone.
+    setBoard()
+    {
+        this.board = { speed: 0, value: 0, ready: false, soundId: null }
+
+        this.board.sound = new Howl({
+            src: ['./sounds/cues/board-roll.mp3'],
+            loop: true,
+            volume: 0,
+            onload: () => { this.board.ready = true },
+            onloaderror: () => { console.warn('Board audio could not be loaded.') }
+        })
+    }
+
+    updateBoardAudio()
+    {
+        if(!this.board.ready) return
+
+        const speed = Math.min(Math.max(this.board.speed, 0), 1)
+        // Ease so a dropped frame or a kerb does not chop the roll into pieces.
+        this.board.value += (speed - this.board.value) * 0.2
+
+        // Below a whisper the loop is stopped outright: a board standing still
+        // should be silent, not a quiet drone.
+        if(this.board.value < 0.01)
+        {
+            if(this.board.soundId !== null)
+            {
+                this.board.sound.stop(this.board.soundId)
+                this.board.soundId = null
+            }
+            return
+        }
+
+        if(this.board.soundId === null) this.board.soundId = this.board.sound.play()
+        this.board.sound.volume(this.board.value * 0.5 * this.duck.value, this.board.soundId)
+        this.board.sound.rate(0.82 + this.board.value * 0.5, this.board.soundId)
+    }
+
+    // The car is a physical object: when nobody is in it, it is switched off.
+    // Ducking the engine to zero left a silent loop running and the tyre layer
+    // live, which is not the same thing as an engine that has stopped.
+    setEngineRunning(_running)
+    {
+        const running = Boolean(_running)
+        if(running === this.engine.running) return
+        this.engine.running = running
+
+        if(this.engine.ready && this.engine.soundId !== null)
+        {
+            if(running) this.engine.sound.play(this.engine.soundId)
+            else this.engine.sound.pause(this.engine.soundId)
+        }
+
+        const tire = this.engine.tire
+        if(tire.ready && tire.soundId !== null)
+        {
+            if(running) tire.sound.play(tire.soundId)
+            else
+            {
+                tire.currentVolume = 0
+                tire.sound.volume(0, tire.soundId)
+                tire.sound.pause(tire.soundId)
+            }
         }
     }
 
@@ -541,7 +686,9 @@ export default class Sounds
         this.items.push(item)
     }
 
-    play(_name, _velocity)
+    // Sample-based player. play() dispatches synthesised cues first and falls
+    // through to here for anything backed by an audio file.
+    playItem(_name, _velocity)
     {
         const item = this.items.find((_item) => _item.name === _name)
         const time = Date.now()

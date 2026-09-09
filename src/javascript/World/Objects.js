@@ -1,4 +1,5 @@
 import * as THREE from 'three'
+import { renderPosition, renderQuaternion } from '../Utils/renderTransform.js'
 import * as BufferGeometryUtils from 'three/addons/utils/BufferGeometryUtils.js';
 
 
@@ -343,8 +344,9 @@ export default class Objects
         {
             this.time.on('tick', () =>
             {
-                object.container.position.copy(object.collision.body.position)
-                object.container.quaternion.copy(object.collision.body.quaternion)
+                const smoothing = this.time.delta / 1000
+                object.container.position.copy(renderPosition(object.collision.body, smoothing))
+                object.container.quaternion.copy(renderQuaternion(object.collision.body, smoothing))
             })
         }
 

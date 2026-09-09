@@ -1,4 +1,5 @@
 import * as THREE from 'three'
+import { renderPosition } from '../Utils/renderTransform.js'
 import CANNON from 'cannon'
 import { TransformControls } from 'three/examples/jsm/controls/TransformControls.js'
 
@@ -91,11 +92,21 @@ export default class Car
             this.movement.localSpeed = this.movement.speed.clone().applyAxisAngle(new THREE.Vector3(0, 0, 1), - this.chassis.object.rotation.z)
             this.movement.localAcceleration = this.movement.acceleration.clone().applyAxisAngle(new THREE.Vector3(0, 0, 1), - this.chassis.object.rotation.z)
 
-            // Sound
-            this.sounds.engine.speed = this.movement.localSpeed.x
-            this.sounds.engine.acceleration = !this.physics.onFoot && this.controls.actions.up ? (this.controls.actions.boost ? 1 : 0.5) : 0
+            // Sound. On foot the chassis is pinned to its parked pose every
+            // frame, which reads as violent acceleration and set the tyres
+            // screeching while the visitor was walking. The car is silent
+            // unless someone is actually in it.
+            const driving = !this.physics.onFoot
+            // Switch the engine off entirely on foot rather than merely
+            // silencing it, so walking past your parked car is actually quiet.
+            this.sounds.setEngineRunning(driving)
+            this.sounds.engine.speed = driving ? this.movement.localSpeed.x : 0
+            this.sounds.engine.acceleration = driving && this.controls.actions.up ? (this.controls.actions.boost ? 1 : 0.5) : 0
 
-            if(this.movement.localAcceleration.x > 0.03 && this.time.elapsed - this.movement.lastScreech > 5000)
+            // Wheelspin off the line only: a genuinely hard launch, not every
+            // brisk pull-away, and no more than once every eight seconds. The
+            // sustained cornering squeal lives in Sounds.updateVehicleAudio.
+            if(driving && this.movement.localAcceleration.x > 0.055 && this.time.elapsed - this.movement.lastScreech > 8000)
             {
                 this.movement.lastScreech = this.time.elapsed
                 this.sounds.play('screech')
@@ -108,7 +119,12 @@ export default class Car
         this.chassis = {}
         this.chassis.offset = new THREE.Vector3(0, 0, - 0.28)
         this.chassis.object = this.objects.getConvertedMesh(this.models.chassis.scene.children)
-        this.chassis.object.position.copy(this.physics.car.chassis.body.position)
+        // The smoothed chassis translation for this frame. Everything bolted to
+        // the car reads this one value: calling the smoother again would advance
+        // the filter a second time and hand back a different position, which is
+        // exactly how the wheels ended up jittering against the body.
+        this.chassis.renderPosition = new THREE.Vector3().copy(renderPosition(this.physics.car.chassis.body, this.time.delta / 1000))
+        this.chassis.object.position.copy(this.chassis.renderPosition)
         this.chassis.oldPosition = this.chassis.object.position.clone()
         this.container.add(this.chassis.object)
 
@@ -123,7 +139,8 @@ export default class Car
             // Update if mode physics
             if(!this.transformControls.enabled)
             {
-                this.chassis.object.position.copy(this.physics.car.chassis.body.position).add(this.chassis.offset)
+                this.chassis.renderPosition.copy(renderPosition(this.physics.car.chassis.body, this.time.delta / 1000))
+                this.chassis.object.position.copy(this.chassis.renderPosition).add(this.chassis.offset)
                 this.chassis.object.quaternion.copy(this.physics.car.chassis.body.quaternion)
             }
 
@@ -307,7 +324,17 @@ export default class Car
                     const wheelBody = this.physics.car.wheels.bodies[_wheelKey]
                     const wheelObject = this.wheels.items[_wheelKey]
 
-                    wheelObject.position.copy(wheelBody.position)
+                    // Offset from the raw chassis, applied to the smoothed one, so
+                    // the car translates as a rigid body. Only translation is
+                    // smoothed; the wheel's own rotation stays exact or the spin
+                    // would visibly drag behind the road speed.
+                    const chassisBody = this.physics.car.chassis.body
+                    const smoothed = this.chassis.renderPosition
+                    wheelObject.position.set(
+                        smoothed.x + (wheelBody.position.x - chassisBody.position.x),
+                        smoothed.y + (wheelBody.position.y - chassisBody.position.y),
+                        smoothed.z + (wheelBody.position.z - chassisBody.position.z)
+                    )
                     wheelObject.quaternion.copy(wheelBody.quaternion)
                 }
             }

@@ -1,6 +1,7 @@
 import * as THREE from 'three'
 import CANNON from 'cannon'
 import { createPerson } from './Pedestrians.js'
+import { renderPosition } from '../Utils/renderTransform.js'
 
 export default class Explorer
 {
@@ -36,9 +37,13 @@ export default class Explorer
     }
 
     get position() { return this.active ? this.body.position : this.world.physics.car.chassis.body.position }
-    // Everything else in the world draws from raw physics positions, so the
-    // walker has to as well or the camera and the meshes disagree by a frame.
-    get renderPosition() { return this.position }
+    // Physics settles on fixed steps; everything drawn reads the interpolated
+    // pose so the walker, the board and the view all agree frame to frame.
+    get renderPosition()
+    {
+        const body = this.active ? this.body : this.world.physics.car.chassis.body
+        return renderPosition(body, this.world.time.delta / 1000)
+    }
     get blocked() { return this.world.experienceDirector.locks.size > 0 || this.world.arcade.state !== 'idle' }
 
     // Deck, trucks and four wheels, in the same flat box language as the walker.
@@ -90,7 +95,13 @@ export default class Explorer
     // once and you keep rolling, the way Stick RPG's skateboard works.
     setSkating(_next)
     {
+        const was = this.skating
         this.skating = Boolean(_next)
+        if(was !== this.skating)
+        {
+            // A kick to push off, deck-on-kerb to step down.
+            this.world.sounds?.cues?.[this.skating ? 'boardPush' : 'boardOff']?.()
+        }
         this.runButton.setAttribute('aria-pressed', String(this.skating))
         this.runButton.classList.toggle('is-on', this.skating)
         if(this.board) this.board.visible = this.active && this.skating
@@ -195,6 +206,7 @@ export default class Explorer
         this.world.physics.onFoot = false
         this.avatar.visible = false
         if(this.board) this.board.visible = false
+        if(this.world.sounds?.board) this.world.sounds.board.speed = 0
         this.world.guidedTour.clearControls()
         this.world.physics.car.chassis.body.wakeUp()
         this.lastCarAngle = this.world.physics.car.angle
@@ -311,6 +323,9 @@ export default class Explorer
                 this.board.rotation.z = this.avatar.rotation.z
             }
             this.avatar.rotation.x = this.skating ? - 0.05 - Math.min(travelling / 7.6, 1) * 0.13 : 0
+
+            // Rolling noise follows real speed, so kerbs and corners are audible.
+            if(w.sounds?.board) w.sounds.board.speed = this.skating ? Math.min(travelling / 7.6, 1) : 0
             if(this.body.position.z < -5) this.body.position.set(this.parked.position.x, this.parked.position.y + 2, 1)
         }
     }
