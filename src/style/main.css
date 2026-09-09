@@ -203,6 +203,7 @@
     gap: 2px;
 }
 .city-welcome__start,
+.city-welcome__brief,
 .city-welcome__resume
 {
     display: inline-flex;
@@ -230,6 +231,7 @@
 }
 .city-welcome__start:disabled { opacity: .5; cursor: progress; }
 .city-welcome__start:not(:disabled):hover,
+.city-welcome__brief:hover,
 .city-welcome__resume:hover
 {
     color: #ffd37a;
@@ -2532,3 +2534,119 @@ body.is-touch-input .interior-bar kbd { display: none; }
 .arcade-panel .arcade-best, .arcade-panel .arcade-round small { color: #5d6470; }
 .arcade-panel button, .arcade-menu button strong, .arcade-menu button span { color: #172334; }
 .arcade-panel .arcade-small { color: #172334; border: 2px solid #172334; }
+
+/* ------------------------------------------------------------ recruiter brief
+   The fast path: everything the city says, on one scrollable page, for someone
+   screening thirty candidates who will not drive a car to find out. */
+.city-welcome__brief { font-weight: 700; letter-spacing: .06em; }
+
+.brief
+{
+    width: min(880px, calc(100vw - 24px));
+    max-height: min(92dvh, 1000px);
+    margin: auto;
+    padding: 0;
+    overflow-y: auto;
+    color: var(--ui-text);
+    background: var(--ui-surface);
+    border: 1px solid var(--ui-border);
+    border-radius: 14px;
+    font-family: var(--font-ui);
+    box-shadow: 0 24px 70px rgba(0, 0, 0, .6);
+}
+.brief::backdrop { background: rgba(8, 7, 5, .82); backdrop-filter: blur(3px); }
+.brief__sheet { padding: 0 0 28px; }
+
+.brief__head { position: relative; padding: 30px 32px 24px; border-bottom: 1px solid var(--ui-soft); }
+.brief__eyebrow { margin: 0 0 12px; font-size: 10px; font-weight: 800; letter-spacing: .16em; color: var(--ui-accent); }
+.brief h1 { margin: 0; font-family: var(--font-display); font-size: 40px; line-height: .95; letter-spacing: -.02em; text-transform: uppercase; color: var(--ui-text); }
+.brief h1 span { display: block; margin-top: 10px; font-family: var(--font-ui); font-size: 13px; font-weight: 700; letter-spacing: .06em; text-transform: none; color: var(--ui-accent); }
+.brief__pitch { margin: 18px 0 0; max-width: 62ch; font-size: 14.5px; line-height: 1.62; color: var(--ui-dim); }
+
+.brief__contact { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; }
+.brief__contact a
+{
+    display: inline-flex;
+    align-items: baseline;
+    gap: 7px;
+    padding: 8px 12px;
+    font-size: 12px;
+    color: var(--ui-text);
+    text-decoration: none;
+    border: 1px solid var(--ui-border);
+    border-radius: 7px;
+    background: var(--ui-soft);
+}
+.brief__contact a:hover { color: var(--ui-ink); background: var(--ui-accent); border-color: var(--ui-accent); }
+.brief__contact b { font-size: 9.5px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; opacity: .75; }
+
+.brief__close
+{
+    position: absolute;
+    top: 24px;
+    right: 24px;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    min-height: 38px;
+    padding: 8px 13px;
+    font: 700 11px var(--font-ui);
+    letter-spacing: .06em;
+    color: var(--ui-accent);
+    background: transparent;
+    border: 1px solid var(--ui-border);
+    border-radius: 7px;
+    cursor: pointer;
+}
+.brief__close:hover { color: var(--ui-ink); background: var(--ui-accent); }
+.brief__close kbd { font: inherit; opacity: .6; }
+
+.brief__section { padding: 26px 32px 0; }
+.brief__section h2 { margin: 0 0 16px; font-size: 11px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; color: var(--ui-accent); }
+
+.brief__headlines { margin: 0; padding: 0; list-style: none; display: grid; gap: 9px; }
+.brief__headlines li { position: relative; padding-left: 20px; font-size: 15px; line-height: 1.5; }
+.brief__headlines li::before { content: '▸'; position: absolute; left: 0; color: var(--ui-accent); }
+
+.brief__projects, .brief__roles { display: grid; gap: 18px; }
+.brief__project, .brief__role { padding: 18px 20px; border: 1px solid var(--ui-soft); border-radius: 10px; background: rgba(255, 182, 39, .03); }
+.brief h3 { margin: 0 0 6px; display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px; font-size: 17px; letter-spacing: -.01em; }
+.brief h3 a { font-size: 11px; font-weight: 700; letter-spacing: .06em; color: var(--ui-accent); text-decoration: none; }
+.brief h3 a:hover { text-decoration: underline; }
+.brief__meta, .brief__stack { margin: 0 0 10px; font-size: 10px; font-weight: 700; letter-spacing: .08em; color: var(--ui-accent); opacity: .8; }
+.brief__lede { margin: 0 0 12px; font-size: 13.5px; line-height: 1.55; color: var(--ui-dim); }
+.brief__project ul, .brief__role ul { margin: 0; padding-left: 18px; display: grid; gap: 8px; }
+.brief__project li, .brief__role li { font-size: 13px; line-height: 1.55; color: var(--ui-dim); }
+.brief__role li b { color: var(--ui-text); font-weight: 700; }
+
+.brief__skills { margin: 0; display: grid; gap: 10px; }
+.brief__skills div { display: grid; grid-template-columns: 96px 1fr; gap: 14px; align-items: baseline; }
+.brief__skills dt { font-size: 10px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--ui-accent); }
+.brief__skills dd { margin: 0; font-size: 13px; line-height: 1.5; color: var(--ui-dim); }
+.brief__education { margin: 18px 0 0; font-size: 13px; color: var(--ui-dim); }
+
+.brief__foot { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; margin: 30px 32px 0; padding-top: 22px; border-top: 1px solid var(--ui-soft); }
+.brief__foot p { margin: 0; flex: 1; font-size: 13px; color: var(--ui-dim); }
+.brief__foot button
+{
+    min-height: 46px;
+    padding: 12px 20px;
+    font: 700 12px var(--font-ui);
+    letter-spacing: .06em;
+    color: var(--ui-ink);
+    background: var(--ui-accent);
+    border: 0;
+    border-radius: 8px;
+    cursor: pointer;
+}
+.brief__foot button:hover { background: var(--experience-secondary); }
+
+@media (max-width: 720px)
+{
+    .brief h1 { font-size: 30px; }
+    .brief__head { padding: 24px 18px 20px; padding-top: 70px; }
+    .brief__close { top: 16px; right: 16px; }
+    .brief__section { padding: 22px 18px 0; }
+    .brief__foot { margin: 24px 18px 0; }
+    .brief__skills div { grid-template-columns: 1fr; gap: 4px; }
+}

@@ -4,6 +4,38 @@
 // the positioning line at the top of the resume — AI Engineer / Full-Stack /
 // Product — and nothing here claims work that was not actually shipped.
 
+/**
+ * The facts a recruiter needs in sixty seconds. Kept here rather than in the
+ * intro markup so the fast path and the 3D city can never drift apart: both
+ * read this file, and this file is transcribed from the AI-engineer resume.
+ */
+export const PROFILE = {
+    name: 'Richard Simmons',
+    title: 'AI Engineer',
+    location: 'Canal Winchester, OH',
+    pitch: 'Agent systems that hold up in production: LangGraph and FastAPI in Python, evals that gate CI, and a deterministic permission layer so the model is never the authority on what it is allowed to do. Full-stack is the reason those ship instead of staying in a notebook.',
+    contact: [
+        { label: 'Email', value: 'richard.simmons.dev@gmail.com', href: 'mailto:richard.simmons.dev@gmail.com' },
+        { label: 'GitHub', value: 'github.com/RSimmons2021', href: 'https://github.com/RSimmons2021' },
+        { label: 'LinkedIn', value: 'in/richard-simmons-a3916958', href: 'https://www.linkedin.com/in/richard-simmons-a3916958' }
+    ],
+    skills: [
+        { group: 'AI', items: ['LangGraph', 'FastAPI', 'OpenAI & Anthropic APIs', 'Eval harnesses', 'Tool calling', 'RAG'] },
+        { group: 'Languages', items: ['Python', 'TypeScript', 'JavaScript', 'SQL'] },
+        { group: 'Frontend', items: ['React', 'Next.js', 'React Native', 'Three.js', 'TailwindCSS'] },
+        { group: 'Backend', items: ['Node.js', 'PostgreSQL', 'Supabase', 'Redis', 'REST', 'Background workers'] },
+        { group: 'Cloud', items: ['AWS (S3, Lambda)', 'Docker', 'CI/CD', 'Edge Functions'] }
+    ],
+    education: { degree: 'B.S. Computer Science', school: 'Wright State University', year: 'May 2021' },
+    // The single number from each role that a hiring manager actually retains.
+    headlines: [
+        '500 more documents a month through an agent pipeline, gated by an eval suite',
+        '2/24 to 20/24 on the hardest eval tier at 12x lower cost per verified episode',
+        '1M+ daily requests across 7 manufacturing facilities',
+        '2 apps shipped solo to the App Store and Google Play'
+    ]
+}
+
 export const MAX_STAT = 10
 export const MAX_FOCUS = 100
 

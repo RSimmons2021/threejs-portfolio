@@ -3,11 +3,26 @@ import '@fontsource/jetbrains-mono/latin-400.css'
 import '@fontsource/jetbrains-mono/latin-700.css'
 import './style/main.css'
 import Application from './javascript/Application.js'
+import RecruiterBrief from './javascript/RecruiterBrief.js'
 import resumePdfUrl from '../docs/Richard_Simmons_Resume_AI.pdf'
 
-for(const resumeLink of document.querySelectorAll('.js-resume'))
+const applyResumeLinks = () =>
 {
-    resumeLink.href = resumePdfUrl
+    for(const resumeLink of document.querySelectorAll('.js-resume'))
+    {
+        resumeLink.href = resumePdfUrl
+    }
+}
+applyResumeLinks()
+
+// Built and wired before the 3D app is constructed, and deliberately outside
+// the try/catch below: if WebGL fails to initialise, the fast path still has to
+// work. That is the machine a recruiter is most likely to be on.
+const brief = new RecruiterBrief()
+document.addEventListener('brief:built', applyResumeLinks)
+for(const trigger of document.querySelectorAll('.js-brief-open'))
+{
+    trigger.addEventListener('click', () => brief.open())
 }
 
 const showStartupFallback = (_error) =>
@@ -54,6 +69,7 @@ try
     document.addEventListener('keydown', (event) =>
     {
         if(event.key !== 'Enter' || event.repeat || startButton.disabled || document.body.classList.contains('has-started')) return
+        if(document.body.classList.contains('has-brief')) return
         if(event.target instanceof Element && event.target.closest('a, button, input, select, textarea')) return
         event.preventDefault()
         startButton.click()
