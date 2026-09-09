@@ -103,14 +103,6 @@ export default class Car
             this.sounds.engine.speed = driving ? this.movement.localSpeed.x : 0
             this.sounds.engine.acceleration = driving && this.controls.actions.up ? (this.controls.actions.boost ? 1 : 0.5) : 0
 
-            // Wheelspin off the line only: a genuinely hard launch, not every
-            // brisk pull-away, and no more than once every eight seconds. The
-            // sustained cornering squeal lives in Sounds.updateVehicleAudio.
-            if(driving && this.movement.localAcceleration.x > 0.055 && this.time.elapsed - this.movement.lastScreech > 8000)
-            {
-                this.movement.lastScreech = this.time.elapsed
-                this.sounds.play('screech')
-            }
         })
     }
 

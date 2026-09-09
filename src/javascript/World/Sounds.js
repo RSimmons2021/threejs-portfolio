@@ -97,17 +97,6 @@ export default class Sounds
                 rateMax: 1.5
             },
             {
-                name: 'screech',
-                sounds: ['./sounds/screeches/screech-1.mp3'],
-                minDelta: 1000,
-                velocityMin: 0,
-                velocityMultiplier: 1,
-                volumeMin: 0.75,
-                volumeMax: 1,
-                rateMin: 0.9,
-                rateMax: 1.1
-            },
-            {
                 name: 'uiArea',
                 sounds: ['./sounds/ui/area-1.mp3'],
                 minDelta: 100,
@@ -281,31 +270,6 @@ export default class Sounds
             }
         })
 
-        this.engine.tire = {
-            ready: false,
-            soundId: null,
-            currentVolume: 0,
-        }
-        this.engine.tire.sound = new Howl({
-            // Its own sustained loop rather than a sprite window into the
-            // one-shot chirp: that window was a hardcoded 272ms and broke the
-            // moment the chirp was regenerated at a different length.
-            src: ['./sounds/tires/tire-loop.mp3'],
-            volume: 0,
-            loop: true,
-            onload: () =>
-            {
-                this.engine.tire.ready = true
-                if(this.engine.started)
-                {
-                    this.startTireLayer()
-                }
-            },
-            onloaderror: (_id, _error) =>
-            {
-                console.warn('Tire audio could not be loaded.', _error)
-            }
-        })
 
         this.setVehicleNoise()
 
@@ -360,16 +324,6 @@ export default class Sounds
 
         this.engine.started = true
 
-        if(this.engine.tire.sound.state() === 'loaded')
-        {
-            this.engine.tire.ready = true
-            this.startTireLayer()
-        }
-        else
-        {
-            this.engine.tire.sound.load()
-        }
-
         if(this.engine.sound.state() === 'loaded')
         {
             this.engine.ready = true
@@ -381,17 +335,6 @@ export default class Sounds
         this.engine.sound.load()
     }
 
-    startTireLayer()
-    {
-        const tire = this.engine.tire
-        if(!tire.ready || tire.soundId !== null)
-        {
-            return
-        }
-
-        tire.soundId = tire.sound.play()
-        tire.sound.volume(0, tire.soundId)
-    }
 
     setVehicleStateProvider(_provider)
     {
@@ -462,29 +405,6 @@ export default class Sounds
         const braking = Math.min(Math.max(state?.braking ?? 0, 0), 1)
         const cornering = Math.min(Math.max(state?.cornering ?? 0, 0), 1)
 
-        const tire = this.engine.tire
-        if(tire.soundId !== null)
-        {
-            // Tyres protest when the car is genuinely asking too much of them:
-            // a hard corner carried at speed, or heavy braking at speed. Both
-            // factors have to be high at once, so ordinary steering and gentle
-            // slowing stay silent. Previously any braking at all squealed.
-            const ramp = (_value, _from, _to) => Math.min(Math.max((_value - _from) / (_to - _from), 0), 1)
-
-            const fast = ramp(speed, 0.42, 0.8)
-            const hardTurn = ramp(cornering, 0.55, 0.95)
-            const hardBrake = ramp(braking * speed, 0.5, 0.85)
-
-            // Cornering is the main voice; braking can only add to it.
-            const slip = Math.min(fast * hardTurn + hardBrake * 0.45, 1)
-            const tireTarget = slip * 0.16 * this.engine.volume.master * this.duck.value
-
-            // Fade in quickly when the slide starts, out slowly as grip returns.
-            const response = tireTarget > tire.currentVolume ? 0.5 : 0.14
-            tire.currentVolume += (tireTarget - tire.currentVolume) * response
-            tire.sound.volume(tire.currentVolume, tire.soundId)
-            tire.sound.rate(0.9 + slip * 0.28, tire.soundId)
-        }
 
         if(this.engine.noise.ready)
         {
@@ -609,17 +529,6 @@ export default class Sounds
             else this.engine.sound.pause(this.engine.soundId)
         }
 
-        const tire = this.engine.tire
-        if(tire.ready && tire.soundId !== null)
-        {
-            if(running) tire.sound.play(tire.soundId)
-            else
-            {
-                tire.currentVolume = 0
-                tire.sound.volume(0, tire.soundId)
-                tire.sound.pause(tire.soundId)
-            }
-        }
     }
 
     playInterfaceTone(_preset = 'focus')
@@ -737,7 +646,6 @@ export default class Sounds
         }
 
         this.engine.sound.unload()
-        this.engine.tire.sound.unload()
 
         if(this.engine.noise.ready)
         {

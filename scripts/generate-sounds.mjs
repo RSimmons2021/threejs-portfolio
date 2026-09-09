@@ -47,8 +47,6 @@ const MANIFEST = [
       prompt: 'A bowling pin being struck and clattering briefly on a polished lane, light and hollow' },
 
     // --- group: car -----------------------------------------------------
-    { group: 'car', file: 'screeches/screech-1.mp3', duration: 1.6, influence: 0.7,
-      prompt: 'Car tyres chirping and losing traction on dry tarmac for a moment, short skid, no crash' },
     { group: 'car', file: 'car-horns/car-horn-1.mp3', duration: 0.9, influence: 0.8,
       prompt: 'A short single beep of a small city car horn, friendly, one press' },
     { group: 'car', file: 'car-horns/car-horn-2.mp3', duration: 1.4, influence: 0.8,
@@ -63,19 +61,15 @@ const MANIFEST = [
     // single file and sweeps playbackRate 0.4 -> 1.4, so the eight other RPM
     // clips on disk were never actually played. Generating one coherent loop
     // is both cheaper and the only way the rev sweep stays one engine.
-    { group: 'engine', file: 'engines/1/engine-loop.mp3', duration: 5.0, loop: true, influence: 0.85,
+    { group: 'engine', file: 'engines/1/engine-loop.mp3', duration: 2.0, loop: true, influence: 0.85,
       prompt: 'A smooth warm electric motor humming steadily at constant speed, soft rounded low frequency drone with a gentle whir, pleasant and quiet, no rattle, no combustion, no exhaust, no revving, no pitch changes, no music, seamless continuous loop' },
 
-    // Sustained tyre squeal, generated as its own loop so the one-shot chirp
-    // below can be replaced without breaking a hardcoded sprite range.
-    { group: 'engine', file: 'tires/tire-loop.mp3', duration: 3.0, loop: true, influence: 0.8,
-      prompt: 'Rubber tyres squealing continuously while sliding on dry tarmac, steady sustained squeal, no engine, no crash, no music' },
 
     // --- group: ui --------------------------------------------------------
     { group: 'ui', file: 'ui/area-1.mp3', duration: 0.6, influence: 0.6,
       prompt: 'A soft short synthetic interface blip, warm and rounded, single note, quiet' },
-    { group: 'ui', file: 'reveal/reveal-1.mp3', duration: 3.5, influence: 0.4,
-      prompt: 'A short calm ambient startup chime in the style of the Windows 95 startup sound, soft warm synthesiser bells and pads, gentle and welcoming, slow attack, resolves and fades naturally, no riser, no swell, no drums, no impact, quiet and unhurried' },
+    { group: 'ui', file: 'reveal/reveal-1.mp3', duration: 3.0, influence: 0.4,
+      prompt: 'An uplifting warm analogue synthesiser pad playing a bright major chord that opens up and resolves, welcoming and optimistic startup theme, soft round mellow tone with a gentle lift, cheerful but calm, smooth attack, no bells, no chimes, no sparkle, no percussion, no drums' },
 
     // --- group: cues ------------------------------------------------------
     // The walking layer. These replace the synthesised versions in soundCues.js.
@@ -98,7 +92,7 @@ const MANIFEST = [
       prompt: 'A rubber stamp pressed firmly onto paper on a desk, single dry thud' },
     { group: 'cues', file: 'cues/stat-gain.mp3', duration: 0.9, influence: 0.6,
       prompt: 'A short warm two note rising synthetic chime, gentle, positive, quiet' },
-    { group: 'cues', file: 'cues/unlock.mp3', duration: 2.2, influence: 0.6,
+    { group: 'cues', file: 'cues/unlock.mp3', duration: 1.6, influence: 0.6,
       prompt: 'A heavy lock releasing then a warm rising three note synthetic chord resolving, achievement, no drums' },
     { group: 'cues', file: 'cues/objective.mp3', duration: 1.0, influence: 0.6,
       prompt: 'A short crisp two note completion chime, light and bright, quiet' },
@@ -111,16 +105,16 @@ const MANIFEST = [
       prompt: 'A short clean single note confirmation blip, soft and affirmative' },
     { group: 'cues', file: 'cues/ruling-wrong.mp3', duration: 0.7, influence: 0.7,
       prompt: 'A dull low muted thunk of a wrong answer, short, no buzzer, not harsh' },
-    { group: 'cues', file: 'cues/breach.mp3', duration: 1.8, influence: 0.7,
+    { group: 'cues', file: 'cues/breach.mp3', duration: 1.2, influence: 0.7,
       prompt: 'A single deep low impact hit with a short dark tail, serious failure, no music, no alarm' },
-    { group: 'cues', file: 'cues/contained.mp3', duration: 2.2, influence: 0.6,
+    { group: 'cues', file: 'cues/contained.mp3', duration: 1.6, influence: 0.6,
       prompt: 'A calm warm three note ascending resolution, quietly triumphant, synthetic, no drums' },
 
     { group: 'cues', file: 'cues/board-push.mp3', duration: 0.8, influence: 0.75,
       prompt: 'A skateboarder pushing once off concrete with a shoe, single scrape and roll' },
     { group: 'cues', file: 'cues/board-off.mp3', duration: 0.8, influence: 0.75,
       prompt: 'A skateboard deck clacking down onto concrete as someone steps off, single wooden knock' },
-    { group: 'cues', file: 'cues/board-roll.mp3', duration: 4.0, loop: true, influence: 0.75,
+    { group: 'cues', file: 'cues/board-roll.mp3', duration: 2.0, loop: true, influence: 0.75,
       prompt: 'Skateboard wheels rolling steadily on smooth concrete, constant speed, close mic, no music' },
     { group: 'cues', file: 'cues/low-focus.mp3', duration: 1.4, influence: 0.55,
       prompt: 'A soft low synthetic warning pulse, single, warm and non alarming, quiet' }

@@ -26,6 +26,15 @@ export default class Explorer
         this.body.collisionRole = 'player-on-foot'
         this.body.updateMassProperties()
         world.physics.getPlayerPosition = () => this.position
+        // Which way the player is actually facing, for the rotating radar.
+        // On foot that is the way the walker is pointed (or looking, in first
+        // person); in the car it is the chassis heading.
+        this.heading = 0
+        world.physics.getPlayerHeading = () =>
+        {
+            if(!this.active) return world.physics.car.angle
+            return this.firstPerson ? this.yaw : this.heading
+        }
         const explorer = this
         this.proximity = { get position() { return explorer.position } }
         world.areas.car = this.proximity
@@ -310,6 +319,7 @@ export default class Explorer
                 const current = this.avatar.rotation.z
                 const turn = Math.atan2(Math.sin(heading - current), Math.cos(heading - current))
                 this.avatar.rotation.z = current + turn * Math.min(1, delta * (this.skating ? 8 : 16))
+                this.heading = this.avatar.rotation.z + Math.PI / 2
             }
             this.phase += delta * travelling * 2.5
             const render = this.renderPosition

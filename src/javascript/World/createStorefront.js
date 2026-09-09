@@ -71,7 +71,15 @@ export const hoverMarker = (_name, _colour, _kind, _locked) =>
     canvas.height = 256
     const ctx = canvas.getContext('2d')
 
+    // Repaints this marker's own canvas in place. The lock state used to be
+    // changed by disposing the texture and swapping in a new one, but a
+    // SpriteMaterial with no map draws as a solid white square — and these
+    // sprites have depthTest off, so that blank frame appeared as a white box
+    // over the whole scene every time syncDoorLocks ran during the intro.
+    const paint = (_lockedNow) =>
+    {
     const w = 512, pad = 12, bodyH = 150, tail = 34
+    _locked = _lockedNow
     ctx.fillStyle = _locked ? '#2b2f38' : _colour
     ctx.strokeStyle = '#16130e'
     ctx.lineWidth = 10
@@ -99,6 +107,10 @@ export const hoverMarker = (_name, _colour, _kind, _locked) =>
     ctx.font = `bold ${size}px Arial, sans-serif`
     ctx.fillText(_name, 286, pad + 100)
 
+    }
+
+    paint(_locked)
+
     const texture = new THREE.CanvasTexture(canvas)
     texture.colorSpace = THREE.SRGBColorSpace
     const sprite = new THREE.Sprite(new THREE.SpriteMaterial({
@@ -110,6 +122,12 @@ export const hoverMarker = (_name, _colour, _kind, _locked) =>
     }))
     sprite.renderOrder = 30
     sprite.scale.set(4.4, 2.2, 1)
+    // Same canvas, same texture, just new pixels: never a frame without a map.
+    sprite.userData.setLocked = (_next) =>
+    {
+        paint(_next)
+        texture.needsUpdate = true
+    }
     return sprite
 }
 
@@ -236,9 +254,7 @@ export default function createStorefront({ materials, name, sign, colour, facing
         mat.color.set(locked ? '#39404d' : colour)
         mat.opacity = locked ? 0.25 : 0.6
         for(const mesh of glow) mesh.visible = !locked
-        marker.material.map.dispose()
-        marker.material.map = hoverMarker(name, colour, kind, locked).material.map
-        marker.material.needsUpdate = true
+        marker.userData.setLocked(locked)
     }
 
     return group
