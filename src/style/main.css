@@ -2278,7 +2278,8 @@ body.is-touch-input .career-game__lede kbd { display: none; }
 .career-dialog__body { padding: 18px 20px; }
 .career-dialog__foot { padding: 11px 20px; border-top: 2px solid #172334; background: #ffe3ab; font-size: 10px; font-weight: 700; letter-spacing: .05em; }
 
-.career-dialog button, .career-dialog a[target]
+/* mailto links have no target, so key off the actions row too. */
+.career-dialog button, .career-dialog a[target], .career-actions a
 {
     gap: 6px;
     font: 700 12.5px var(--font-ui);
@@ -2294,7 +2295,7 @@ body.is-touch-input .career-game__lede kbd { display: none; }
     justify-content: center;
     transition: transform 120ms ease-out, background 120ms ease-out;
 }
-.career-dialog button:hover:not(:disabled), .career-dialog a[target]:hover { background: #ffe0a0; transform: translateY(-1px); }
+.career-dialog button:hover:not(:disabled), .career-dialog a[target]:hover, .career-actions a:hover { background: #ffe0a0; transform: translateY(-1px); }
 .career-dialog button:disabled { background: #e4dac2; color: #8a8577; cursor: not-allowed; }
 .career-dialog button:focus-visible, .career-dialog a:focus-visible { outline: 3px solid #187575; outline-offset: 3px; }
 .career-dialog button.is-quiet { background: transparent; font-weight: 500; }
@@ -2650,3 +2651,13 @@ body.is-touch-input .interior-bar kbd { display: none; }
     .brief__foot { margin: 24px 18px 0; }
     .brief__skills div { grid-template-columns: 1fr; gap: 4px; }
 }
+
+/* Clock in the walking HUD. Turns amber-red once the day is spent, which is
+   the cue to go home rather than a message telling you to. */
+.career-hud__clock { font-weight: 700; color: var(--ui-dim); font-variant-numeric: tabular-nums; }
+.career-hud__clock[data-late="true"] { color: #ff8a3d; }
+
+/* The offer: the one screen in the walking layer that is allowed to feel big. */
+.career-offer { display: grid; gap: 6px; margin-bottom: 16px; padding: 14px 16px; background: #172334; }
+.career-offer__line { margin: 0; font-size: 12px; letter-spacing: .05em; color: #93d6d0; }
+.career-offer__line b { color: #fff0d2; font-size: 14px; }

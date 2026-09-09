@@ -37,6 +37,16 @@ export const PROFILE = {
 }
 
 export const MAX_STAT = 10
+export const DAY_START = 8          // you wake at 08:00
+export const DAY_END = 24           // past midnight you are too tired to work
+export const HOURS_SHIFT = 2
+export const HOURS_TRAIN = 1
+export const HOURS_ARCADE = 1
+
+// Getting hired is the win condition, and the moment the site earns the right
+// to ask for anything. Reaching it means every project door is open and every
+// employer on the resume has been worked.
+export const HIRED_REQUIREMENT = { ai: 5, systems: 4, product: 4 }
 export const MAX_FOCUS = 100
 
 export const STATS = [
@@ -297,7 +307,7 @@ export const BUILDINGS = [
         kind: 'project',
         colour: '#f0a3a3',
         door: { x: -28, y: -19.3, facing: 'south' },
-        requires: { ai: 7, systems: 5 },
+        requires: { ai: 5, systems: 4 },
         url: 'https://openai-agent-site.vercel.app',
         eyebrow: 'SELECTED PROJECT · REACT / VITE · FASTAPI · LANGGRAPH · SQLITE · SSE · ED25519',
         intro: 'An agent permission layer where authority is deterministic, not model-decided.',
@@ -465,7 +475,8 @@ export const QUESTS = [
     { id: 'purchase', label: 'Buy something from Supply', hint: 'Credits come from shifts.' },
     { id: 'containment', label: 'Hold 100% containment at The Cabinet', hint: 'One wrong ruling ends the run.' },
     { id: 'agentlab', label: 'Get into Agent Lab', hint: 'Requires AI 5.' },
-    { id: 'agentrelay', label: 'Get into Agent Relay', hint: 'Requires AI 7 and SYSTEMS 5.' }
+    { id: 'agentrelay', label: 'Get into Agent Relay', hint: 'Requires AI 5 and SYSTEMS 4.' },
+    { id: 'hired', label: 'Get hired', hint: 'Work every employer, open every project door.' }
 ]
 
 // CONTAINMENT: the arcade cabinet. Each round is a request against a capability

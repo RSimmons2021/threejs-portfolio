@@ -35,7 +35,7 @@
     check('Shift pays credits', r.state.credits === before.credits + 45)
     check('Shift raises the mapped stat', r.stat('product') === before.product + 2)
     check('Shift spends focus', r.state.focus === before.focus - 20)
-    check('Shift cannot be worked twice', !r.$dialog.querySelector('[data-shift="toyota-ux"]'))
+    check('Shift cannot be worked twice in one day', !r.$dialog.querySelector('[data-shift="toyota-ux"]'))
     check('First-shift objective logged', r.state.quests.includes('first-shift'))
 
     r.close()
@@ -87,6 +87,7 @@
     w.interiors.$panel.querySelector('[data-interior="sleep"]').click()
     check('Sleep advances the day', r.state.day === 2)
     check('Sleep restores focus', r.state.focus === 100)
+    check('Sleep returns to the morning', r.state.hour === 8)
     w.interiors.$panel.querySelector('[data-interior="leave"]').click()
     check('Leaving puts you back on the street', !w.interiors.active && w.interiors.$panel.hidden)
     check('Leaving restores the view you arrived in', !e.firstPerson)

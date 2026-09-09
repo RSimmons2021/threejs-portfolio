@@ -4,16 +4,19 @@ import createApartment from './createApartment.js'
 import { createPerson } from './Pedestrians.js'
 import CareerNPCs from './CareerNPCs.js'
 import { containment, findTheBeat, loadTest, sitTheEval } from './CareerGames.js'
-import { BUILDINGS, MAX_FOCUS, MAX_STAT, NPCS, QUESTS, SHOP, STATS } from './careerData.js'
+import { BUILDINGS, DAY_END, DAY_START, HIRED_REQUIREMENT, HOURS_ARCADE, HOURS_SHIFT, HOURS_TRAIN,
+    MAX_FOCUS, MAX_STAT, NPCS, QUESTS, SHOP, STATS } from './careerData.js'
 
 const STORAGE_KEY = 'rs-career-v1'
 
 const BLANK = () => ({
     day: 1,
+    hour: DAY_START,
+    hired: false,
     focus: MAX_FOCUS,
     credits: 0,
     stats: { ai: 0, systems: 0, product: 0 },
-    shifts: [],
+    shifts: {},          // shift id -> day it was last worked
     npcs: [],
     trained: [],
     owned: [],
@@ -51,6 +54,7 @@ export default class CareerRPG
         this.container.add(this.npcs.container)
 
         this.applyCosmetics()
+        this.applyClock()
         this.syncDoorLocks()
         this.render()
 
@@ -73,7 +77,12 @@ export default class CareerRPG
                 ...blank,
                 ...raw,
                 stats: { ...blank.stats, ...(raw.stats || {}) },
-                shifts: Array.isArray(raw.shifts) ? raw.shifts : [],
+                // Saves from before shifts were repeatable stored an array of
+                // ids; fold those into the map as "worked on day 1".
+                shifts: Array.isArray(raw.shifts)
+                    ? Object.fromEntries(raw.shifts.map((_id) => [_id, 1]))
+                    : (raw.shifts && typeof raw.shifts === 'object' ? raw.shifts : {}),
+                hour: Number.isFinite(raw.hour) ? raw.hour : DAY_START,
                 npcs: Array.isArray(raw.npcs) ? raw.npcs : [],
                 trained: Array.isArray(raw.trained) ? raw.trained : [],
                 owned: Array.isArray(raw.owned) ? raw.owned : [],
@@ -95,6 +104,7 @@ export default class CareerRPG
         this.state = BLANK()
         this.save()
         this.applyCosmetics()
+        this.applyClock()
         this.syncDoorLocks()
         this.render()
         this.close()
@@ -102,6 +112,38 @@ export default class CareerRPG
     }
 
     stat(_id) { return this.state.stats[_id] || 0 }
+
+    /* ---------------------------------------------------------------- clock */
+
+    // The career layer owns the clock so a day can actually pass: DayNightCycle
+    // otherwise mirrors the visitor's real time, and sleeping would not change
+    // anything. Hours are a soft budget alongside focus — everywhere is open, so
+    // the clock paces the day rather than gating it.
+    applyClock()
+    {
+        const cycle = this.world.dayNightCycle
+        if(!cycle) return
+        cycle.settings.realTime = false
+        cycle.settings.autoPlay = false
+        cycle.settings.currentTime = (this.state.hour % 24) / 24
+    }
+
+    spendHours(_hours)
+    {
+        this.state.hour += _hours
+        this.applyClock()
+    }
+
+    get hourLabel()
+    {
+        const h = Math.floor(this.state.hour % 24)
+        const m = Math.round((this.state.hour % 1) * 60)
+        return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
+    }
+
+
+    // Past DAY_END there is nothing left in the day but sleep.
+    get exhausted() { return this.state.hour >= DAY_END }
 
     meets(_requires)
     {
@@ -125,6 +167,8 @@ export default class CareerRPG
         this.syncDoorLocks()
         this.render()
 
+        this.checkHired()
+
         const cues = this.world.sounds?.cues
         const opened = wasLocked.filter((_b) => this.meets(_b.requires))
         // A gated project opening outranks the stat that opened it, so it takes
@@ -145,9 +189,9 @@ export default class CareerRPG
         const s = this.state
         switch(_id)
         {
-            case 'first-shift': return s.shifts.length > 0
+            case 'first-shift': return Object.keys(s.shifts).length > 0
             case 'all-employers': return BUILDINGS.filter((_b) => _b.kind === 'job')
-                .every((_b) => _b.shifts.some((_shift) => s.shifts.includes(_shift.id)))
+                .every((_b) => _b.shifts.some((_shift) => s.shifts[_shift.id] !== undefined))
             case 'all-npcs': return NPCS.every((_npc) => s.npcs.includes(_npc.id))
             case 'trained': return STATS.every((_stat) => s.trained.includes(_stat.id))
             case 'sleep': return s.day > 1
@@ -155,8 +199,70 @@ export default class CareerRPG
             case 'containment': return s.containment >= 100
             case 'agentlab': return s.visited.includes('agentlab')
             case 'agentrelay': return s.visited.includes('agentrelay')
+            case 'hired': return s.hired === true
             default: return false
         }
+    }
+
+    // The arc has an ending, and the ending is the ask. Reaching it means every
+    // project door is open and every employer has been worked, so the offer is
+    // something the visitor earned rather than a banner they were shown.
+    get meetsHiringBar()
+    {
+        if(!this.meets(HIRED_REQUIREMENT)) return false
+        return BUILDINGS.filter((_b) => _b.kind === 'job')
+            .every((_b) => _b.shifts.some((_shift) => this.state.shifts[_shift.id] !== undefined))
+    }
+
+    checkHired()
+    {
+        if(this.state.hired || !this.meetsHiringBar) return
+        this.state.hired = true
+        this.save()
+        // grant() renders (and so checks quests) before it gets here, so the
+        // final objective would otherwise not tick until the next redraw.
+        this.checkQuests()
+        this.render()
+        this.world.sounds?.cues?.contained()
+        window.setTimeout(() => this.openOffer(), 700)
+    }
+
+    openOffer()
+    {
+        if(this.$dialog.open) return
+        this.building = null
+        this.world.experienceDirector?.setInteractionLock('career', true)
+        document.body.classList.add('has-career-dialog')
+        this.world.sounds?.setWorldDuck(0.7)
+
+        const s = this.state
+        this.$dialog.querySelector('[data-eyebrow]').textContent = `DAY ${s.day} · OFFER ON THE TABLE`
+        this.$dialog.querySelector('[data-title]').innerHTML = `YOU'RE HIRED<span>THE CITY IS OUT OF THINGS TO TEACH YOU</span>`
+        this.$dialog.querySelector('[data-intro]').textContent =
+            'Every employer on the résumé worked, every project door open. That is the whole of it — the rest of this conversation happens off the map.'
+
+        this.$body.innerHTML = `
+            <div class="career-offer">
+                <p class="career-offer__line">AI <b>${this.stat('ai')}</b> · SYSTEMS <b>${this.stat('systems')}</b> · PRODUCT <b>${this.stat('product')}</b></p>
+                <p class="career-offer__line">${s.day} ${s.day === 1 ? 'day' : 'days'} · ${s.credits} credits · ${s.quests.length} of ${QUESTS.length} objectives</p>
+            </div>
+            <p class="career-game__lede">If the city made the case, here is the short version and the way to reach me.</p>
+            <div class="career-actions">
+                <a href="mailto:richard.simmons.dev@gmail.com">Email me ↗</a>
+                <a href="https://www.linkedin.com/in/richard-simmons-a3916958" target="_blank" rel="noopener">LinkedIn ↗</a>
+                <button type="button" data-offer="brief">The 60-second version</button>
+            </div>
+            <p class="career-game__note">The city stays open. Nothing here expires.</p>`
+
+        this.$body.querySelector('[data-offer="brief"]').addEventListener('click', () =>
+        {
+            this.close()
+            document.querySelector('.js-brief-open')?.click()
+        })
+
+        this.renderFoot()
+        this.$dialog.showModal()
+        this.render()
     }
 
     checkQuests()
@@ -301,6 +407,7 @@ export default class CareerRPG
         this.$panel.innerHTML = `
             <div class="career-hud__top">
                 <span class="career-hud__day" data-day>DAY 1</span>
+                <span class="career-hud__clock" data-clock>08:00</span>
                 <span class="career-hud__credits"><strong data-credits>0</strong> cr</span>
                 <button type="button" data-career="log" aria-expanded="false">Goals</button>
                 <button type="button" data-career="bag" aria-expanded="false">Bag</button>
@@ -369,6 +476,7 @@ export default class CareerRPG
         this.save()
         this.world.sounds?.cues?.equip()
         this.applyCosmetics()
+        this.applyClock()
         this.syncDoorLocks()
         this.render()
     }
@@ -393,6 +501,9 @@ export default class CareerRPG
         if(low && !this.warnedLowFocus) this.world.sounds?.cues?.lowFocus()
         this.warnedLowFocus = low
         this.$panel.querySelector('[data-day]').textContent = `DAY ${s.day}`
+        const $clock = this.$panel.querySelector('[data-clock]')
+        $clock.textContent = this.hourLabel
+        $clock.dataset.late = String(this.exhausted)
         this.$panel.querySelector('[data-credits]').textContent = s.credits
         this.$panel.querySelector('[data-focus]').style.transform = `scaleX(${s.focus / MAX_FOCUS})`
         this.$panel.querySelector('.career-hud__focus').dataset.low = String(s.focus < 20)
@@ -508,9 +619,6 @@ export default class CareerRPG
         if(this.$dialog.open || this.world.arcade?.state !== 'idle') return
 
         const cues = this.world.sounds?.cues
-        if(!this.meets(_building.requires)) cues?.doorLocked()
-        else if(_building.kind !== 'home') cues?.door(_building.kind)
-
         // A building with a modelled interior is walked into, not read about.
         // This has to come before the interaction lock: the lock freezes the
         // walker for a dialog, and there is no dialog to release it here.
@@ -608,7 +716,7 @@ export default class CareerRPG
     renderFoot()
     {
         const s = this.state
-        this.$foot.innerHTML = `DAY ${s.day} · ${s.credits} cr · FOCUS ${s.focus}/${MAX_FOCUS}
+        this.$foot.innerHTML = `DAY ${s.day} · ${this.hourLabel} · ${s.credits} cr · FOCUS ${s.focus}/${MAX_FOCUS}
             · AI ${this.stat('ai')} · SYS ${this.stat('systems')} · PRD ${this.stat('product')}`
     }
 
@@ -631,16 +739,21 @@ export default class CareerRPG
     {
         this.$body.innerHTML = `<div class="career-shifts">${_building.shifts.map((_shift) =>
         {
-            const done = this.state.shifts.includes(_shift.id)
-            const affordable = this.state.focus >= _shift.focus
+            const lastWorked = this.state.shifts[_shift.id]
+            const done = lastWorked === this.state.day
+            const everWorked = lastWorked !== undefined
+            const affordable = this.state.focus >= _shift.focus && !this.exhausted
             const gains = Object.entries(_shift.gain).map(([id, v]) => `+${v} ${id.toUpperCase()}`).join(' · ')
             return `
                 <article class="career-shift" data-done="${done}">
                     <h3>${_shift.title}</h3>
                     <p>${_shift.body}</p>
                     <div class="career-shift__foot">
-                        <span>${done ? 'WORKED' : `${_shift.focus} focus → +${_shift.credits} cr · ${gains}`}</span>
-                        ${done ? '' : `<button type="button" data-shift="${_shift.id}"${affordable ? '' : ' disabled'}>${affordable ? 'Work the shift' : 'Not enough focus'}</button>`}
+                        <span>${done
+                            ? 'WORKED TODAY'
+                            : `${_shift.focus} focus · ${HOURS_SHIFT}h → +${_shift.credits} cr${everWorked ? '' : ` · ${gains}`}`}</span>
+                        ${done ? '' : `<button type="button" data-shift="${_shift.id}"${affordable ? '' : ' disabled'}>${
+                            this.exhausted ? 'Too late today' : affordable ? (everWorked ? 'Work it again' : 'Work the shift') : 'Not enough focus'}</button>`}
                     </div>
                 </article>`
         }).join('')}</div>`
@@ -654,31 +767,40 @@ export default class CareerRPG
     workShift(_building, _id)
     {
         const shift = _building.shifts.find((_shift) => _shift.id === _id)
-        if(!shift || this.state.shifts.includes(_id) || this.state.focus < shift.focus) return
-        this.state.shifts.push(_id)
+        if(!shift || this.state.shifts[_id] === this.state.day) return
+        if(this.state.focus < shift.focus || this.exhausted) return
+
+        // The first time you do the work you learn something; after that it is
+        // a job. Repeats pay the money and not the stat, so the loop can turn
+        // without progression running away.
+        const firstTime = this.state.shifts[_id] === undefined
+        this.state.shifts[_id] = this.state.day
         this.state.focus -= shift.focus
+        this.spendHours(HOURS_SHIFT)
         this.world.sounds?.cues?.shift()
-        this.grant({ credits: shift.credits, gain: shift.gain })
+        this.grant({ credits: shift.credits, gain: firstTime ? shift.gain : null })
         const gains = Object.entries(shift.gain).map(([id, v]) => `+${v} ${id.toUpperCase()}`).join(' · ')
-        this.notify(`${shift.title} — +${shift.credits} cr · ${gains}`, 'project')
+        this.notify(`${shift.title} — +${shift.credits} cr${firstTime ? ` · ${gains}` : ''}`, 'project')
         this.renderJob(_building)
         this.renderFoot()
     }
 
     renderTrainer(_building)
     {
-        const affordable = this.state.focus >= _building.trainer.focus
+        const affordable = this.state.focus >= _building.trainer.focus && !this.exhausted
         this.$body.innerHTML = `
             <p class="career-game__lede">${_building.trainer.body}</p>
-            <p class="career-game__note">${_building.trainer.focus} focus · pass for +1 ${_building.stat.toUpperCase()} and 25 cr.</p>
+            <p class="career-game__note">${_building.trainer.focus} focus · ${HOURS_TRAIN}h · pass for +1 ${_building.stat.toUpperCase()} and 25 cr.</p>
             <div class="career-actions">
-                <button type="button" data-train${affordable ? '' : ' disabled'}>${affordable ? _building.trainer.verb : 'Not enough focus'}</button>
+                <button type="button" data-train${affordable ? '' : ' disabled'}>${
+                    this.exhausted ? 'Too late today' : affordable ? _building.trainer.verb : 'Not enough focus'}</button>
             </div>`
 
         this.$body.querySelector('[data-train]')?.addEventListener('click', () =>
         {
-            if(this.state.focus < _building.trainer.focus) return
+            if(this.state.focus < _building.trainer.focus || this.exhausted) return
             this.state.focus -= _building.trainer.focus
+            this.spendHours(HOURS_TRAIN)
             this.save()
             this.renderFoot()
             const $host = document.createElement('div')
@@ -721,8 +843,12 @@ export default class CareerRPG
     {
         this.state.day += 1
         this.state.focus = MAX_FOCUS
+        // Morning, not "the same instant tomorrow": the point of sleeping is
+        // that it hands back a whole day's worth of hours.
+        this.state.hour = DAY_START
+        this.applyClock()
         this.save()
-        this.notify(`Day ${this.state.day}. Focus restored.`, 'project')
+        this.notify(`Day ${this.state.day}, ${this.hourLabel}. Focus restored.`, 'project')
         this.render()
     }
 
@@ -745,7 +871,7 @@ export default class CareerRPG
     renderHome()
     {
         this.$body.innerHTML = `
-            <p class="career-game__lede">Focus is ${this.state.focus} of ${MAX_FOCUS}. Sleeping restores it and starts day ${this.state.day + 1}.</p>
+            <p class="career-game__lede">It is ${this.hourLabel}. Focus is ${this.state.focus} of ${MAX_FOCUS}. Sleeping restores it and starts day ${this.state.day + 1} at 08:00.</p>
             <p class="career-game__note">Music producer, 10+ years. Design obsessive: Dieter Rams, Zaha Hadid, Grasshopper. This is the room where the side of the resume nobody asks about actually lives.</p>
             <div class="career-actions">
                 <button type="button" data-sleep>Sleep until morning</button>
@@ -807,6 +933,7 @@ export default class CareerRPG
 
         this.save()
         this.applyCosmetics()
+        this.applyClock()
         this.syncDoorLocks()
         this.renderShop()
         this.renderFoot()
@@ -825,6 +952,7 @@ export default class CareerRPG
 
     startContainment()
     {
+        this.spendHours(HOURS_ARCADE)
         const $host = document.createElement('div')
         $host.className = 'career-game'
         this.$body.innerHTML = ''
