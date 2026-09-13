@@ -17,7 +17,7 @@ const readGlb = (name) => {
 test('gallery has the requested order, destinations, and all 18 billboards', () => {
     assert.deepEqual(projects.map(p => p.slug), ['zoan', 'agent-lab', 'deepseek', 'agent-relay', 'lucid', 'aso-agent'])
     assert.deepEqual(projects.map(p => p.href), [
-        'https://zoancollective.site', 'https://ai-agent-portal-site.vercel.app/',
+        'https://zoancollective.com', 'https://ai-agent-portal-site.vercel.app/',
         'https://github.com/RSimmons2021/deepseek-harness-desktop',
         'https://openai-agent-site.vercel.app/', 'https://www.lucid-app.xyz/',
         'https://layers-aso-agent.vercel.app/'
