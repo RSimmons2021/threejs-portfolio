@@ -41,7 +41,8 @@ export default class AdvancedLighting
         this.settings.spotlightOffsetForward = 2
         this.settings.floorPoolStrength = 0.16
         this.settings.headlightConesEnabled = false
-        this.settings.headlightConesAutoNight = true
+        // Neon car lights are soft surface spill, never visible headlight beams.
+        this.settings.headlightConesAutoNight = !this.config.neon
         this.settings.ambientIntensity = 0.4
         this.settings.ambientColor = '#6B7F3F'
         this.settings.directionalIntensity = 0.6
@@ -330,7 +331,7 @@ export default class AdvancedLighting
 
         // Cones show when forced on, or automatically once night falls
         const autoNight = this.settings.headlightConesAutoNight && this.nightFactor > 0.4
-        const visible = this.settings.headlightConesEnabled || autoNight
+        const visible = !this.config.neon && (this.settings.headlightConesEnabled || autoNight)
         this.headlightCones.group.visible = visible
 
         if(!visible)

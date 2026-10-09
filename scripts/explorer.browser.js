@@ -55,9 +55,10 @@
     e.firstPerson = false
     e.toggleView()
     e.updateCamera()
-    // Neon hover-car cockpit eye sits at body +0.64 m; the legacy F1 at +0.85 m.
-    const eye = w.config.neon ? 0.64 : 0.85
-    check('First-person camera uses eye height and close near plane', w.camera.instance.near === 0.08 && Math.abs(w.camera.instance.position.z - car.position.z - eye) < 0.03)
+    // Neon eye uses its authored mesh frame, attached to the visible chassis.
+    const cockpitEye = e.lookTarget.clone().fromArray(w.config.neon ? w.resources.items.hoverCarSpec.cockpit.eye.meshFrame : [0, 0, 0.85])
+        .applyQuaternion(w.car.chassis.object.quaternion).add(w.car.chassis.object.position)
+    check('First-person camera uses eye height and close near plane', w.camera.instance.near === 0.08 && w.camera.instance.position.distanceTo(cockpitEye) < 0.001)
     e.toggleView()
     check('Camera restores overhead projection', w.camera.instance.near === 1 && w.camera.instance.fov === 40)
     e.exitCar()
@@ -74,7 +75,7 @@
     e.body.position.set(0, -15, 0.4)
     for(let i = 0; i < 90; i++) { e.update(); w.physics.world.step(1 / 60) }
     check('Walker passes through NPC', e.body.position.x > 2)
-    check('Crowd has no collision bodies', w.pedestrians.people.length === 12 && !w.physics.world.bodies.some(body => body.collisionRole === 'npc'))
+    check('Crowd has no collision bodies', (w.config.neon ? w.neonCrowd.ready && w.neonCrowd.mesh.count === w.neonCrowd.count + 6 : w.pedestrians.people.length === 12) && !w.physics.world.bodies.some(body => body.collisionRole === 'npc'))
     w.guidedTour.clearControls()
     w.arcade.start('bowling')
     check('Arcade start safely returns to driving', !e.active && !e.firstPerson && w.arcade.state === 'countdown')

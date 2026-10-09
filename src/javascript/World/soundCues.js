@@ -30,23 +30,23 @@ const WEIGHT = {
  * or not the audio has been regenerated.
  */
 export const CUE_SAMPLES = {
-    'door-job': 'cues/door-job.mp3',
-    'door-trainer': 'cues/door-trainer.mp3',
-    'door-shop': 'cues/door-shop.mp3',
-    'door-home': 'cues/door-home.mp3',
-    'door-arcade': 'cues/door-arcade.mp3',
-    'door-project': 'cues/door-project.mp3',
-    'door-locked': 'cues/door-locked.mp3',
-    shift: 'cues/shift.mp3',
-    'stat-gain': 'cues/stat-gain.mp3',
-    unlock: 'cues/unlock.mp3',
-    objective: 'cues/objective.mp3',
-    purchase: 'cues/purchase.mp3',
+    'door-job': 'cyber/door.mp3',
+    'door-trainer': 'cyber/door.mp3',
+    'door-shop': 'cyber/door.mp3',
+    'door-home': 'cyber/home.mp3',
+    'door-arcade': 'cyber/arcade.mp3',
+    'door-project': 'cyber/door.mp3',
+    'door-locked': 'cyber/wrong.mp3',
+    shift: 'cyber/objective.mp3',
+    'stat-gain': 'cyber/objective.mp3',
+    unlock: 'cyber/unlock.mp3',
+    objective: 'cyber/objective.mp3',
+    purchase: 'cyber/interface.mp3',
     equip: 'cues/equip.mp3',
-    'ruling-correct': 'cues/ruling-correct.mp3',
-    'ruling-wrong': 'cues/ruling-wrong.mp3',
-    breach: 'cues/breach.mp3',
-    contained: 'cues/contained.mp3',
+    'ruling-correct': 'cyber/interface.mp3',
+    'ruling-wrong': 'cyber/wrong.mp3',
+    breach: 'cyber/breach.mp3',
+    contained: 'cyber/unlock.mp3',
     'board-push': 'cues/board-push.mp3',
     'board-off': 'cues/board-off.mp3',
     'low-focus': 'cues/low-focus.mp3'
@@ -85,6 +85,7 @@ export default function createSoundCues(_context, _destination, _playSample = nu
         envelope.connect(_destination)
         oscillator.start(now)
         oscillator.stop(now + duration + 0.02)
+        oscillator.onended = () => { oscillator.disconnect(); envelope.disconnect() }
     }
 
     // A burst of filtered noise: the percussive half of every physical cue.
@@ -106,6 +107,7 @@ export default function createSoundCues(_context, _destination, _playSample = nu
         envelope.connect(_destination)
         source.start(now)
         source.stop(now + duration + 0.02)
+        source.onended = () => { source.disconnect(); filter.disconnect(); envelope.disconnect() }
     }
 
     // Each door kind sounds like the thing it is, so the taxonomy is learnable

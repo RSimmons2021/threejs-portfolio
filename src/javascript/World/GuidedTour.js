@@ -8,12 +8,13 @@ export default class GuidedTour
         this.camera = _options.camera
         this.physics = _options.physics
         this.controls = _options.controls
+        this.world = _options.world
 
         this.targets = [
-            { id: 'intro', label: 'Intro', x: 0, y: 2, z: 3, heading: - Math.PI * 0.5, cameraAngle: 'default', zoom: 0.8 },
+            { id: 'intro', label: 'Guide', x: 0, y: 2, z: 3, heading: - Math.PI * 0.5, cameraAngle: 'default', zoom: 0.8 },
             { id: 'projects', label: 'Projects', x: 30, y: - 30, z: 3, heading: 0, cameraAngle: 'projects', zoom: 0.3 },
-            { id: 'about', label: 'About', x: 1.2, y: - 54, z: 3, heading: - Math.PI * 0.5, cameraAngle: 'default', zoom: 0.42 },
-            { id: 'play', label: 'Play', x: - 37, y: - 44, z: 1, heading: Math.PI, cameraAngle: 'projects', zoom: 1 }
+            { id: 'about', label: 'Contact', x: 1.2, y: - 54, z: 3, heading: - Math.PI * 0.5, cameraAngle: 'default', zoom: 0.42 },
+            { id: 'play', label: 'Arcade', x: - 37, y: - 44, z: 1, heading: Math.PI, cameraAngle: 'projects', zoom: 1 }
         ]
 
         this.setElement()
@@ -51,16 +52,19 @@ export default class GuidedTour
             const target = this.targets.find((_item) => _item.id === button.dataset.tourTarget)
             if(target)
             {
-                this.goTo(target)
+                if(target.id === 'intro' && this.world?.visitorGuide) this.world.visitorGuide.open()
+                else this.goTo(target)
             }
         })
 
         document.body.appendChild(this.$element)
+        this.setActive('intro')
     }
 
     goTo(_target)
     {
         window.dispatchEvent(new Event('portfolio:navigate'))
+        this.world?.explorer?.enterCar(true)
         const body = this.physics?.car?.chassis?.body
         if(!body)
         {
@@ -87,6 +91,7 @@ export default class GuidedTour
         this.camera.zoom.targetValue = _target.zoom
 
         this.setActive(_target.id)
+        this.world?.visitorGuide?.guideTour(_target)
     }
 
     clearControls()
@@ -108,6 +113,8 @@ export default class GuidedTour
         for(const button of buttons)
         {
             button.classList.toggle('is-active', button.dataset.tourTarget === _id)
+            if(button.dataset.tourTarget === _id) button.setAttribute('aria-current', 'location')
+            else button.removeAttribute('aria-current')
         }
     }
 }

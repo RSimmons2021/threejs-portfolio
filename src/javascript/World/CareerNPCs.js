@@ -11,15 +11,15 @@ const nameplate = (_name, _role, _colour) =>
     canvas.width = 640
     canvas.height = 160
     const ctx = canvas.getContext('2d')
-    ctx.fillStyle = '#16130e'
+    ctx.fillStyle = '#08131c'
     ctx.fillRect(0, 0, 640, 160)
     ctx.fillStyle = _colour
     ctx.fillRect(0, 0, 640, 8)
     ctx.textAlign = 'center'
-    ctx.fillStyle = '#ffe7b0'
-    ctx.font = 'bold 48px Arial, sans-serif'
+    ctx.fillStyle = '#e9faff'
+    ctx.font = 'bold 44px monospace'
     ctx.fillText(_name, 320, 78)
-    ctx.fillStyle = '#e7c98c'
+    ctx.fillStyle = '#7be8f0'
     ctx.font = '26px monospace'
     ctx.fillText(_role, 320, 122)
     const texture = new THREE.CanvasTexture(canvas)
@@ -74,9 +74,11 @@ export default class CareerNPCs
             halfExtents: new THREE.Vector2(2.1, 2.1),
             hasKey: true,
             testCar: true,
-            active: true
+            active: true,
+            skyAccess: false
         })
         area.on('interact', () => this.rpg.openNPC(_npc))
+        if(this.world.config.neon) area.container.visible = false
         this.rpg.registerZone(area, _npc.name, () => this.rpg.openNPC(_npc))
 
         return { npc: _npc, group, body, label, overhead, phase: Math.random() * Math.PI * 2 }

@@ -6,6 +6,7 @@ import AreaFloorBorderGeometry from '../Geometries/AreaFloorBorderGeometry.js'
 import AreaFenceGeometry from '../Geometries/AreaFenceGeometry.js'
 import AreaFenceMaterial from '../Materials/AreaFence.js'
 import AreaFloorBordereMaterial from '../Materials/AreaFloorBorder.js'
+import { ENTRY_HEIGHT, isInsideArea } from './areaRules.js'
 
 export default class Area extends EventEmitter
 {
@@ -25,6 +26,11 @@ export default class Area extends EventEmitter
         this.hasKey = _options.hasKey
         this.testCar = _options.testCar
         this.active = _options.active
+        this.skyAccess = _options.skyAccess ?? (this.config.neon && this.hasKey && this.testCar)
+        this.entryHeight = _options.entryHeight ?? ENTRY_HEIGHT
+        this.floorZ = _options.floorZ ?? 0
+        this.entryLabel = _options.entryLabel || 'Explore'
+        this.entryColor = _options.entryColor || '#71e0f4'
 
         // Set up
         this.container = new THREE.Object3D()
@@ -43,6 +49,11 @@ export default class Area extends EventEmitter
         if(this.hasKey)
         {
             this.setKey()
+        }
+        if(this.skyAccess)
+        {
+            this.floorBorder.mesh.visible = false
+            this.fence.mesh.visible = false
         }
     }
 
@@ -269,10 +280,12 @@ export default class Area extends EventEmitter
     setInteractions()
     {
         this.mouseMesh = new THREE.Mesh(
-            new THREE.PlaneGeometry(this.halfExtents.x * 2, this.halfExtents.y * 2, 1, 1),
+            this.skyAccess ? new THREE.BoxGeometry(this.halfExtents.x * 2, this.halfExtents.y * 2, this.entryHeight)
+                : new THREE.PlaneGeometry(this.halfExtents.x * 2, this.halfExtents.y * 2, 1, 1),
             new THREE.MeshBasicMaterial({ transparent: true, opacity: 0 })
         )
-        this.mouseMesh.position.z = - 0.01
+        this.mouseMesh.position.z = this.skyAccess ? this.entryHeight / 2 + this.floorZ : -0.01
+        this.mouseMesh.visible = false // Still directly raycastable; never draws an invisible pick surface.
         this.mouseMesh.matrixAutoUpdate = false
         this.mouseMesh.updateMatrix()
         this.container.add(this.mouseMesh)
@@ -281,7 +294,7 @@ export default class Area extends EventEmitter
         {
             if(this.testCar)
             {
-                const isIn = Math.abs(this.car.position.x - this.position.x) < Math.abs(this.halfExtents.x) && Math.abs(this.car.position.y - this.position.y) < Math.abs(this.halfExtents.y)
+                const isIn = this.contains(this.car.position, this.car.airborne)
 
                 if(isIn !== this.isIn)
                 {
@@ -299,12 +312,18 @@ export default class Area extends EventEmitter
 
         window.addEventListener('keydown', (_event) =>
         {
-            const isInteractionKey = _event.key === 'f' || _event.key === 'e' || _event.key === 'Enter'
-            if(isInteractionKey && this.isIn && !_event.repeat && !document.querySelector('dialog[open]'))
+            if(_event.defaultPrevented || _event.target?.closest?.('button, a, summary, input, select, textarea, [contenteditable="true"]')) return
+            // E is climb in flight. Enter activates the column, without also
+            // opening a door when the pilot just wanted to gain altitude.
+            const isInteractionKey = _event.key === 'Enter' || (!this.car?.airborne && (_event.key === 'f' || _event.key === 'e'))
+            const inRange = this.car?.airborne ? this.skyAccess && this.contains(this.car.position, true) : this.isIn
+            if(isInteractionKey && inRange && !_event.repeat && !document.querySelector('dialog[open]'))
             {
                 _event.preventDefault()
                 this.interact()
             }
         })
     }
+
+    contains(position, airborne = false) { return isInsideArea(this, position, airborne) }
 }

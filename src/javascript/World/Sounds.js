@@ -1,5 +1,6 @@
 import { Howl, Howler } from 'howler'
 import createSoundCues, { CUE_SAMPLES } from './soundCues.js'
+import { vehicleAudioMix, cityAudioGain } from './vehicleAudioMix.js'
 
 export default class Sounds
 {
@@ -25,22 +26,12 @@ export default class Sounds
         this.setEngine()
         this.setCues()
         this.setBoard()
+        this.setFlightAudio()
     }
 
     setSettings()
     {
         this.settings = [
-            {
-                name: 'reveal',
-                sounds: ['./sounds/reveal/reveal-1.mp3'],
-                minDelta: 100,
-                velocityMin: 0,
-                velocityMultiplier: 1,
-                volumeMin: 1,
-                volumeMax: 1,
-                rateMin: 1,
-                rateMax: 1
-            },
             {
                 name: 'brick',
                 sounds: ['./sounds/bricks/brick-1.mp3', './sounds/bricks/brick-2.mp3', './sounds/bricks/brick-4.mp3', './sounds/bricks/brick-6.mp3', './sounds/bricks/brick-7.mp3', './sounds/bricks/brick-8.mp3'],
@@ -54,36 +45,38 @@ export default class Sounds
             },
             {
                 name: 'bowlingPin',
-                sounds: ['./sounds/bowling/pin-1.mp3'],
-                minDelta: 0,
-                velocityMin: 1,
-                velocityMultiplier: 0.5,
-                volumeMin: 0.35,
-                volumeMax: 1,
-                rateMin: 0.1,
-                rateMax: 0.85
+                sounds: ['./sounds/cyber/bowling-pins.mp3'],
+                minDelta: 110,
+                maxConcurrent: 3,
+                velocityMin: 0.65,
+                velocityMultiplier: 0.14,
+                volumeMin: 0.24,
+                volumeMax: 0.72,
+                rateMin: 0.94,
+                rateMax: 1.06
             },
             {
                 name: 'bowlingBall',
-                sounds: ['./sounds/bowling/pin-1.mp3', './sounds/bowling/pin-1.mp3', './sounds/bowling/pin-1.mp3'],
-                minDelta: 0,
+                sounds: ['./sounds/cyber/bowling-ball.mp3'],
+                minDelta: 90,
+                maxConcurrent: 2,
                 velocityMin: 1,
-                velocityMultiplier: 0.5,
-                volumeMin: 0.35,
-                volumeMax: 1,
-                rateMin: 0.1,
-                rateMax: 0.2
+                velocityMultiplier: 0.12,
+                volumeMin: 0.2,
+                volumeMax: 0.58,
+                rateMin: 0.96,
+                rateMax: 1.04
             },
             {
                 name: 'carHit',
-                sounds: ['./sounds/car-hits/car-hit-1.mp3', './sounds/car-hits/car-hit-3.mp3', './sounds/car-hits/car-hit-4.mp3', './sounds/car-hits/car-hit-5.mp3'],
+                sounds: ['./sounds/cyber/impact.mp3'],
                 minDelta: 100,
                 velocityMin: 2,
                 velocityMultiplier: 1,
                 volumeMin: 0.2,
                 volumeMax: 0.6,
-                rateMin: 0.35,
-                rateMax: 0.55
+                rateMin: 0.9,
+                rateMax: 1.1
             },
             {
                 name: 'woodHit',
@@ -98,18 +91,18 @@ export default class Sounds
             },
             {
                 name: 'uiArea',
-                sounds: ['./sounds/ui/area-1.mp3'],
+                sounds: ['./sounds/cyber/interface.mp3'],
                 minDelta: 100,
                 velocityMin: 0,
                 velocityMultiplier: 1,
-                volumeMin: 0.75,
-                volumeMax: 1,
+                volumeMin: 0.25,
+                volumeMax: 0.35,
                 rateMin: 0.95,
                 rateMax: 1.05
             },
             {
                 name: 'carHorn1',
-                sounds: ['./sounds/car-horns/car-horn-1.mp3'],
+                sounds: ['./sounds/cyber/horn.mp3'],
                 minDelta: 0,
                 velocityMin: 0,
                 velocityMultiplier: 1,
@@ -120,7 +113,7 @@ export default class Sounds
             },
             {
                 name: 'carHorn2',
-                sounds: ['./sounds/car-horns/car-horn-2.mp3'],
+                sounds: ['./sounds/cyber/horn.mp3'],
                 minDelta: 0,
                 velocityMin: 0,
                 velocityMultiplier: 1,
@@ -201,6 +194,9 @@ export default class Sounds
             {
                 Howler.mute(this.muted)
             }
+            // Time is paused in a hidden tab, so stop/resume these loops here
+            // instead of waiting for a tick that will not happen.
+            if(this.flight) this.updateFlightAudio()
         })
 
         // Debug
@@ -215,8 +211,7 @@ export default class Sounds
 
     setEngine()
     {
-        // Keep the original, softer engine character: one continuous low-off
-        // loop whose pitch and volume follow the car without clip switching.
+        // A continuous magnetic motor, crossfaded against the flight turbines.
         this.engine = {}
         this.engine.started = false
         this.engine.running = true
@@ -245,8 +240,9 @@ export default class Sounds
 
         this.engine.sound = new Howl({
             // One steady loop, pitch-shifted across the rev range by rate below.
-            src: ['./sounds/engines/1/engine-loop.mp3'],
+            src: ['./sounds/cyber/drive.mp3'],
             loop: true,
+            volume: 0,
             onload: () =>
             {
                 this.engine.ready = true
@@ -255,7 +251,7 @@ export default class Sounds
                     return
                 }
 
-                this.engine.soundId = this.engine.sound.play()
+                if(this.engine.running) this.engine.soundId = this.engine.sound.play()
                 this.updateEngineSound()
             },
             onloaderror: (_id, _error) =>
@@ -281,6 +277,7 @@ export default class Sounds
             this.duck.value += (this.duck.target - this.duck.value) * 0.12
             if(this.cueGain) this.cueGain.gain.value = 0.35 + this.duck.value * 0.65
             this.updateBoardAudio()
+            this.updateFlightAudio()
 
             if(this.engine.started)
             {
@@ -351,7 +348,7 @@ export default class Sounds
         const rateAmplitude = this.engine.rate.max - this.engine.rate.min
         const nextRate = this.engine.rate.min + rateAmplitude * this.engine.progress
         const volumeAmplitude = this.engine.volume.max - this.engine.volume.min
-        const nextVolume = (this.engine.volume.min + volumeAmplitude * this.engine.progress) * this.engine.volume.master
+        const nextVolume = (this.engine.volume.min + volumeAmplitude * this.engine.progress) * this.engine.volume.master * (this.flight?.mix.drive ?? 1)
 
         this.engine.sound.rate(nextRate, this.engine.soundId)
         this.engine.sound.volume(nextVolume, this.engine.soundId)
@@ -403,18 +400,57 @@ export default class Sounds
         const state = this.engine.vehicleStateProvider ? this.engine.vehicleStateProvider() : null
         const speed = Math.min(Math.max(state?.speed ?? this.engine.progress, 0), 1)
         const braking = Math.min(Math.max(state?.braking ?? 0, 0), 1)
-        const cornering = Math.min(Math.max(state?.cornering ?? 0, 0), 1)
 
 
         if(this.engine.noise.ready)
         {
-            const windTarget = speed * speed * 0.035 * this.engine.volume.master * this.duck.value
-            const brakeTarget = braking * speed * 0.018 * this.engine.volume.master * this.duck.value
+            const windTarget = state?.flying || state?.onFoot ? 0 : speed * speed * 0.035 * this.engine.volume.master * this.duck.value
+            const brakeTarget = state?.flying || state?.onFoot ? 0 : braking * speed * 0.018 * this.engine.volume.master * this.duck.value
             this.engine.noise.wind.value += (windTarget - this.engine.noise.wind.value) * 0.08
             this.engine.noise.brake.value += (brakeTarget - this.engine.noise.brake.value) * 0.18
             this.engine.noise.wind.gain.gain.value = this.engine.noise.wind.value
             this.engine.noise.brake.gain.gain.value = this.engine.noise.brake.value
             this.engine.noise.wind.filter.frequency.value = 480 + speed * 1100
+        }
+    }
+
+    setFlightAudio()
+    {
+        const loop = name => ({ sound: new Howl({ src: [`./sounds/cyber/${name}.mp3`], loop: true, volume: 0 }), id: null })
+        this.flight = { blend: 0, mix: { drive: 1 }, hover: loop('hover'), air: loop('air'), city: loop('city'),
+            up: new Howl({ src: ['./sounds/cyber/transform-up.mp3'], volume: 0.4 }),
+            down: new Howl({ src: ['./sounds/cyber/transform-down.mp3'], volume: 0.4 }) }
+    }
+
+    playVehicleTransform(direction)
+    {
+        if(!this.engine.started || this.muted || document.hidden) return
+        const sound = direction === 'up' ? this.flight.up : this.flight.down
+        sound.volume(0.4 * this.duck.value)
+        sound.play()
+    }
+
+    updateFlightAudio()
+    {
+        const state = this.engine.vehicleStateProvider?.()
+        const dt = Math.min(this.time.delta, 60) / 1000
+        this.flight.blend += ((state?.flying ? 1 : 0) - this.flight.blend) * (1 - Math.exp(-dt * 5))
+        this.flight.mix = vehicleAudioMix(state, this.engine.started && !document.hidden, this.duck.value, this.flight.blend)
+        const levels = { hover: this.flight.mix.hover, air: this.flight.mix.air,
+            city: cityAudioGain(state, this.engine.started && !document.hidden, this.duck.value) }
+        for(const [name, level] of Object.entries(levels))
+        {
+            const layer = this.flight[name]
+            if(layer.sound.state() !== 'loaded') continue
+            if(level < 0.001)
+            {
+                if(layer.id !== null) layer.sound.stop(layer.id)
+                layer.id = null
+                continue
+            }
+            if(layer.id === null) layer.id = layer.sound.play()
+            layer.sound.volume(level, layer.id)
+            if(name !== 'city') layer.sound.rate(0.92 + (state?.speed || 0) * 0.25 + (state?.boost ? 0.06 : 0), layer.id)
         }
     }
 
@@ -576,6 +612,8 @@ export default class Sounds
             rateMin: _options.rateMin,
             rateMax: _options.rateMax,
             lastTime: 0,
+            maxConcurrent: _options.maxConcurrent ?? Infinity,
+            voices: new Set(),
             sounds: []
         }
 
@@ -583,6 +621,9 @@ export default class Sounds
         {
             const sound = new Howl({
                 src: [_sound],
+                onend: id => item.voices.delete(id),
+                onstop: id => item.voices.delete(id),
+                onplayerror: id => item.voices.delete(id),
                 onloaderror: (_id, _error) =>
                 {
                     console.warn(`Sound could not be loaded: ${_sound}`, _error)
@@ -607,6 +648,9 @@ export default class Sounds
         {
             // Find random sound
             const sound = item.sounds[Math.floor(Math.random() * item.sounds.length)]
+            // Bowling contacts can fan out into dozens of pin-pin/floor events.
+            // Bound voices, and don't queue stale collisions during loading.
+            if(Number.isFinite(item.maxConcurrent) && (item.voices.size >= item.maxConcurrent || sound.state() !== 'loaded')) return
 
             // Update volume
             let volume = Math.min(Math.max((velocity - item.velocityMin) * item.velocityMultiplier, item.volumeMin), item.volumeMax)
@@ -618,7 +662,8 @@ export default class Sounds
             sound.rate(item.rateMin + Math.random() * rateAmplitude)
 
             // Play
-            sound.play()
+            const id = sound.play()
+            if(id !== null) item.voices.add(id)
 
             // Save last play time
             item.lastTime = time

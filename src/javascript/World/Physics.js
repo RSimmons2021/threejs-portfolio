@@ -225,6 +225,10 @@ export default class Physics
             {
                 if(_event.body.mass === 0)
                 {
+                    // The opening descent ends on the ground, not a crash.
+                    // Floor contact must never kick the camera (including
+                    // repeated suspension contacts after the car has landed).
+                    if(_event.body === this.floor.body) return
                     const relativeVelocity = _event.contact.getImpactVelocityAlongNormal()
                     this.sounds.play('carHit', relativeVelocity)
 

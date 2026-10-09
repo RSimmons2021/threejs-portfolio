@@ -114,7 +114,7 @@
    "pitchDeg": -6,
    "fovDeg": 75,
    "near": 0.05,
-   "note": "Explorer.updateCamera uses p.z + 0.85 for the car: change it to + 0.64 and x - 0.05 along the heading for this cabin."
+   "note": "Attach the camera using meshFrame in the rendered chassis coordinate system. bodyFrameZ already includes the chassis -0.28 m visual offset; do not use it as a mesh-local height."
   },
   "slots": {
    "nd_dash": {

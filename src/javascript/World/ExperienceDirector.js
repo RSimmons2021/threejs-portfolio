@@ -48,6 +48,16 @@ export default class ExperienceDirector
         this.$root.className = 'experience-director'
         this.$root.innerHTML = `
             <nav class="experience-tools" aria-label="Experience tools">
+                <button type="button" data-experience-action="overview">Overview</button>
+                <a class="js-resume" href="${document.querySelector('.js-resume')?.href || '#'}" download="Richard_Simmons_Resume_AI.pdf" aria-label="Download Richard Simmons’s résumé as a PDF">Résumé ↓</a>
+                <details class="review-guide">
+                    <summary>Review guide</summary>
+                    <div class="review-guide__body">
+                        <p class="review-guide__eyebrow">A short route through the portfolio</p>
+                        <ol><li><b>Projects</b> — jump to any of the six projects using the top navigation. Enter its light column to open the case study.</li><li><b>Experience</b> — the Overview includes roles, responsibilities, and the stack, without playing the career game.</li><li><b>Résumé</b> — download the PDF here at any time.</li></ol>
+                        <p>The city and arcade are optional. Nothing you need to review is locked behind a game.</p>
+                    </div>
+                </details>
                 <button type="button" data-experience-action="xray" aria-pressed="false">
                     <span>X</span> System X-ray
                 </button>
@@ -181,6 +191,7 @@ export default class ExperienceDirector
             if(!button) return
 
             if(button.dataset.experienceAction === 'xray') this.diagnostics.toggle()
+            if(button.dataset.experienceAction === 'overview') window.dispatchEvent(new Event('portfolio:brief'))
         })
 
         this.$portal.addEventListener('click', (_event) =>
@@ -221,7 +232,7 @@ export default class ExperienceDirector
         // Space pauses/resumes the story while the portal has focus
         this.$portal.addEventListener('keydown', (_event) =>
         {
-            if(_event.key === ' ' && this.portal.cinematic && !this.portal.cinematicEnded)
+            if(_event.key === ' ' && this.portal.cinematic && !this.portal.cinematicEnded && !_event.target.closest('button, a, input, select, textarea'))
             {
                 _event.preventDefault()
                 this.togglePauseCinematic()
@@ -275,6 +286,7 @@ export default class ExperienceDirector
 
         if(!this.$portal.open)
         {
+            this.portalReturnFocus = document.activeElement
             this.$portal.showModal()
         }
         this.$portal.scrollTop = 0
@@ -295,6 +307,7 @@ export default class ExperienceDirector
             if(this.config.reducedMotion)
             {
                 this.$portal.close()
+                this.restorePortalFocus()
             }
             else
             {
@@ -307,6 +320,7 @@ export default class ExperienceDirector
                     if(this.$portal.open)
                     {
                         this.$portal.close()
+                        this.restorePortalFocus()
                     }
                 }, 260)
             }
@@ -321,6 +335,12 @@ export default class ExperienceDirector
         {
             this.clearProjectTheme()
         }
+    }
+
+    restorePortalFocus()
+    {
+        if(this.portalReturnFocus?.isConnected) this.portalReturnFocus.focus({ preventScroll: true })
+        this.portalReturnFocus = null
     }
 
     // Dissolve between frames instead of hard-cutting the src swap
@@ -412,7 +432,7 @@ export default class ExperienceDirector
             images[this.portal.cinematic ? stage % Math.max(images.length, 1) : slideIndex] || '',
             `${project.name} interface, view ${(this.portal.cinematic ? stage : slideIndex) + 1}`
         )
-        this.$portalCaption.textContent = this.portal.cinematic ? actLabel : `${project.name} · interface ${slideIndex + 1}`
+        this.$portalCaption.textContent = this.portal.cinematic ? actLabel : `${project.name} · view ${slideIndex + 1} of ${images.length}`
 
         // Ghosted chapter numeral behind the story text
         this.$portalNumeral.textContent = this.portal.cinematic ? (this.actNumerals[stage] || `${stage + 1}`) : ''
@@ -423,10 +443,16 @@ export default class ExperienceDirector
         this.$portalRole.textContent = project.details.role
         this.$portalStack.textContent = scene ? scene.supporting : project.details.stack
         this.$portalLive.href = project.link.href
+        const repository = project.link.href.includes('github.com')
+        this.$portalLive.textContent = repository ? 'Open repository ↗' : 'Open live project ↗'
+        this.$portalLive.setAttribute('aria-label', `Open ${project.name} ${repository ? 'repository' : 'project'} in a new tab`)
+        this.$portal.querySelector('[data-portal-action="close"]').setAttribute('aria-label', `Close ${project.name} case study`)
 
+        const focusedSlide = document.activeElement?.dataset?.portalSlide
         this.$portalSlides.innerHTML = images.map((_image, _index) => `
-            <button type="button" data-portal-slide="${_index}" class="${_index === slideIndex ? 'is-active' : ''}" aria-label="View project image ${_index + 1}"></button>
+            <button type="button" data-portal-slide="${_index}" class="${_index === slideIndex ? 'is-active' : ''}" aria-pressed="${_index === slideIndex}" aria-label="View ${project.name} image ${_index + 1} of ${images.length}"></button>
         `).join('')
+        if(focusedSlide !== undefined) this.$portalSlides.querySelector(`[data-portal-slide="${focusedSlide}"]`)?.focus({ preventScroll: true })
 
         // Story-style timed progress: past acts are filled, the live act animates
         this.$cinematicProgress.innerHTML = scenes.map((_scene, _index) =>
@@ -776,6 +802,9 @@ export default class ExperienceDirector
         if(this.locks.size > 0)
         {
             this.clearControls()
+
+            // Mini-games own their car input and pose until their exit restores it.
+            if(this.physics.car.miniGameOwnsPose) return
 
             // Keep the car pinned for the whole lock, not just at lock time
             const body = this.physics?.car?.chassis?.body

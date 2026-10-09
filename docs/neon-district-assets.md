@@ -200,6 +200,7 @@ All have white head lamps, red tail lights and blue under-glow.
 - 534 triangles: hooded courier with a glowing visor, backpack and cyan light accents.
 - Skinned to a 15-bone rig (rigid weights) and faces +Y.
 - Clips: `idle`, `walk` (0.8 s), `run`, `skate` (riding stance), `wave`, `enter_car` (crouch, 0.67 s, one-shot).
+- Runtime update (2026-10-09): the original atlas/GLB remain unchanged. The player-only shader recolours emissive accents green. `SkateStance.js` corrects the clip's local hip-axis twist with planted boot contacts and an upright head; the original clip continues to animate upper-body balance. Crowd colours are unaffected.
 
 **`npc.glb` + `npc-vat.json` + `textures/npc_vat.png`:**
 - 376 triangles, 714 vertices, 144 frames: `idle` 60, `walk` 24, `talk` 60 at 30 fps.

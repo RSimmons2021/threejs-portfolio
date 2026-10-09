@@ -4,6 +4,7 @@ import createApartment from './createApartment.js'
 import { createPerson } from './Pedestrians.js'
 import CareerNPCs from './CareerNPCs.js'
 import { containment, findTheBeat, loadTest, sitTheEval } from './CareerGames.js'
+import { STARTER_CREDITS, withStarterCredits } from './careerRules.js'
 import { BUILDINGS, DAY_END, DAY_START, HIRED_REQUIREMENT, HOURS_ARCADE, HOURS_SHIFT, HOURS_TRAIN,
     MAX_FOCUS, MAX_STAT, NPCS, QUESTS, SHOP, STATS } from './careerData.js'
 
@@ -14,7 +15,8 @@ const BLANK = () => ({
     hour: DAY_START,
     hired: false,
     focus: MAX_FOCUS,
-    credits: 0,
+    credits: STARTER_CREDITS,
+    starterCreditsGranted: true,
     stats: { ai: 0, systems: 0, product: 0 },
     shifts: {},          // shift id -> day it was last worked
     npcs: [],
@@ -46,6 +48,8 @@ export default class CareerRPG
 
         try { this.storage = window.localStorage } catch { this.storage = null }
         this.state = this.read()
+        // Persist the one-time grant immediately; a reload must not add it again.
+        this.save()
 
         this.setInterface()
         this.setDoors()
@@ -73,9 +77,11 @@ export default class CareerRPG
             if(!raw || typeof raw !== 'object') return blank
             // Merge field by field: a stored save from an older build must never
             // be able to remove a key the rest of this class assumes exists.
-            return {
+            return withStarterCredits({
                 ...blank,
                 ...raw,
+                starterCreditsGranted: raw.starterCreditsGranted === true,
+                credits: Number.isFinite(raw.credits) ? Math.max(0, raw.credits) : 0,
                 stats: { ...blank.stats, ...(raw.stats || {}) },
                 // Saves from before shifts were repeatable stored an array of
                 // ids; fold those into the map as "worked on day 1".
@@ -86,10 +92,10 @@ export default class CareerRPG
                 npcs: Array.isArray(raw.npcs) ? raw.npcs : [],
                 trained: Array.isArray(raw.trained) ? raw.trained : [],
                 owned: Array.isArray(raw.owned) ? raw.owned : [],
-                equipped: Array.isArray(raw.equipped) ? raw.equipped : [],
+                equipped: Array.isArray(raw.equipped) ? raw.equipped.filter(id => id !== 'headphones') : [],
                 quests: Array.isArray(raw.quests) ? raw.quests : [],
                 visited: Array.isArray(raw.visited) ? raw.visited : []
-            }
+            })
         }
         catch { return blank }
     }
@@ -108,7 +114,7 @@ export default class CareerRPG
         this.syncDoorLocks()
         this.render()
         this.close()
-        this.notify('Career reset. Day 1, nothing earned.', 'warning')
+        this.notify(`Career reset. Day 1, ${STARTER_CREDITS} starter credits.`, 'warning')
     }
 
     stat(_id) { return this.state.stats[_id] || 0 }
@@ -317,7 +323,7 @@ export default class CareerRPG
             const normal = facingNormal(building.door.facing)
             const area = this.world.areas.add({
                 position: new THREE.Vector2(building.door.x + normal.x * 2.1, building.door.y + normal.y * 2.1),
-                halfExtents: new THREE.Vector2(2.3, 2.3)
+                halfExtents: new THREE.Vector2(2.3, 2.3), entryLabel: building.name, entryColor: building.colour
             })
             area.on('interact', () => this.open(building))
             this.registerZone(area, building.name, () => this.open(building))
@@ -380,12 +386,7 @@ export default class CareerRPG
         }
 
         if(owned.includes('hardhat')) part([0.4, 0.38, 0.11], [0, 0, 1.79], '#ffca62')
-        if(owned.includes('headphones'))
-        {
-            part([0.44, 0.1, 0.07], [0, 0, 1.73], '#172334')
-            part([0.08, 0.17, 0.17], [- 0.19, 0, 1.56], '#172334')
-            part([0.08, 0.17, 0.17], [0.19, 0, 1.56], '#172334')
-        }
+        // Headphones remain a saved inventory keepsake, never avatar geometry.
         if(owned.includes('lanyard'))
         {
             part([0.2, 0.06, 0.24], [0, - 0.14, 1.3], '#86ded7')
@@ -396,7 +397,7 @@ export default class CareerRPG
         avatar.visible = explorer.avatar ? explorer.avatar.visible : false
         avatar.position.copy(explorer.avatar ? explorer.avatar.position : new THREE.Vector3())
         avatar.rotation.z = explorer.avatar ? explorer.avatar.rotation.z : 0
-        if(explorer.avatar) this.world.container.remove(explorer.avatar)
+        if(explorer.avatar) { explorer.avatar.userData.dispose?.(); this.world.container.remove(explorer.avatar) }
         this.world.container.add(avatar)
         explorer.avatar = avatar
     }
@@ -409,6 +410,7 @@ export default class CareerRPG
         this.$panel.className = 'career-hud'
         this.$panel.setAttribute('aria-label', 'Career progress')
         this.$panel.innerHTML = `
+            <p class="career-hud__mode">OPTIONAL / CAREER PLAY</p>
             <div class="career-hud__top">
                 <span class="career-hud__day" data-day>DAY 1</span>
                 <span class="career-hud__clock" data-clock>08:00</span>
@@ -464,12 +466,12 @@ export default class CareerRPG
     toggleEquip(_id)
     {
         const item = SHOP.find((_item) => _item.id === _id)
-        if(!item || !this.state.owned.includes(_id)) return
+        if(!item || item.kind === 'keepsake' || !this.state.owned.includes(_id)) return
         const equipped = this.state.equipped
         if(equipped.includes(_id)) equipped.splice(equipped.indexOf(_id), 1)
         else
         {
-            // One item per slot, so a hard hat and headphones cannot share a head.
+            // Wear at most one item in each cosmetic slot.
             for(const other of SHOP)
             {
                 if(other.slot && other.slot === item.slot && equipped.includes(other.id))
@@ -529,6 +531,8 @@ export default class CareerRPG
                     if(_item.kind === 'consumable')
                         return `<div class="career-bag__item"><span>${_item.name} ×${s.espresso}</span>
                             <button type="button" data-use="${_item.id}"${s.espresso ? '' : ' disabled'}>Use</button></div>`
+                    if(_item.kind === 'keepsake')
+                        return `<div class="career-bag__item"><span>${_item.name}</span><small>Collected · stays in your bag</small></div>`
                     const on = s.equipped.includes(_item.id)
                     return `<div class="career-bag__item" data-on="${on}"><span>${_item.name}</span>
                         <button type="button" data-equip="${_item.id}">${on ? 'Worn' : 'Wear'}</button></div>`
@@ -594,10 +598,12 @@ export default class CareerRPG
     {
         this.$dialog = document.createElement('dialog')
         this.$dialog.className = 'career-dialog'
+        this.$dialog.setAttribute('aria-labelledby', 'career-dialog-title')
         this.$dialog.innerHTML = `
             <header class="career-dialog__head">
+                <p class="career-dialog__mode">OPTIONAL / CAREER SIMULATION</p>
                 <p class="career-dialog__eyebrow" data-eyebrow></p>
-                <h2 data-title></h2>
+                <h2 id="career-dialog-title" data-title></h2>
                 <p class="career-dialog__intro" data-intro></p>
                 <button type="button" class="career-dialog__close" data-career="close">Close <kbd>Esc</kbd></button>
             </header>
@@ -615,12 +621,12 @@ export default class CareerRPG
         // A queued close event can land after the dialog has already been
         // reopened (close then immediately open, which Esc-then-E does). Releasing
         // then would destroy the new session's running game, so check first.
-        this.$dialog.addEventListener('close', () => { if(!this.$dialog.open) this.release() })
+        this.$dialog.addEventListener('close', () => { if(!this.$dialog.open && !this.world.miniGames?.active) this.release() })
     }
 
     open(_building)
     {
-        if(this.$dialog.open || this.world.arcade?.state !== 'idle') return
+        if(this.$dialog.open || this.world.miniGames?.active || this.world.arcade?.state !== 'idle') return
 
         const cues = this.world.sounds?.cues
         // A building with a modelled interior is walked into, not read about.
@@ -671,7 +677,7 @@ export default class CareerRPG
 
     openNPC(_npc)
     {
-        if(this.$dialog.open || this.world.arcade?.state !== 'idle') return
+        if(this.$dialog.open || this.world.miniGames?.active || this.world.arcade?.state !== 'idle') return
         this.building = null
         this.world.experienceDirector?.setInteractionLock('career', true)
         document.body.classList.add('has-career-dialog')
@@ -774,6 +780,30 @@ export default class CareerRPG
         if(!shift || this.state.shifts[_id] === this.state.day) return
         if(this.state.focus < shift.focus || this.exhausted) return
 
+        const gameId = { 'loopp-handoff': 'handoff', 'zoan-ship': 'shipIt' }[_id]
+        if(this.world.miniGames && gameId)
+        {
+            this.state.focus -= shift.focus
+            this.spendHours(HOURS_SHIFT)
+            this.save()
+            this.play3D(gameId, (passed, summary) =>
+            {
+                if(passed)
+                {
+                    const first = this.state.shifts[_id] === undefined
+                    this.state.shifts[_id] = this.state.day
+                    this.grant({ credits: shift.credits, gain: first ? shift.gain : null })
+                    this.notify(`${shift.title} — +${shift.credits} cr`, 'project')
+                }
+                this.renderJob(_building)
+                const result = document.createElement('p')
+                result.className = 'career-reward'; result.textContent = summary
+                this.$body.prepend(result)
+                this.save(); this.renderFoot(); this.render()
+            })
+            return
+        }
+
         // The first time you do the work you learn something; after that it is
         // a job. Repeats pay the money and not the stat, so the loop can turn
         // without progression running away.
@@ -797,7 +827,7 @@ export default class CareerRPG
             <p class="career-game__note">${_building.trainer.focus} focus · ${HOURS_TRAIN}h · pass for +1 ${_building.stat.toUpperCase()} and 25 cr.</p>
             <div class="career-actions">
                 <button type="button" data-train${affordable ? '' : ' disabled'}>${
-                    this.exhausted ? 'Too late today' : affordable ? _building.trainer.verb : 'Not enough focus'}</button>
+                    this.exhausted ? 'Too late today' : affordable ? this.world.miniGames ? `Play ${ { systems: 'Packet Run', product: 'Beat Tunnel', ai: 'Signal / Noise' }[_building.stat] }` : _building.trainer.verb : 'Not enough focus'}</button>
             </div>`
 
         this.$body.querySelector('[data-train]')?.addEventListener('click', () =>
@@ -807,6 +837,11 @@ export default class CareerRPG
             this.spendHours(HOURS_TRAIN)
             this.save()
             this.renderFoot()
+            if(this.world.miniGames)
+            {
+                this.play3D({ systems: 'packetRun', product: 'beatTunnel', ai: 'signalNoise' }[_building.stat], (passed, summary) => this.finishTraining(_building, passed, summary))
+                return
+            }
             const $host = document.createElement('div')
             $host.className = 'career-game'
             this.$body.innerHTML = ''
@@ -930,9 +965,13 @@ export default class CareerRPG
         else
         {
             this.state.owned.push(_id)
-            // Wear it straight away; the bag can take it off again.
-            this.toggleEquip(_id)
-            this.notify(`${item.name} acquired and worn.`, 'project')
+            if(item.kind === 'keepsake') this.notify(`${item.name} collected in your bag.`, 'project')
+            else
+            {
+                // Wear it straight away; the bag can take it off again.
+                this.toggleEquip(_id)
+                this.notify(`${item.name} acquired and worn.`, 'project')
+            }
         }
 
         this.save()
@@ -949,7 +988,7 @@ export default class CareerRPG
         this.$body.innerHTML = `
             <p class="career-game__lede">Read the call against the manifest and rule on it. One wrong ruling ends the run — a permission layer that is right most of the time is not one.</p>
             <p class="career-game__note">Best containment: ${this.state.containment}%. Clear the board for +2 AI and 60 cr.</p>
-            <div class="career-actions"><button type="button" data-play>Insert credit</button></div>`
+            <div class="career-actions"><button type="button" data-play>Play Containment · free</button></div>`
 
         this.$body.querySelector('[data-play]').addEventListener('click', () => this.startContainment())
     }
@@ -957,11 +996,31 @@ export default class CareerRPG
     startContainment()
     {
         this.spendHours(HOURS_ARCADE)
+        if(this.world.miniGames)
+        {
+            this.play3D('containment', (passed, summary) => this.finishArcade(passed, summary))
+            return
+        }
         const $host = document.createElement('div')
         $host.className = 'career-game'
         this.$body.innerHTML = ''
         this.$body.appendChild($host)
         this.game = containment($host, (_passed, _summary) => this.finishArcade(_passed, _summary), this.world.sounds?.cues)
+    }
+
+    play3D(id, onDone)
+    {
+        this.game = this.world.miniGames.start(id, (passed, summary) =>
+        {
+            this.game = null
+            this.world.experienceDirector.setInteractionLock('career', true)
+            document.body.classList.add('has-career-dialog')
+            onDone(passed, summary)
+            if(!this.$dialog.open) this.$dialog.showModal()
+        })
+        if(this.$dialog.open) this.$dialog.close()
+        document.body.classList.remove('has-career-dialog')
+        this.world.experienceDirector.setInteractionLock('career', false)
     }
 
     finishArcade(_passed, _summary)
@@ -981,7 +1040,7 @@ export default class CareerRPG
         this.$body.innerHTML = `
             <p class="career-result" data-passed="${_passed}">${_passed ? 'CONTAINED' : 'BREACH'}</p>
             <p class="career-game__lede">${_summary}</p>
-            <div class="career-actions"><button type="button" data-again>Insert another credit</button></div>`
+            <div class="career-actions"><button type="button" data-again>Play again · free</button></div>`
         this.$body.querySelector('[data-again]').addEventListener('click', () => this.startContainment())
         this.render()
         this.renderFoot()

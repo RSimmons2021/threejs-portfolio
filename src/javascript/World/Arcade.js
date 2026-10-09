@@ -32,6 +32,7 @@ export default class Arcade
         window.addEventListener('resize', () => { if(this.state !== 'idle') this.setGameCamera() })
         document.addEventListener('keydown', event =>
         {
+            if(event.target?.closest?.('button, a, summary') && ['Enter', 'Space'].includes(event.code)) return
             if(this.state === 'idle' || /INPUT|SELECT|TEXTAREA/.test(event.target.tagName)) return
             if(['running', 'countdown'].includes(this.state) && ['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.code)) event.preventDefault()
             if(event.code === 'Escape' || event.code === 'KeyR')
@@ -44,6 +45,7 @@ export default class Arcade
         }, true)
         document.addEventListener('keyup', event =>
         {
+            if(event.target?.closest?.('button, a, summary') && ['Enter', 'Space'].includes(event.code)) return
             if(this.state === 'idle') return
             // Controls resets the car on R keyup, not keydown. Consume both
             // edges so retry cannot be followed by an unrelated world reset.
@@ -109,7 +111,7 @@ export default class Arcade
         this.label('TURN BACK ↶', 'RETURN ON THE LOWER LANE', 151, -32, 0.065, 7, '#ffca62', false)
         this.startPads = ['sprint', 'bowling'].map((game, i) =>
         {
-            const area = w.areas.add({ position: new THREE.Vector2(-22, i ? -45 : -34), halfExtents: new THREE.Vector2(3, 1.5) })
+            const area = w.areas.add({ position: new THREE.Vector2(-22, i ? -45 : -34), halfExtents: new THREE.Vector2(3, 1.5), entryLabel: i ? 'Neon Bowling' : 'Midnight Sprint' })
             area.on('interact', () => { if(this.state === 'idle') this.start(game) })
             return area
         })
@@ -121,12 +123,21 @@ export default class Arcade
         this.$panel.className = 'arcade-panel'
         this.$panel.setAttribute('aria-label', 'After Hours Arcade games')
         this.$panel.innerHTML = `
-            <div class="arcade-panel__eyebrow">NYC RECREATION DEPT. / FREE PLAY</div>
+            <div class="arcade-panel__eyebrow">OPTIONAL PLAY / NOT PORTFOLIO INFORMATION</div>
             <h2>After Hours Arcade<span>↗</span></h2>
             <div class="arcade-menu">
-                <p>Short games. Big little victories. Open all day.</p>
+                <p>Eight optional games, open all day. Projects, experience, and résumé are in the Guide and Overview—no game is required.</p>
                 <button data-game="sprint"><strong>01 / Midnight Sprint ↗</strong><span>Eight checkpoints. Beat your ghost. Gold under 32s.</span></button>
                 <button data-game="bowling"><strong>02 / Neon Bowling ↗</strong><span>Drive into the ball. Three 8-second frames. Gold: 25 pins.</span></button>
+                <div class="arcade-practice" hidden>
+                    <p>CAREER CIRCUIT / FREE PRACTICE<br>No credits, focus or stats required. Career rewards stay at the city doors.</p>
+                    <button data-practice="packetRun"><strong>Packet Run ↗</strong><span>Collect cyan cargo. Deliver through green rings.</span></button>
+                    <button data-practice="beatTunnel"><strong>Beat Tunnel ↗</strong><span>Steer through rhythm rings. Boost at gates.</span></button>
+                    <button data-practice="signalNoise"><strong>Signal / Noise ↗</strong><span>Sort posts: positive, neutral or negative.</span></button>
+                    <button data-practice="handoff"><strong>Handoff ↗</strong><span>Route documents. Escalate when confidence is too low.</span></button>
+                    <button data-practice="containment"><strong>Containment ↗</strong><span>Allow, deny or hold the agent's tool calls.</span></button>
+                    <button data-practice="shipIt"><strong>Ship It ↗</strong><span>Code, build both platforms, clear payments, review.</span></button>
+                </div>
                 <p class="arcade-best"></p>
                 <button data-action="smash" class="arcade-small">Reset smash wall</button>
                 <button data-action="dismiss" class="arcade-small">Keep exploring</button>
@@ -150,6 +161,11 @@ export default class Arcade
             const button = event.target.closest('button')
             if(!button) return
             if(button.dataset.game) this.start(button.dataset.game)
+            if(button.dataset.practice && this.state === 'idle' && this.world.miniGames && !this.world.miniGames.active)
+            {
+                this.world.careerRPG.close()
+                this.world.miniGames.start(button.dataset.practice, () => this.render(), { practice: true })
+            }
             if(button.dataset.action === 'retry') this.start(this.game)
             if(button.dataset.action === 'exit') this.exit()
             if(button.dataset.action === 'smash') this.world.sections.playground.resetBricks()
@@ -213,7 +229,10 @@ export default class Arcade
 
     start(game)
     {
+        if(this.world.miniGames?.active) return
         this.world.explorer?.enterCar(true)
+        if(this.world.explorer?.firstPerson) this.world.explorer.toggleView()
+        this.world.hoverFlight?.forceLand()
         this.releaseRound()
         const w = this.world
         this.game = game
@@ -225,6 +244,8 @@ export default class Arcade
         this.savedAreas = w.areas.items.map(area => ({ area, active: area.active }))
         this.savedAreas.forEach(({area}) => area.deactivate())
         document.body.classList.add('arcade-active')
+        document.body.classList.toggle('bowling-active', game === 'bowling')
+        this.$panel.dataset.game = game
         this.elapsed = 0
         this.gate = 0
         this.frame = 1
@@ -283,6 +304,8 @@ export default class Arcade
         this.gateGroup.visible = false
         this.gateMarker.visible = false
         document.body.classList.remove('arcade-active')
+        document.body.classList.remove('bowling-active')
+        delete this.$panel.dataset.game
     }
 
     exit(returnToCourtyard = true)
@@ -338,6 +361,7 @@ export default class Arcade
         this.lastTick = now
         if(this.state === 'idle')
         {
+            this.$panel.querySelector('.arcade-practice').hidden = !this.world.miniGames
             const inArcade = isInsideArcade(this.world.explorer?.position || this.body.position)
             if(!inArcade) this.dismissed = false
             this.$panel.hidden = !(inArcade && !this.dismissed)

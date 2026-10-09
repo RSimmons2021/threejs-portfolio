@@ -13,10 +13,11 @@ export default class NeonSky
         this.material = new THREE.ShaderMaterial({
             depthWrite: false, depthTest: true, depthFunc: THREE.LessEqualDepth, side: THREE.BackSide,
             uniforms: { uZenith: shared.uZenith, uHorizon: shared.uHorizon, uGlow: shared.uGlow, uFogHigh: shared.uFogHighColor,
-                uDaylight: shared.uDaylight, uDusk: shared.uDusk, uSunDir: shared.uSunDir, uSunColor: shared.uSunColor, uTime: { value: 0 } },
+                uDaylight: shared.uDaylight, uDusk: shared.uDusk, uSunDir: shared.uSunDir, uSunColor: shared.uSunColor,
+                uCloudCover: shared.uCloudCover, uReducedMotion: shared.uReducedMotion, uTime: { value: 0 } },
             vertexShader: `varying vec3 vDir; void main(){ vDir = position; vec4 p = projectionMatrix * modelViewMatrix * vec4(position, 1.0); gl_Position = p.xyww; }`,
             fragmentShader: `uniform vec3 uZenith; uniform vec3 uHorizon; uniform vec3 uGlow; uniform vec3 uFogHigh; uniform float uDaylight; uniform float uDusk;
-                uniform vec3 uSunDir; uniform vec3 uSunColor; uniform float uTime;
+                uniform vec3 uSunDir; uniform vec3 uSunColor; uniform float uTime; uniform float uCloudCover; uniform float uReducedMotion;
                 varying vec3 vDir;
                 float h(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
                 float n(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
@@ -40,8 +41,8 @@ export default class NeonSky
                     col += sunTint * (pow(sunAmount, 6.0) * 0.18 + pow(sunAmount, 64.0) * 0.6) * uDaylight;
                     if(up > 0.0)
                     {
-                        vec2 p = d.xy / (up + 0.12) * 2.2 + vec2(uTime * 0.012, uTime * 0.004);
-                        float coverage = mix(0.42, 0.55, uDaylight);
+                        vec2 p = d.xy / (up + 0.12) * 2.2 + vec2(uTime * 0.012, uTime * 0.004) * (1.0 - uReducedMotion);
+                        float coverage = uCloudCover;
                         float c = clouds(p, coverage);
                         // Self-shadowing: density a little toward the sun darkens the belly.
                         float toward = clouds(p + uSunDir.xy * 0.18, coverage);

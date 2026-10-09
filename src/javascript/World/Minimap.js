@@ -37,8 +37,8 @@ export default class Minimap
         this.landmarks = [
             { x: 0, y: 0, label: 'START' },
             { x: 90, y: -30, label: 'PROJECTS' },
-            { x: 1.2, y: -55, label: 'ABOUT' },
-            { x: -38, y: -34, label: 'PLAY' }
+            { x: 1.2, y: -55, label: 'CONTACT' },
+            { x: -38, y: -34, label: 'ARCADE' }
         ]
 
         // Eased: snapping the world to every steering twitch is nauseating.
@@ -65,6 +65,8 @@ export default class Minimap
         this.radius = SIZE / 2
 
         this.canvas = document.createElement('canvas')
+        this.canvas.setAttribute('role', 'img')
+        this.canvas.setAttribute('aria-label', 'Nearby landmarks. Use the Portfolio tour navigation to jump to Projects, About, or Play.')
         this.canvas.width = SIZE * 2
         this.canvas.height = SIZE * 2
         this.canvas.style.width = `${SIZE}px`

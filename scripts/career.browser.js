@@ -16,7 +16,7 @@
     check('Walker is on foot', e.active)
     check('Every resume door exists', r.doors.size === 12)
     check('Every street NPC exists', r.npcs.people.length === 6)
-    check('Career starts at day 1 with nothing earned', r.state.day === 1 && r.state.credits === 0 && r.stat('ai') === 0)
+    check('Career starts at day 1 with 300 starter credits', r.state.day === 1 && r.state.credits === 300 && r.stat('ai') === 0)
 
     // Proximity, prompt, and the E key all reach the same door
     const toyota = at('toyota')
@@ -70,7 +70,7 @@
     const partsBefore = e.avatar.children.length
     r.$dialog.querySelector('[data-buy="headphones"]').click()
     check('Purchase deducts credits', r.state.credits === 220)
-    check('Purchase rebuilds the avatar with the cosmetic', e.avatar.children.length > partsBefore)
+    check('Headphones stay in the bag, not on the character', e.avatar.children.length === partsBefore && !r.state.equipped.includes('headphones'))
     check('Owned cosmetics cannot be rebought', r.$dialog.querySelector('[data-buy="headphones"]').disabled)
     r.$dialog.querySelector('[data-buy="sitemap"]').click()
     check('Site map reveals the locked doors too', w.minimap.doors.length === 12)

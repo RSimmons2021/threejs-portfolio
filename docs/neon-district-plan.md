@@ -1,6 +1,8 @@
 # Neon District: Cyberpunk Overhaul Build Plan
 
-Status: **assets built; look pass implemented** (full district, sun + sky + haze, traffic, hover-car flight, chase camera, live cockpit dash). See [`neon-district-perf.md`](neon-district-perf.md) for what runs now and what is still open (phone verification, NPC crowd, 3D mini-games). Written 2026-10-08.
+Status: **assets built; look pass and content wiring implemented** (full district, lighting, flight, cameras, live cockpit, project holo gallery, VAT crowd and six career games). Updated 2026-10-09. See [`neon-district-perf.md`](neon-district-perf.md) for current verification and remaining physical-phone/performance acceptance, and [`neon-district-minigames.md`](neon-district-minigames.md) for game-specific tuning and follow-up polish.
+
+**Latest user changes:** the first-person cockpit eye uses the asset's mesh frame (0.92 m), fixing the previous 28 cm low position. Free flight now reaches 160 m, easing above 150 m; sky-entry columns reach 162 m. Very subtle hover wind and distance-fading city ambience reuse the ElevenLabs pack. Players receive 300 starter credits (one-time +300 migration for old saves), and all six games have no-cost practice in After Hours Arcade. Packet Run has labelled delivery rings, collision-aware roof-clearance waypoints, on-arrival request queues and a 180-second round. Signal / Noise allows more reading time; Ship It has next-station guidance and grounded feet. Green player accents, upright skating, Enter/touch aerial entry and arrival-mode restoration remain unchanged.
 
 **Already done:** every 3D asset, texture and the full district layout are built and checked. They live in `static/models/cyber/`, are described in **[`neon-district-assets.md`](neon-district-assets.md)**, and are checked by `npm run test:cyber-assets`. Reference renders are in `docs/screenshots/neon-district/`. The building agent's job is now the runtime: materials, cameras, flight, the content port and performance.
 
@@ -166,8 +168,8 @@ Stack: Vite 5, three **0.164.1**, cannon 0.6.2, gsap, howler, custom GLSL in `sr
 
 ### 6.4 Flight envelope (player-facing)
 
-- Flying is allowed anywhere inside the district boundary, from **1.5 to 70 units** of altitude. The ceiling sits below the tallest tower tops so the canyon feel holds.
-- Near the ceiling the car pushes down gently and an "Airspace ceiling" HUD hint appears.
+- Flying is allowed inside the same district boundary, from **1.5 units above the surface to 160 units absolute height**. The new ceiling clears the tallest 112 m tower. Runtime `flightRules.js` overrides the original authored 70/62 m envelope without expanding the horizontal city bounds.
+- Climb speed eases above 150 m toward a 160 m ceiling; hovering below the ceiling does not force descent. Descend remains available.
 - At the boundary there's a soft wall: the fog thickens, the car is steered back, and a "Restricted airspace" hint shows.
 - Hitting a building bumps the car and plays a hit sound (existing car-hit sounds). The car doesn't crash or explode.
 
@@ -463,7 +465,7 @@ The car has a **normal, non-hovering drive mode** and transforms back and forth:
 | Visual bank max | 25° |
 | Visual pitch max | 12° |
 | Min altitude above surface | 1.5 units |
-| Ceiling | 70 units (soft from 62) |
+| Ceiling | 160 units (climb eases from 150) |
 | Boundary soft zone | 10 units inside the flight bounds |
 | Linear damping (flying) | 0.4 |
 
@@ -472,7 +474,7 @@ The car has a **normal, non-hovering drive mode** and transforms back and forth:
 - `physics.car.speed` and `physics.car.angle` are updated in flight. Camera FOV kick, sounds, minimap, city reflection and `ExperienceHUD` read them.
 - Expose `physics.car.mode` ('grounded' | 'takeoff' | 'flying' | 'landing') and `physics.car.altitude` (height above the surface below).
 - The `portfolio:navigate` event, guided tour and arcade **force a landing first**. Instant-land with a 0.4 s fade is acceptable when called by the tour.
-- **Zones and areas** (`Zones.js`, `Areas.js`) only trigger when the car is grounded or under 3 units. This prevents triggering project zones from the air.
+- **Zones and areas:** ordinary proximity zones remain grounded-only. Entry areas use 162 m square light columns and explicit Enter/touch activation from the sky, matching the expanded flight ceiling. E/Q remain climb/descend, and conversations/interior stations never activate overhead.
 - `TireEffects` (skid marks and smoke) are off while flying. `ParticleTrails` switch to thruster particles in blue.
 - Headlight cones (`AdvancedLighting.updateHeadlightCones`) follow the chassis orientation in flight.
 - The ground reflection quad in `City.js` projects onto the surface below and fades with altitude.
@@ -565,7 +567,7 @@ Keep `camera.targetOverride` (used by the tour and director) working: when set, 
 
 - Keep the skateboard as the **default board**: `skateboard.glb` (built) replaces `Explorer.createBoard()`.
   - Spin the four `skateboard_wheel_*` nodes about X from walker speed (radius 0.045).
-  - Same physics, and the player's `skate` clip plays while riding.
+  - Same physics; the player's `skate` clip supplies balance motion while the runtime pins both boot soles to the grip tape and keeps the head upright. Player emissive accents are green, not the crowd's cyan.
 - `hoverboard.glb` (built) is an **optional cosmetic**, e.g. a career-shop unlock or an easter egg. It has the same physics and hover pads (`nd_thruster`) instead of wheels.
 
 ---
@@ -707,7 +709,7 @@ Each phase lists tasks, then **Done when**. Don't start the next phase until the
 **Done when:**
 - On desktop and phone: take off, fly the crossroads canyon, bump a tower, hit the ceiling, land, exit, walk, re-enter, and toggle first person in the car while flying.
 - In first person the dash speed matches the HUD speed, and the dash minimap matches the HUD radar.
-- Zones don't trigger from the air.
+- Ground-only zones don't trigger from the air; entry columns accept Enter/touch at altitude without stealing the climb key.
 - The tour forces a landing.
 - A new `scripts/flight.browser.js` passes (section 17).
 

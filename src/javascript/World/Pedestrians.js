@@ -1,9 +1,45 @@
 import * as THREE from 'three'
+import { clone as cloneSkeleton } from 'three/examples/jsm/utils/SkeletonUtils.js'
+import SkateStance from './SkateStance.js'
 
 // Shared geometry and materials keep the crowd inexpensive. People intentionally
 // have no physics bodies: both the driver and walker pass straight through them.
 export function createPerson(materials, color = '#ffb627')
 {
+    const player = materials.resources.items.cyberPlayer
+    if(materials.resources.config.neon && player)
+    {
+        const root = cloneSkeleton(player.scene)
+        root.traverse(mesh =>
+        {
+            if(mesh.isMesh) mesh.material = mesh.material.name === 'nd_atlas'
+                ? materials.cyber.playerMaterial() : materials.cyber.forSlot(mesh.material.name)
+        })
+        const mixer = new THREE.AnimationMixer(root)
+        const stance = new SkateStance(root)
+        const clips = Object.fromEntries(player.animations.map(clip => [clip.name, mixer.clipAction(clip)]))
+        let active = 'idle'
+        clips.idle.play()
+        root.userData.animate = (phase, moving, dt = 0, skating = false) =>
+        {
+            const next = skating ? 'skate' : moving ? 'walk' : 'idle'
+            if(next !== active)
+            {
+                if(materials.resources.config.reducedMotion) { clips[active].stop(); clips[next].reset().play() }
+                else { clips[active].fadeOut(0.15); clips[next].reset().fadeIn(0.15).play() }
+                active = next
+            }
+            mixer.update(materials.resources.config.reducedMotion ? 0 : dt)
+            if(skating) stance.update()
+        }
+        root.userData.dispose = () =>
+        {
+            mixer.stopAllAction(); mixer.uncacheRoot(root)
+            root.traverse(mesh => { if(mesh.isSkinnedMesh) mesh.skeleton.dispose() })
+        }
+        root.userData.cyberPlayer = true
+        return root
+    }
     const group = new THREE.Group()
     const box = createPerson.box ||= new THREE.BoxGeometry(1, 1, 1)
     const palette = createPerson.palette ||= new Map()
@@ -49,6 +85,7 @@ export default class Pedestrians
 {
     constructor(world)
     {
+        this.world = world
         this.container = new THREE.Group()
         this.container.name = 'City pedestrians / nonblocking'
         const routes = [[-9, -4, -9, -19], [9, -8, 9, -20], [-12, -26, -48, -26],
@@ -61,6 +98,8 @@ export default class Pedestrians
             person.userData.route = route
             return person
         })
+        this.routes = routes
+        if(world.config.neon) return // Replaced asynchronously by the single VAT batch.
         const byMaterial = new Map()
         for(const person of this.people) person.traverse(mesh =>
         {

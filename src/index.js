@@ -19,6 +19,20 @@ applyResumeLinks()
 // the try/catch below: if WebGL fails to initialise, the fast path still has to
 // work. That is the machine a recruiter is most likely to be on.
 const brief = new RecruiterBrief()
+window.addEventListener('portfolio:brief', () => brief.open())
+window.addEventListener('portfolio:brief-state', event =>
+{
+    window.application?.world?.experienceDirector?.setInteractionLock('brief', event.detail.open)
+})
+// Keep native overview links/buttons in charge of keyboard input. Driving
+// shortcuts must not leak through this WebGL-independent dialog.
+for(const type of ['keydown', 'keyup'])
+{
+    window.addEventListener(type, event =>
+    {
+        if(document.body.classList.contains('has-brief')) event.stopImmediatePropagation()
+    }, true)
+}
 document.addEventListener('brief:built', applyResumeLinks)
 for(const trigger of document.querySelectorAll('.js-brief-open'))
 {

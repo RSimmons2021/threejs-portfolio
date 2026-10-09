@@ -15,6 +15,7 @@ export default class AmbientSounds
         this.weather = _options.weather
         this.dayNightCycle = _options.dayNightCycle
         this.debug = _options.debug
+        this.urban = !!_options.urban
 
         // Settings
         this.settings = {}
@@ -255,6 +256,10 @@ export default class AmbientSounds
         {
             return
         }
+
+        // The neon megacity has its own generated infrastructure/traffic bed.
+        // Keep weather layers, but not the old countryside birds/crickets.
+        if(this.urban) return
 
         // Crickets: true night only (silent through sunrise/sunset transitions),
         // not raining, not foggy

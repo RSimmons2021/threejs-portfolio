@@ -424,11 +424,10 @@ export const SHOP = [
     },
     {
         id: 'headphones',
-        slot: 'head',
         name: 'Studio headphones',
         cost: 80,
-        kind: 'cosmetic',
-        detail: 'Ten years of producing, worn on the head.',
+        kind: 'keepsake',
+        detail: 'Music-production keepsake. Stays in your bag, not on the character.',
         apply: { headphones: true }
     },
     {

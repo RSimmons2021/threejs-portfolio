@@ -1,15 +1,16 @@
 import * as THREE from 'three'
 import vertexShader from '../../shaders/cyber/vertex.glsl'
 import fragmentShader from '../../shaders/cyber/fragment.glsl'
+import NeonLightRig, { MAX_SPILL_LIGHTS } from './NeonLightRig.js'
 
 // Day/night palette. Colours are written as sRGB hex and converted to linear by
 // THREE.Color; light intensities are linear multipliers. 'daylight' runs 0..1.
 const PALETTE = {
-    night: { sky: [0.17, 0.2, 0.3], ground: [0.025, 0.025, 0.04], sun: [0, 0, 0], fogLow: '#0d1119', fogHigh: '#1a2030',
-        zenith: '#05070b', horizon: '#1a1a2c', glow: '#3a1d3e', density: 0.0125, neon: 3.0, lit: 0.16 },
-    // Day: blue sky fill + a warm key sun (baked sun-shadow volume), light haze.
-    day: { sky: [0.5, 0.62, 0.9], ground: [0.2, 0.17, 0.14], sun: [6.4, 5.2, 3.9], fogLow: '#7f8f9c', fogHigh: '#aebfcc',
-        zenith: '#3d6eae', horizon: '#bccbd6', glow: '#e8d6bc', density: 0.0056, neon: 0.75, lit: 0.05 }
+    night: { sky: [0.11, 0.15, 0.2], ground: [0.014, 0.02, 0.025], sun: [0, 0, 0], fogLow: '#18232c', fogHigh: '#34434f',
+        zenith: '#080f18', horizon: '#25313b', glow: '#503047', density: 0.0105, neon: 2.2, lit: 0.13 },
+    // Cooler overcast fill, warm exposed edges, dark occluded street canyons.
+    day: { sky: [0.72, 0.79, 0.85], ground: [0.09, 0.11, 0.13], sun: [4.8, 4.1, 3.3], fogLow: '#5b6c76', fogHigh: '#bac5c8',
+        zenith: '#718897', horizon: '#c6cfd0', glow: '#e6d6bf', density: 0.0058, neon: 0.7, lit: 0.04 }
 }
 
 export default class CyberMaterials
@@ -29,7 +30,10 @@ export default class CyberMaterials
         this.mask.flipY = false
         this.atlas.magFilter = THREE.NearestFilter
         this.atlas.minFilter = THREE.LinearMipmapLinearFilter
-        this.mask.magFilter = THREE.NearestFilter
+        // Smooth coverage, not raw IDs: the shader unpremultiplies G by R
+        // before choosing a room. Averaged IDs must never drive random light.
+        this.mask.magFilter = THREE.LinearFilter
+        this.mask.minFilter = THREE.LinearMipmapLinearFilter
         this.mask.colorSpace = THREE.NoColorSpace
         this.volume.colorSpace = THREE.NoColorSpace
         this.volume.minFilter = this.volume.magFilter = THREE.LinearFilter
@@ -45,6 +49,7 @@ export default class CyberMaterials
         this.day = { ...PALETTE.day, fogLow: c(PALETTE.day.fogLow), fogHigh: c(PALETTE.day.fogHigh),
             zenith: c(PALETTE.day.zenith), horizon: c(PALETTE.day.horizon), glow: c(PALETTE.day.glow) }
         this.shared = {
+            uAtlasSize: { value: new THREE.Vector2(this.mask.image.width, this.mask.image.height) },
             uSkyColor: { value: new THREE.Color() },
             uGroundColor: { value: new THREE.Color() },
             uFogColor: { value: new THREE.Color() },
@@ -72,6 +77,14 @@ export default class CyberMaterials
             uHorizon: { value: new THREE.Color() },
             uGlow: { value: new THREE.Color() }
         }
+        Object.assign(this.shared, {
+            uCloudCover: { value: 0.7 },
+            uSpillCount: { value: 0 },
+            uSpillPosition: { value: Array.from({ length: MAX_SPILL_LIGHTS }, () => new THREE.Vector4()) },
+            uSpillColor: { value: Array.from({ length: MAX_SPILL_LIGHTS }, () => new THREE.Vector4()) },
+            uSpillNormal: { value: Array.from({ length: MAX_SPILL_LIGHTS }, () => new THREE.Vector3()) },
+            uCarGlow: { value: new THREE.Vector4(0, 0, 0, 0) }
+        })
         this.update(null, 0.5)
     }
 
@@ -99,6 +112,28 @@ export default class CyberMaterials
         this.cache.set(key, material)
         this.materials.shades.items[`cyber:${key}`] = material
         return material
+    }
+
+    mappedScreen(texture)
+    {
+        const base = this.create()
+        const material = base.clone()
+        material.defines = { PROJECT_SCREEN: 1 }
+        material.uniforms = { ...base.uniforms, uProjectTexture: { value: texture } }
+        material.side = THREE.DoubleSide
+        return material
+    }
+
+    playerMaterial()
+    {
+        if(!this.player)
+        {
+            const base = this.create({ atlas: true, ao: true })
+            this.player = base.clone()
+            this.player.defines = { ...base.defines, PLAYER_LIGHT: 1 }
+            this.player.uniforms = { ...base.uniforms, uPlayerLight: { value: new THREE.Color('#78ff62') } }
+        }
+        return this.player
     }
 
     // Materials for props / vehicles exported with nd_* slot names (no per-instance seed).
@@ -152,11 +187,26 @@ export default class CyberMaterials
         let density = mix(n.density, d.density)
         let wet = 0.3
         const weather = world?.weather?.state
-        if(weather === 'rain') { density *= 1.25; wet = 1 }
+        const cover = weather === 'rain' || weather === 'fog' ? 0.96 : weather === 'snow' ? 0.88 : 0.7
+        const transition = world ? 1 - Math.exp(-Math.min(world.time.delta, 60) / 1400) : 1
+        s.uCloudCover.value += (cover - s.uCloudCover.value) * transition
+        // Storm clouds dim the direct key, rather than retaining a sunny sky
+        // and a full-strength sun while rain is falling.
+        const key = weather === 'rain' ? 0.28 : weather === 'fog' ? 0.16 : weather === 'snow' ? 0.4 : 1
+        s.uSunColor.value.multiplyScalar(key)
+        if(weather === 'rain') { density *= 1.35; wet = 1 }
         if(weather === 'fog') density *= 1.8
         if(weather === 'snow') { density *= 1.35; wet = 0.5 }
-        s.uFogDensity.value += (density - s.uFogDensity.value) * (world ? 0.02 : 1)
-        s.uWetness.value += (wet - s.uWetness.value) * (world ? 0.01 : 1)
+        s.uFogDensity.value += (density - s.uFogDensity.value) * transition
+        s.uWetness.value += (wet - s.uWetness.value) * transition
         this.daylight = daylight
+        if(world)
+        {
+            this.lightRig ||= new NeonLightRig(world, s)
+            this.lightRig.update()
+            const post = world.passes.screenFxPass.material.uniforms
+            post.uExposure.value = mix(1.12, 0.98)
+            post.uBloomStrength.value = mix(1.15, 0.75)
+        }
     }
 }

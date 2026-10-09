@@ -2,6 +2,7 @@ import * as THREE from 'three'
 import CANNON from 'cannon'
 import { createPerson } from './Pedestrians.js'
 import { renderPosition } from '../Utils/renderTransform.js'
+import { movementVector } from './movementRules.js'
 
 export default class Explorer
 {
@@ -14,6 +15,8 @@ export default class Explorer
         this.pitch = 0
         this.phase = 0
         this.lookTarget = new THREE.Vector3()
+        this.carForward = new THREE.Vector3()
+        this.cockpitEye = new THREE.Vector3()
         this.avatar = createPerson(world.materials)
         this.avatar.visible = false
         world.container.add(this.avatar)
@@ -36,12 +39,14 @@ export default class Explorer
             return this.firstPerson ? this.yaw : this.heading
         }
         const explorer = this
-        // Interaction zones ignore a car that is flying overhead.
-        const far = new CANNON.Vec3(1e5, 1e5, 0)
+        // Areas decide their own vertical range. Sky-entry columns accept the
+        // flying chassis; ground-only conversations/stations do not.
         this.proximity = { get position()
         {
-            const hover = explorer.world.physics.car.hover
-            return !explorer.active && hover?.airborne ? far : explorer.position
+            return explorer.position
+        }, get airborne()
+        {
+            return !explorer.active && !!explorer.world.physics.car.hover?.airborne
         } }
         world.areas.car = this.proximity
         world.areas.items.forEach(area => { area.car = this.proximity })
@@ -57,9 +62,23 @@ export default class Explorer
     get renderPosition()
     {
         const body = this.active ? this.body : this.world.physics.car.chassis.body
-        return renderPosition(body, this.world.time.delta / 1000)
+        return renderPosition(body, this.world.time.delta / 1000, this.world.time.elapsed)
     }
     get blocked() { return this.world.experienceDirector.locks.size > 0 || this.world.arcade.state !== 'idle' }
+
+    useCyberBoard()
+    {
+        const source = this.world.resources.items.cyberSkateboard
+        if(!source) return
+        const board = source.scene.clone(true)
+        board.traverse(mesh => { if(mesh.isMesh) mesh.material = this.world.materials.cyber.forSlot(mesh.material.name) })
+        board.visible = this.board.visible
+        this.board.removeFromParent()
+        this.board = board
+        this.world.container.add(board)
+        this.boardWheels = []
+        board.traverse(node => { if(node.name.startsWith('skateboard_wheel_')) this.boardWheels.push(node) })
+    }
 
     // Deck, trucks and four wheels, in the same flat box language as the walker.
     createBoard(_materials)
@@ -241,7 +260,7 @@ export default class Explorer
     {
         this.firstPerson = !this.firstPerson
         this.yaw = this.active ? this.yaw : this.world.physics.car.angle
-        this.lastCarAngle = this.world.physics.car.angle
+        this.lastCarAngle = this.renderCarHeading
         this.pitch = !this.active && this.world.config.neon ? -0.1 : 0
         const camera = this.world.camera
         camera.firstPerson = this.firstPerson
@@ -301,11 +320,9 @@ export default class Explorer
                 forward = Math.sin(joystick.angle.originalValue)
                 right = Math.cos(joystick.angle.originalValue)
             }
-            const angle = this.firstPerson ? this.yaw : Math.atan2(-w.camera.angle.value.y, -w.camera.angle.value.x)
-            const length = Math.max(1, Math.hypot(forward, right))
+            const angle = this.firstPerson ? this.yaw : w.controls.getViewYaw()
             const speed = this.blocked || document.hidden ? 0 : (this.skating ? 7.6 : 3.2)
-            const targetX = (Math.cos(angle) * forward + Math.sin(angle) * right) * speed / length
-            const targetY = (Math.sin(angle) * forward - Math.cos(angle) * right) * speed / length
+            const target = movementVector(forward, right, angle, speed)
 
             // Ease into the target velocity rather than snapping to it. Snapping
             // every frame is what made walking feel stepped, and it fought the
@@ -314,8 +331,8 @@ export default class Explorer
             const delta = Math.min(w.time.delta / 1000, 0.05)
             const rate = this.skating ? (forward || right ? 3.2 : 1.6) : 14
             const ease = 1 - Math.exp(- rate * delta)
-            this.body.velocity.x += (targetX - this.body.velocity.x) * ease
-            this.body.velocity.y += (targetY - this.body.velocity.y) * ease
+            this.body.velocity.x += (target.x - this.body.velocity.x) * ease
+            this.body.velocity.y += (target.y - this.body.velocity.y) * ease
             this.body.angularVelocity.set(0, 0, 0)
 
             const travelling = Math.hypot(this.body.velocity.x, this.body.velocity.y)
@@ -333,16 +350,20 @@ export default class Explorer
             }
             this.phase += delta * travelling * 2.5
             const render = this.renderPosition
-            this.avatar.position.set(render.x, render.y, render.z - 0.38)
-            // On the board the legs stop cycling and the rider leans into the roll.
-            this.avatar.userData.animate(this.phase, moving && !this.skating && !w.config.reducedMotion)
+            const groundZ = render.z - 0.38
+            // Feet start at the grip tape (0.135 m on the Blender board), not
+            // at the wheels. Whole-avatar tilt would lift one contact off it.
+            const deckHeight = this.avatar.userData.cyberPlayer ? 0.135 : 0
+            this.avatar.position.set(render.x, render.y, groundZ + (this.skating ? deckHeight : 0))
+            this.avatar.rotation.x = 0
+            this.avatar.userData.animate(this.phase, moving && !this.skating && !w.config.reducedMotion, delta, this.skating)
             if(this.board)
             {
                 this.board.visible = this.skating
-                this.board.position.copy(this.avatar.position)
+                this.board.position.set(render.x, render.y, groundZ)
                 this.board.rotation.z = this.avatar.rotation.z
+                this.boardWheels?.forEach(wheel => { wheel.rotation.x += travelling * delta / 0.045 })
             }
-            this.avatar.rotation.x = this.skating ? - 0.05 - Math.min(travelling / 7.6, 1) * 0.13 : 0
 
             // Rolling noise follows real speed, so kerbs and corners are audible.
             if(w.sounds?.board) w.sounds.board.speed = this.skating ? Math.min(travelling / 7.6, 1) : 0
@@ -358,17 +379,34 @@ export default class Explorer
         const camera = this.world.camera.instance
         if(!this.active)
         {
-            const angle = this.world.physics.car.angle
+            const angle = this.renderCarHeading
             this.yaw += Math.atan2(Math.sin(angle - this.lastCarAngle), Math.cos(angle - this.lastCarAngle))
             this.lastCarAngle = angle
         }
         const p = this.renderPosition
-        // Hover car cockpit eye: body +0.64 m, a little behind centre (hover-car.json -> cockpit.eye).
+        // The eye is local to the rendered mesh, not the physics body. Using
+        // bodyFrameZ here double-subtracted the chassis' -0.28 m visual offset.
         const neonCar = !this.active && this.world.config.neon
-        camera.position.set(p.x, p.y, p.z + (this.active ? 1.27 : neonCar ? 0.64 : 0.85))
-        if(neonCar) { camera.position.x -= Math.cos(this.world.physics.car.angle) * 0.05; camera.position.y -= Math.sin(this.world.physics.car.angle) * 0.05 }
-        this.lookTarget.set(p.x + Math.cos(this.yaw) * Math.cos(this.pitch), p.y + Math.sin(this.yaw) * Math.cos(this.pitch), camera.position.z + Math.sin(this.pitch))
+        camera.position.set(p.x, p.y, p.z + 1.27)
+        if(!this.active)
+        {
+            // Attach the eye to the exact visible cockpit pose (including its
+            // bank/bob), not a second independently smoothed physics position.
+            const chassis = this.world.car.chassis.object
+            if(neonCar) this.cockpitEye.fromArray(this.world.resources.items.hoverCarSpec.cockpit.eye.meshFrame)
+            else this.cockpitEye.set(0, 0, 0.85)
+            this.cockpitEye.applyQuaternion(chassis.quaternion).add(chassis.position)
+            camera.position.copy(this.cockpitEye)
+        }
+        camera.up.set(0, 0, 1)
+        this.lookTarget.copy(camera.position).add(this.carForward.set(Math.cos(this.yaw) * Math.cos(this.pitch), Math.sin(this.yaw) * Math.cos(this.pitch), Math.sin(this.pitch)))
         camera.lookAt(this.lookTarget)
         camera.updateMatrixWorld()
+    }
+
+    get renderCarHeading()
+    {
+        this.carForward.set(1, 0, 0).applyQuaternion(this.world.car.chassis.object.quaternion)
+        return Math.atan2(this.carForward.y, this.carForward.x)
     }
 }

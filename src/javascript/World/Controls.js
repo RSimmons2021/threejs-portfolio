@@ -2,6 +2,9 @@ import mobileDoubleTriangle from '../../images/mobile/doubleTriangle.png'
 import mobileTriangle from '../../images/mobile/triangle.png'
 import mobileCross from '../../images/mobile/cross.png'
 import EventEmitter from '../Utils/EventEmitter'
+import * as THREE from 'three'
+import { joystickWorldYaw } from './movementRules.js'
+import { isInterfaceKey } from './interfaceInput.js'
 
 export default class Controls extends EventEmitter
 {
@@ -14,9 +17,19 @@ export default class Controls extends EventEmitter
         this.time = _options.time
         this.camera = _options.camera
         this.sounds = _options.sounds
+        this.viewDirection = new THREE.Vector3()
+        this.lastViewYaw = Math.atan2(-this.camera.angle.value.y, -this.camera.angle.value.x)
 
         this.setActions()
         this.setKeyboard()
+    }
+
+    getViewYaw()
+    {
+        this.camera.instance.getWorldDirection(this.viewDirection)
+        if(Math.hypot(this.viewDirection.x, this.viewDirection.y) > 0.001)
+            this.lastViewYaw = Math.atan2(this.viewDirection.y, this.viewDirection.x)
+        return this.lastViewYaw
     }
 
     setActions()
@@ -50,6 +63,7 @@ export default class Controls extends EventEmitter
 
         this.keyboard.events.keyDown = (_event) =>
         {
+            if(isInterfaceKey(_event)) return
             switch(_event.code)
             {
                 case 'ArrowUp':
@@ -127,6 +141,7 @@ export default class Controls extends EventEmitter
                     break
 
                 case 'KeyR':
+                    if(isInterfaceKey(_event)) break
                     this.trigger('action', ['reset'])
                     break
             }
@@ -196,8 +211,6 @@ export default class Controls extends EventEmitter
         // Angle
         this.touch.joystick.angle = {}
 
-        this.touch.joystick.angle.offset = Math.PI * 0.18
-
         this.touch.joystick.angle.center = {}
         this.touch.joystick.angle.center.x = 0
         this.touch.joystick.angle.center.y = 0
@@ -232,7 +245,7 @@ export default class Controls extends EventEmitter
                     this.touch.joystick.angle.current.y - this.touch.joystick.angle.center.y,
                     this.touch.joystick.angle.current.x - this.touch.joystick.angle.center.x
                 )
-                this.touch.joystick.angle.value = this.touch.joystick.angle.originalValue + this.touch.joystick.angle.offset
+                this.touch.joystick.angle.value = joystickWorldYaw(this.touch.joystick.angle.originalValue, this.getViewYaw())
 
                 // Update joystick
                 const distance = Math.hypot(this.touch.joystick.angle.current.y - this.touch.joystick.angle.center.y, this.touch.joystick.angle.current.x - this.touch.joystick.angle.center.x)
@@ -689,6 +702,12 @@ export default class Controls extends EventEmitter
             this.touch.brake.$element.style.opacity = 1
             this.touch.forward.$element.style.opacity = 1
             this.touch.boost.$element.style.opacity = 1
+        }
+        for(const [name, control] of Object.entries(this.touch))
+        {
+            if(!control.$element) continue
+            control.$element.classList.add('world-touch-control')
+            control.$element.dataset.worldControl = name
         }
     }
 }

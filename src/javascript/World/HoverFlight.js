@@ -1,5 +1,6 @@
 import * as THREE from 'three'
 import CANNON from 'cannon'
+import { FLIGHT_CEILING, SOFT_CEILING, ceilingVelocity } from './flightRules.js'
 
 // Drive <-> fly for the Neon District hover car.
 //   T            take off / land
@@ -8,7 +9,7 @@ import CANNON from 'cannon'
 // GROUNDED: the RaycastVehicle drives as before and the pods are wheels.
 // FLYING: the vehicle constraint is removed; this module steers the chassis body
 // directly (velocity tracking + gravity cancel), so collisions still push it around.
-const CRUISE = 18, BOOST = 30, CLIMB = 8, DESCEND = 10, CEILING = 70, SOFT_CEILING = 62, MIN_ALT = 1.5
+const CRUISE = 18, BOOST = 30, CLIMB = 8, DESCEND = 10, MIN_ALT = 1.5
 
 export default class HoverFlight
 {
@@ -18,7 +19,8 @@ export default class HoverFlight
         this.physics = world.physics
         this.car = world.physics.car
         this.spec = world.resources.items.hoverCarSpec
-        this.bounds = world.resources.items.cyberLayout.flightBounds
+        const authoredBounds = world.resources.items.cyberLayout.flightBounds
+        this.bounds = { ...authoredBounds, max: [...authoredBounds.max.slice(0, 2), FLIGHT_CEILING], softCeiling: SOFT_CEILING }
         this.mode = 'grounded'
         this.fold = 0
         this.timer = 0
@@ -103,12 +105,19 @@ export default class HoverFlight
     toggle()
     {
         if(this.mode === 'grounded') this.takeOff()
-        else if(this.mode === 'flying') this.mode = 'landing'
+        else if(this.mode === 'flying') this.beginLanding()
     }
 
-    takeOff()
+    beginLanding()
     {
-        if(this.blocked || this.mode !== 'grounded') return
+        if(this.mode === 'landing' || this.mode === 'grounded') return
+        this.mode = 'landing'
+        this.world.sounds?.playVehicleTransform('down')
+    }
+
+    takeOff(forMiniGame = false)
+    {
+        if((this.blocked && !forMiniGame) || this.mode !== 'grounded') return
         const body = this.car.chassis.body
         // removeFromWorld also removes the chassis body; keep the body, drop the wheels.
         this.car.vehicle.removeFromWorld(this.physics.world)
@@ -118,13 +127,14 @@ export default class HoverFlight
         this.timer = 0
         body.wakeUp()
         body.velocity.z = Math.max(body.velocity.z, 3)
-        this.world.sounds?.cues?.objective?.()
+        this.world.sounds?.playVehicleTransform('up')
         this.world.dispatchFlightChange?.(true)
         document.body.classList.add('is-flying')
     }
 
     touchDown()
     {
+        if(this.mode !== 'landing') this.world.sounds?.playVehicleTransform('down')
         const body = this.car.chassis.body
         body.quaternion.setFromAxisAngle(new CANNON.Vec3(0, 0, 1), this.yaw)
         body.angularVelocity.set(0, 0, 0)
@@ -168,6 +178,7 @@ export default class HoverFlight
         const a = controls.actions
         // Cancel gravity so altitude is held with no input.
         body.force.z += -this.physics.world.gravity.z * body.mass
+        if(this.world.miniGames?.ownsCar) return
 
         let throttle = a.up ? 1 : a.down ? -0.55 : 0
         let turn = (a.left ? 1 : 0) - (a.right ? 1 : 0)
@@ -199,10 +210,9 @@ export default class HoverFlight
         }
         if(this.mode === 'flying')
         {
-            if(body.position.z > SOFT_CEILING) vz = Math.min(vz, -(body.position.z - SOFT_CEILING) * 0.9)
-            if(body.position.z > CEILING) vz = Math.min(vz, -4)
+            vz = ceilingVelocity(body.position.z, vz)
             if(this.altitude < MIN_ALT) vz = Math.max(vz, (MIN_ALT - this.altitude) * 4)
-            if((this.keys.descend || this.touchDescend) && this.altitude < MIN_ALT + 0.3 && Math.abs(speed) < 6) this.mode = 'landing'
+            if((this.keys.descend || this.touchDescend) && this.altitude < MIN_ALT + 0.3 && Math.abs(speed) < 6) this.beginLanding()
         }
         const target = new CANNON.Vec3(Math.cos(this.yaw) * speed, Math.sin(this.yaw) * speed, vz)
         // Soft walls at the district edge.

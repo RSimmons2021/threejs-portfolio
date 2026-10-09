@@ -81,6 +81,7 @@ const HOVER_CAR_RESOURCES = [
 ]
 
 const NEON_RESOURCES = [
+    { name: 'cyberApartmentWindow', source: './models/cyber/textures/apartment_window.jpg', type: 'texture' },
     { name: 'cyberKit', source: './models/cyber/city-kit.glb' },
     { name: 'cyberLayout', source: './models/cyber/district-layout.json' },
     { name: 'cyberSigns', source: './models/cyber/signs-atlas.json' },
@@ -96,6 +97,22 @@ const CYBER_TRUCK_RESOURCES = [
     { name: 'carCyberTruckBackLightsBrake', source: './models/car/cyberTruck/backLightsBrake.glb' },
     { name: 'carCyberTruckBackLightsReverse', source: './models/car/cyberTruck/backLightsReverse.glb' },
     { name: 'carCyberTruckAntena', source: './models/car/cyberTruck/antena.glb' }
+]
+
+const CHARACTER_RESOURCES = [
+    { name: 'cyberPlayer', source: './models/cyber/player.glb' },
+    { name: 'cyberSkateboard', source: './models/cyber/skateboard.glb' },
+    { name: 'cyberNpc', source: './models/cyber/npc.glb' },
+    { name: 'cyberVat', source: './models/cyber/npc-vat.json' },
+    { name: 'cyberNpcVat', source: './models/cyber/textures/npc_vat.png', type: 'texture' }
+]
+
+const MINIGAME_RESOURCES = [
+    { name: 'cyberMiniGames', source: './models/cyber/minigames.glb' },
+    { name: 'cyberMiniGameSpec', source: './models/cyber/minigames.json' },
+    { name: 'cyberMiniGameAtlas', source: './models/cyber/minigame-atlas.json' },
+    { name: 'cyberMiniGameCards', source: './models/cyber/textures/minigame_atlas.png', type: 'texture' },
+    { name: 'cyberArenaWindow', source: './models/cyber/textures/apartment_window.jpg', type: 'texture' }
 ]
 
 const DEFERRED_RESOURCES = [
@@ -166,7 +183,9 @@ export default class Resources extends EventEmitter
     {
         const baseCar = this.config.neon ? HOVER_CAR_RESOURCES : DEFAULT_CAR_RESOURCES
         const carResources = this.config.cyberTruck ? [...baseCar, ...CYBER_TRUCK_RESOURCES] : baseCar
-        return this.loadStage('core', [...CORE_RESOURCES, ...carResources, ...(this.config.neon ? NEON_RESOURCES : [])])
+        const core = CORE_RESOURCES.map(resource => this.config.neon && resource.name === 'apartmentInterior'
+            ? { ...resource, source: './models/cyber/apartment-interior.glb' } : resource)
+        return this.loadStage('core', [...core, ...carResources, ...(this.config.neon ? NEON_RESOURCES : [])])
     }
 
     loadDeferred()
@@ -174,9 +193,12 @@ export default class Resources extends EventEmitter
         return this.loadStage('deferred', DEFERRED_RESOURCES)
     }
 
+    loadCharacters() { return this.loadStage('characters', CHARACTER_RESOURCES) }
+    loadMiniGames() { return this.loadStage('minigames', MINIGAME_RESOURCES) }
+
     loadStage(_name, _resources)
     {
-        const stage = this.stages[_name]
+        const stage = this.stages[_name] ||= { status: 'idle', promise: null, error: null }
 
         if(stage.promise)
         {
@@ -188,7 +210,7 @@ export default class Resources extends EventEmitter
             .then((_summary) =>
             {
                 stage.status = 'ready'
-                const eventName = _name === 'core' ? 'ready' : 'deferredReady'
+                const eventName = _name === 'core' ? 'ready' : `${_name}Ready`
                 this.trigger(eventName, [_summary])
                 return _summary
             })
@@ -196,6 +218,7 @@ export default class Resources extends EventEmitter
             {
                 stage.status = 'error'
                 stage.error = _error
+                stage.promise = null // A transient network error can be retried.
                 this.trigger('error', [{
                     stage: _name,
                     error: _error,

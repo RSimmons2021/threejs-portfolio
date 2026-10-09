@@ -102,6 +102,8 @@ export default class ExperienceHUD
         }
 
         this.$muteButton.textContent = this.sounds.muted ? '🔇' : '🔊'
+        this.$muteButton.setAttribute('aria-pressed', String(!this.sounds.muted))
+        this.$muteButton.setAttribute('aria-label', this.sounds.muted ? 'Enable city sound (M)' : 'Mute city sound (M)')
     }
 
     applyDeviceClass()

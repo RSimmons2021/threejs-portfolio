@@ -129,6 +129,8 @@ export default class NeonCity
                 for(const { geometry, slot } of parts)
                 {
                     if(slot === 'nd_sign') continue
+                    // The portfolio screens get real project artwork in NeonProjects.
+                    if(slot === 'nd_screen' && module === 'billboard_wall') continue
                     const g = geometry.clone()
                     const seedAttr = new THREE.InstancedBufferAttribute(new Float32Array(n), 1)
                     const tintAttr = new THREE.InstancedBufferAttribute(new Float32Array(n * 3), 3)
@@ -265,7 +267,9 @@ export default class NeonCity
                 void main(){ vec3 v = normalize(cameraPosition - vW); float edge = pow(abs(dot(normalize(vN), v)), 1.6);
                 float fall = pow(1.0 - vT, 1.4) * smoothstep(0.0, 0.08, vT);
                 float d = distance(cameraPosition, vW); float fog = exp(-d * uFogDensity * 0.7);
-                gl_FragColor = vec4(uColor * edge * fall * uIntensity * fog, 1.0); }`
+                float nearFade = smoothstep(0.5, 2.5, d);
+                float groundFade = smoothstep(0.05, 0.6, vW.z);
+                gl_FragColor = vec4(uColor * edge * fall * uIntensity * fog * nearFade * groundFade, 1.0); }`
         })
         this.beams = new THREE.InstancedMesh(geometry, this.beamMaterial, 64)
         this.beams.frustumCulled = false
@@ -365,6 +369,7 @@ export default class NeonCity
             this.beams.instanceMatrix.needsUpdate = true
         }
         const cyber = w.materials.cyber
-        this.beamMaterial.uniforms.uIntensity.value = 0.05 + (1 - cyber.daylight) * 0.14
+        const humidity = w.weather?.state === 'rain' || w.weather?.state === 'fog' ? 1.3 : 1
+        this.beamMaterial.uniforms.uIntensity.value = (0.065 + (1 - cyber.daylight) * 0.13) * humidity
     }
 }

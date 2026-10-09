@@ -64,6 +64,7 @@ export default class Areas
         // Time tick event
         this.time.on('tick', () =>
         {
+            if(this.mouse.currentArea && !this.mouse.currentArea.active) this.clearHover()
             // Only update if needed
             if(this.mouse.needsUpdate)
             {
@@ -71,7 +72,7 @@ export default class Areas
 
                 // Set up
                 this.mouse.raycaster.setFromCamera(this.mouse.coordinates, this.camera.instance)
-                const objects = this.items.map((_area) => _area.mouseMesh)
+                const objects = this.items.filter(area => area.active).map((_area) => _area.mouseMesh)
                 const intersects = this.mouse.raycaster.intersectObjects(objects)
 
                 // Intersections found
@@ -129,5 +130,15 @@ export default class Areas
         this.items.push(area)
 
         return area
+    }
+
+    clearHover()
+    {
+        if(this.mouse.currentArea)
+        {
+            this.mouse.currentArea.out()
+            this.mouse.currentArea.testCar = this.mouse.currentArea.initialTestCar
+        }
+        this.mouse.currentArea = null
     }
 }

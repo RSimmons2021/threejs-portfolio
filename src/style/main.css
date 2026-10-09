@@ -44,6 +44,9 @@
 .arcade-menu > button[data-game="bowling"] { background: #93d6d0; }
 .arcade-menu button strong { display: block; font-size: 17px; }
 .arcade-menu button span { display: block; margin-top: 5px; font-size: 12px; font-weight: 500; line-height: 1.45; }
+.arcade-practice { margin: 18px 0; border-top: 1px solid #5ed8e966; padding-top: 8px; }
+.arcade-practice > button { display: block; width: 100%; margin: 8px 0; text-align: left; }
+.arcade-practice button strong { font-size: 15px; }
 .arcade-panel .arcade-small { background: transparent; padding: 8px; font-size: 12px; }
 .arcade-best { font-size: 11px !important; }
 .arcade-round__title { font-size: 12px; font-weight: 800; margin: 16px 0 4px; }
@@ -2700,6 +2703,41 @@ body.is-touch-input .interior-bar kbd { display: none; }
 .is-neon-district .explorer-controls button:hover,
 .is-neon-district .guided-tour__button.is-active { background: #18424c; color: #d7fbff; }
 .is-neon-district .experience-hud__value { color: #68e9f5; }
+.is-neon-district.is-indoors { --interior-bottom: max(24px, env(safe-area-inset-bottom)); }
+.is-neon-district.is-indoors .explorer-controls,
+.is-neon-district.is-indoors .experience-hud__row--secondary { display: none; }
+.is-neon-district.is-indoors .world-touch-control:not([data-world-control="joystick"]) { display: none; }
+.is-neon-district .interior-bar {
+    bottom: var(--interior-bottom, 24px);
+    width: min(560px, calc(100vw - 24px));
+    box-sizing: border-box;
+    color: #cee5e9;
+    background: #08141cf5;
+    border-color: #2b606a;
+    border-radius: 4px;
+}
+.is-neon-district .interior-bar__where { color: #93edf6; }
+.is-neon-district .interior-bar__actions { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.is-neon-district .interior-bar button {
+    min-height: 44px;
+    color: #93edf6;
+    background: #10232e;
+    border: 1px solid #2b606a;
+    border-radius: 2px;
+    text-wrap: balance;
+}
+.is-neon-district .interior-bar button:hover { color: #d7fbff; background: #18424c; }
+.is-neon-district .interior-bar button:focus-visible { outline: 2px solid var(--neon-accent); outline-offset: 3px; }
+.is-neon-district.is-indoors .career-prompt {
+    bottom: calc(var(--interior-bottom) + 112px);
+    color: #93edf6;
+    background: #10232e;
+    border-color: #2b606a;
+}
+.is-neon-district.is-indoors .career-prompt kbd { border-color: #2b606a; }
+@media (max-width: 900px) {
+    .is-neon-district.is-indoors { --interior-bottom: calc(188px + env(safe-area-inset-bottom)); }
+}
 .is-neon-district .arcade-panel h2,
 .is-neon-district .arcade-panel p,
 .is-neon-district .arcade-panel strong,
@@ -2726,6 +2764,34 @@ body.is-touch-input .interior-bar kbd { display: none; }
 }
 
 /* ----------------------------------------------------------------- Neon District flight */
+/* Mini-games keep the scene visible, with opaque backing for daylight text. */
+.mini-game { position: fixed; z-index: 90; top: max(16px, env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); width: min(680px, calc(100% - 24px)); padding: 18px; box-sizing: border-box; border: 1px solid #5ed8e966; background: #07131ef5; color: #eefbff; font: 13px/1.6 'JetBrains Mono', monospace; box-shadow: 0 12px 44px #0006; }
+.mini-game header { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.mini-game small { color: #87d9e6; font-size: 10px; letter-spacing: 0.1em; }
+.mini-game h2 { margin: 3px 0 8px; font: 700 24px/1.2 'JetBrains Mono', monospace; }
+.mini-game button { min-height: 48px; padding: 10px 16px; color: #f3fbff; border: 1px solid #6ce8f080; background: #12323e; font: 700 12px/1.3 'JetBrains Mono', monospace; cursor: pointer; touch-action: none; }
+.mini-game button:active { background: #22e5ff; color: #07131e; }
+.mini-game button:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
+.mini-game__status { margin: 12px 0 5px; color: #9dffbd; font-size: 15px; font-weight: 700; }
+.mini-game__detail { margin: 0; color: #c9e2ec; }
+.mini-game__actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+.mini-game__stamp { display: block; width: 150px; height: 80px; margin-top: 12px; }
+.mini-game[data-result="fail"] .mini-game__status { color: #ff9e9e; }
+.has-mini-game .career-hud, .has-mini-game .career-prompt, .has-mini-game .explorer-controls, .has-mini-game .flight-pad, .has-mini-game .interior-bar, .has-mini-game .arcade-panel { display: none !important; }
+.has-mini-game .experience-hud, .has-mini-game .guided-tour, .has-mini-game .experience-director, .has-mini-game .world-diagnostics, .has-mini-game .minimap { display: none !important; }
+.has-mini-game .world-touch-control { display: none !important; }
+@media (max-width: 600px) {
+    .mini-game { left: 12px; right: 12px; width: auto; transform: none; padding: 12px; font-size: 11px; }
+    .mini-game header { gap: 8px; }
+    .mini-game header > div { min-width: 0; flex: 1; }
+    .mini-game header button { font-size: 10px; padding: 8px; }
+    .mini-game h2 { font-size: 19px; }
+    .mini-game__status { font-size: 12px; }
+    .mini-game__actions { position: fixed; top: auto; bottom: max(12px, env(safe-area-inset-bottom)); left: 12px; right: 12px; margin: 0; padding: 10px; max-height: min(36dvh, 250px); overflow-y: auto; background: #07131eed; border: 1px solid #5ed8e966; }
+    .mini-game__actions button { flex: 1 1 26%; min-height: 56px; padding: 8px; }
+}
+@media (max-height: 500px) { .mini-game { top: 8px; max-height: calc(100dvh - 16px); overflow: auto; } .mini-game__actions { position: static; } }
+
 .flight-pad {
     position: fixed;
     z-index: 23;
@@ -2752,4 +2818,321 @@ body.is-touch-input .interior-bar kbd { display: none; }
 @media (pointer: coarse) and (max-height: 600px) {
     /* Landscape: beside the touch column instead of above it. */
     .flight-pad { right: calc(112px + env(safe-area-inset-right)); bottom: calc(24px + env(safe-area-inset-bottom)); }
+}
+.sky-entry {
+    position: fixed;
+    z-index: 35;
+    left: 50%;
+    bottom: calc(108px + env(safe-area-inset-bottom));
+    transform: translateX(-50%);
+    max-width: calc(100vw - 32px);
+    min-height: 52px;
+    padding: 12px 20px;
+    border: 1px solid #71e0f4;
+    background: #08131cf2;
+    color: #e9faff;
+    font: 600 13px 'JetBrains Mono', monospace;
+    box-shadow: 0 0 24px #22e5ff25;
+    cursor: pointer;
+}
+.sky-entry[hidden], .has-mini-game .sky-entry, .is-touch-input .sky-entry kbd { display: none; }
+.sky-entry:focus-visible { outline: 3px solid #fff; outline-offset: 4px; }
+.sky-entry kbd { margin-left: 12px; color: #71e0f4; }
+
+/* Interface-details pass: one surface language, quiet feedback, readable
+   daylight contrast, and native keyboard/touch affordances across the site. */
+.is-neon-district
+{
+    --ui-ink: #07131e;
+    --ui-bg: rgba(7, 19, 30, .96);
+    --ui-surface: #091824;
+    --ui-text: #e0f0f4;
+    --ui-dim: #acc7d1;
+    --ui-accent: #68e9f5;
+    --ui-border: #376875;
+    --ui-soft: rgba(104, 233, 245, .13);
+    --ui-warning: #ffc28a;
+    --experience-accent: #68e9f5;
+    --experience-secondary: #b2f8df;
+    color-scheme: dark;
+}
+::selection { background: #68e9f5; color: #07131e; }
+:is(button, a, select, summary, input, textarea, [tabindex]):focus-visible
+{
+    outline: 2px solid var(--ui-accent);
+    outline-offset: 4px;
+}
+:is(button, summary, a) { -webkit-tap-highlight-color: transparent; }
+:is(dialog, .arcade-panel, .mini-game, .career-hud__log, .career-hud__bag)
+{
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    scrollbar-color: #376875 #091824;
+    scrollbar-gutter: stable;
+}
+.is-neon-district :is(.guided-tour, .experience-tools, .experience-hud__pill, .experience-hud__tip, .explorer-controls, .career-hud, .arcade-panel, .mini-game, .interior-bar)
+{
+    border: 1px solid var(--ui-border);
+    border-radius: 8px;
+    background: var(--ui-bg);
+    box-shadow: 0 8px 24px #02080d40;
+    backdrop-filter: none;
+}
+.is-neon-district .city-welcome { background-image: radial-gradient(#68e9f51c 1px, transparent 1px); }
+.is-neon-district .city-welcome::before { background: radial-gradient(circle, #68e9f510, transparent 64%); }
+.is-neon-district .city-welcome h1 { text-shadow: 0 0 24px #68e9f51c; }
+.is-neon-district .city-welcome__name::before,
+.is-neon-district .city-welcome__name::after { border-color: var(--ui-border); }
+.is-neon-district .city-welcome__copy { max-width: 48ch; }
+.is-neon-district :is(.city-welcome__start, .city-welcome__brief, .city-welcome__resume) { background: #68e9f508; letter-spacing: .07em; }
+.is-neon-district .city-welcome__start { background: var(--ui-soft); }
+.is-neon-district :is(.city-welcome__start:not(:disabled), .city-welcome__brief, .city-welcome__resume):hover
+{ color: var(--ui-text); background: #163a46; border-color: var(--ui-accent); }
+.is-neon-district :is(.city-welcome__start, .city-welcome__brief, .city-welcome__resume):active { transform: translateY(1px); }
+.is-neon-district .city-welcome__hint span { background: var(--ui-accent); box-shadow: none; animation: none; }
+.is-neon-district .city-welcome__hint { color: var(--ui-dim); }
+.is-neon-district :is(button, a, select, summary, input, textarea, [tabindex]):focus-visible { outline: 2px solid var(--ui-accent); outline-offset: 3px; }
+.is-neon-district .minimap { border-color: var(--ui-border); box-shadow: 0 8px 24px #02080d40; }
+.is-neon-district :is(.guided-tour__button, .guided-tour__project, .experience-tools button, .experience-tools a, .experience-tools summary)
+{
+    min-height: 44px;
+    border-color: var(--ui-border);
+    color: var(--ui-dim);
+    background: transparent;
+}
+.is-neon-district .guided-tour__button[aria-current] { box-shadow: inset 0 -2px var(--ui-accent); color: var(--ui-text); }
+.is-neon-district :is(.explorer-controls button, .mini-game button, .arcade-panel button, .interior-bar button)
+{ border-radius: 4px; min-height: 44px; }
+.is-neon-district :is(.explorer-controls button[aria-pressed="true"], .explorer-controls button.is-on)
+{ background: #18424c; color: var(--ui-text); border-color: var(--ui-accent); }
+.is-neon-district .experience-hud__button { color: var(--ui-text); background: var(--ui-bg); border-color: var(--ui-border); }
+.is-neon-district .experience-tools { align-items: center; }
+.experience-tools :is(a, summary)
+{
+    display: inline-flex;
+    align-items: center;
+    padding: 0 12px;
+    font: 700 11px var(--font-ui);
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    text-decoration: none;
+    cursor: pointer;
+}
+.experience-tools .review-guide { position: relative; }
+.review-guide summary::after { content: '+'; margin-left: 8px; color: var(--ui-accent); }
+.review-guide[open] summary::after { content: '−'; }
+.is-neon-district .experience-tools :is(button, a, summary):hover { background: #18424c; color: var(--ui-text); }
+.review-guide__body
+{
+    position: absolute;
+    right: 0;
+    top: calc(100% + 10px);
+    width: min(340px, calc(100vw - 32px));
+    padding: 20px;
+    border: 1px solid var(--ui-border);
+    border-radius: 8px;
+    background: var(--ui-surface);
+    color: var(--ui-dim);
+    font: 12px/1.65 var(--font-ui);
+    box-shadow: 0 12px 28px #02080d66;
+}
+.review-guide__body ol { margin: 14px 0; padding-left: 18px; display: grid; gap: 12px; }
+.review-guide__body b { color: var(--ui-text); }
+.review-guide__eyebrow { color: var(--ui-accent); font-size: 11px; }
+.brief__nav
+{
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 16px;
+    padding: 8px 32px;
+    border-bottom: 1px solid var(--ui-soft);
+}
+.brief__nav a { display: inline-flex; align-items: center; min-height: 44px; color: var(--ui-dim); font-size: 12px; text-decoration: none; }
+.brief__nav a:hover { color: var(--ui-accent); text-decoration: underline; text-underline-offset: 4px; }
+.brief__nav span { margin-left: 7px; color: var(--ui-accent); font-variant-numeric: tabular-nums; }
+.brief__section { scroll-margin-top: 18px; }
+.brief__guide { margin: -4px 0 20px; max-width: 64ch; font-size: 12px; line-height: 1.6; color: var(--ui-dim); }
+.brief__contact :is(a, button) { min-height: 44px; align-items: center; }
+.brief__contact button
+{
+    padding: 8px 12px;
+    font: 700 12px var(--font-ui);
+    border: 1px solid var(--ui-border);
+    border-radius: 7px;
+    color: var(--ui-text);
+    background: var(--ui-soft);
+    cursor: pointer;
+}
+.brief__contact button:hover { background: #163a46; }
+.brief__copy-status { min-height: 20px; margin: 10px 0 0; color: var(--ui-accent); font-size: 11px; overflow-wrap: anywhere; }
+.brief__close { min-height: 44px; }
+.brief h3 a { display: inline-flex; align-items: center; min-height: 44px; }
+.brief__project-facts { display: grid; gap: 10px; font-size: 12px; line-height: 1.65; }
+.brief__project-facts div { display: grid; grid-template-columns: 62px 1fr; gap: 12px; }
+.brief__project-facts dt { color: var(--ui-accent); }
+.brief__project-facts dd { margin: 0; color: var(--ui-dim); }
+.is-neon-district :is(.brief__project, .brief__role) { background: #68e9f505; }
+.is-neon-district :is(.brief, .project-portal, .career-dialog) { border-radius: 12px; background: var(--ui-surface); border: 1px solid var(--ui-border); color: var(--ui-text); }
+.is-neon-district :is(.brief, .project-portal)::backdrop { background: #02090ee0; backdrop-filter: none; }
+.is-neon-district :is(.project-portal__footer, .project-prototype, .career-dialog__foot) { background: #07131e; border-color: var(--ui-border); }
+.project-portal__slides button { min-width: 44px; min-height: 44px; background: transparent; position: relative; box-shadow: none; }
+.project-portal__slides button::after { content: ''; width: 9px; height: 9px; border-radius: 50%; background: #7a98a4; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); }
+.project-portal__slides button[aria-pressed="true"]::after { background: var(--project-accent); }
+.project-portal__visual { box-shadow: inset 0 0 0 1px #e0f0f415; }
+.project-portal :is(button, a) { min-height: 44px; }
+.is-neon-district .career-dialog__head { border-color: var(--ui-border); }
+.is-neon-district :is(.career-dialog__eyebrow, .career-game__note, .career-talk__aside, .career-shift__foot span) { color: var(--ui-dim); }
+.is-neon-district .career-dialog h2 span { color: var(--ui-accent); }
+.is-neon-district .career-dialog :is(button, a[target], .career-actions a) { background: #122d3a; color: var(--ui-text); border: 1px solid var(--ui-border); border-radius: 4px; }
+.is-neon-district .career-dialog :is(button:not(:disabled), a[target], .career-actions a):hover { background: #18424c; }
+.is-neon-district .career-dialog button:disabled { color: #8ea7b2; background: #15242e; border-color: #31444e; }
+.is-neon-district :is(.career-shift, .career-item, .career-requires li) { border: 1px solid var(--ui-border); background: #0d2230; border-radius: 8px; }
+.is-neon-district :is(.career-shift[data-done="true"], .career-item[data-owned="true"], .career-requires li[data-met="true"]) { background: #112d2b; border-color: #40736b; }
+.is-neon-district :is(.career-reward, .career-options button.is-right) { background: #16473d !important; color: #d5fff0; }
+.is-neon-district .career-result[data-passed="true"] { color: #93efc8; }
+.is-neon-district :is(.career-result[data-passed="false"], .career-requires li[data-met="false"] b) { color: #ffa69b; }
+.is-neon-district .career-prompt { color: var(--ui-text); background: var(--ui-bg); border: 1px solid var(--ui-accent); border-radius: 6px; }
+.is-neon-district .career-prompt kbd { border-color: var(--ui-border); }
+.is-neon-district :is(.career-hud__top button, .career-bag__item button) { border-color: var(--ui-border); color: var(--ui-text); background: #122d3a; min-height: 32px; }
+.is-neon-district :is(.career-hud__top button.is-on, .career-bag__item[data-on="true"] button) { background: #16473d; }
+.is-neon-district :is(.arcade-value, .mini-game__status, .world-diagnostics dd, .performance-monitor) { font-variant-numeric: tabular-nums; }
+.is-neon-district .mini-game button { transition: background-color 120ms ease, border-color 120ms ease; }
+.is-neon-district .mini-game button:active { background: #24545c; }
+@media (max-width: 768px)
+{
+    .is-neon-district .experience-tools { right: 8px; top: 200px; max-width: calc(100vw - 16px); }
+    .experience-tools :is(button, a, summary) { padding: 0 8px; font-size: 9px; }
+    .review-guide__body { right: -56px; }
+    .is-neon-district .career-hud { width: 196px; top: 254px; }
+    .career-hud__top { flex-wrap: wrap; }
+    .is-neon-district :is(.career-hud__top button, .career-bag__item button) { min-height: 44px; padding: 6px 10px; }
+    .brief__nav { padding: 8px 18px; gap: 4px 14px; }
+    .brief__project-facts div { grid-template-columns: 1fr; gap: 2px; }
+}
+@media (hover: none)
+{
+    .is-neon-district :is(.arcade-panel button, .career-dialog button):hover { transform: none; }
+}
+@media (prefers-reduced-motion: reduce)
+{
+    :is(.city-welcome, .brief, .project-portal, .career-dialog, .career-hud, .experience-director, .experience-hud, .explorer-controls, .guided-tour, .arcade-panel, .mini-game, .interior-bar, .sky-entry),
+    :is(.city-welcome, .brief, .project-portal, .career-dialog, .career-hud, .experience-director, .experience-hud, .explorer-controls, .guided-tour, .arcade-panel, .mini-game, .interior-bar) *,
+    .project-portal::backdrop
+    { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}
+
+/* Arrival information and wayfinding are separate from optional games. */
+.visitor-guide {
+    margin: auto; padding: 0; width: min(680px, calc(100vw - 24px));
+    max-height: calc(100dvh - 32px); overflow-y: auto;
+    border: 1px solid var(--ui-border); border-radius: 12px;
+    background: var(--ui-surface); color: var(--ui-text); font-family: var(--font-ui); overscroll-behavior: contain;
+}
+.visitor-guide::backdrop { background: #02090edb; }
+.visitor-guide header { position: relative; padding: 26px 26px 22px; border-bottom: 1px solid var(--ui-soft); }
+.visitor-guide__eyebrow { margin-right: 70px; color: var(--ui-accent); font-size: 10px; letter-spacing: .09em; }
+.visitor-guide h1 { margin: 14px 0 12px; max-width: 20ch; font-family: var(--font-display); font-size: 28px; line-height: 1.15; text-wrap: balance; }
+.visitor-guide p { font-size: 12px; line-height: 1.65; color: var(--ui-dim); }
+.visitor-guide header > button { position: absolute; top: 16px; right: 16px; }
+.visitor-guide section { padding: 20px 26px; }
+.visitor-guide h2 { margin: 0 0 14px; font-size: 11px; letter-spacing: .07em; text-transform: uppercase; color: var(--ui-accent); }
+.visitor-guide :is(button, a), .destination-guide button {
+    padding: 10px 13px; min-height: 44px; border: 1px solid var(--ui-border); border-radius: 5px;
+    font: 600 12px var(--font-ui); color: var(--ui-text); background: #102a37; text-decoration: none; cursor: pointer;
+}
+.visitor-guide :is(button, a):hover, .destination-guide button:hover { border-color: var(--ui-accent); background: #18424c; }
+.visitor-guide :is(button, a):active, .destination-guide button:active { background: #24545c; }
+.visitor-guide__choices { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.visitor-guide__choices :is(button, a) { display: flex; flex-direction: column; align-items: flex-start; justify-content: center; min-height: 88px; padding: 16px; text-align: left; }
+.visitor-guide__choices strong { font-size: 15px; }
+.visitor-guide__choices span { margin-top: 7px; font-size: 11px; font-weight: 400; line-height: 1.5; color: var(--ui-dim); }
+.visitor-guide__direct { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+.visitor-guide__project-choice { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 16px; color: var(--ui-dim); font-size: 11px; }
+.visitor-guide__project-choice select { flex: 1; min-width: 180px; min-height: 44px; padding: 8px 10px; color: var(--ui-text); border: 1px solid var(--ui-border); border-radius: 5px; background: #102a37; font: 11px var(--font-ui); }
+.visitor-guide__direct button:first-child { color: #07131e; background: var(--ui-accent); border-color: var(--ui-accent); }
+.visitor-guide__play { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px; border-top: 1px solid #82618f; background: #21192b; }
+.visitor-guide__play h2 { color: #e8a6ff; margin-bottom: 6px; }
+.visitor-guide__play button { background: #31223d; border-color: #82618f; }
+.is-neon-district .guided-tour [data-tour-target="play"] { color: #e8a6ff; border-left: 1px solid #82618f; }
+.is-neon-district .arcade-panel { border-color: #82618f; }
+.is-neon-district .arcade-panel__eyebrow { color: #e8a6ff; }
+.is-neon-district .mini-game { border-color: #82618f; }
+.career-hud__mode, .career-dialog__mode { color: #e8a6ff; font-size: 9px; letter-spacing: .06em; margin: 0 0 10px; }
+.destination-guide {
+    position: fixed; top: 140px; right: 22px; z-index: 865;
+    width: min(330px, calc(100vw - 16px)); padding: 14px;
+    background: var(--ui-bg); color: var(--ui-text); border: 1px solid var(--ui-border); border-radius: 8px; font: 12px/1.5 var(--font-ui);
+}
+.destination-guide[hidden] { display: none; }
+.destination-guide__heading { display: flex; align-items: center; gap: 12px; }
+.destination-guide__heading > div { flex: 1; min-width: 0; }
+.destination-guide__heading > span { display: block; width: 22px; text-align: center; color: var(--ui-accent); font-size: 26px; flex: 0 0 22px; }
+.destination-guide__heading small { color: var(--ui-accent); font-size: 9px; letter-spacing: .06em; }
+.destination-guide h2 { font-size: 14px; line-height: 1.4; }
+.destination-guide__heading button { padding: 0; width: 44px; flex: 0 0 44px; font-size: 22px; background: transparent; }
+.destination-guide > p { margin-top: 10px; color: var(--ui-dim); font-variant-numeric: tabular-nums; }
+.destination-guide__actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+.destination-guide__actions button { flex: 1 1 auto; padding: 8px; font-size: 11px; }
+.destination-guide__hint { font-size: 10px; line-height: 1.6; }
+.destination-guide[data-category="play"] { border-color: #82618f; }
+.destination-guide[data-category="play"] :is(small, [data-bearing]) { color: #e8a6ff; }
+.has-destination-guide .career-hud { display: none; }
+.has-destination-guide[data-guide-category="information"] .arcade-panel { display: none; }
+
+/* Bowling is a lane view: use a compact score strip above the playfield,
+   never the large bottom-right menu over the visitor's car. */
+.arcade-active .arcade-panel[data-game="bowling"]
+{
+    top: 82px;
+    bottom: auto;
+    left: 10px;
+    right: auto;
+    width: min(540px, calc(100vw - 20px));
+    padding: 10px 14px;
+    max-height: calc(100dvh - 100px);
+}
+.arcade-active .arcade-panel[data-game="bowling"] :is(h2, .arcade-panel__eyebrow, .arcade-progress, .arcade-round small) { display: none; }
+.arcade-panel[data-game="bowling"] .arcade-round { display: grid; grid-template-columns: 90px 1fr; gap: 6px 12px; align-items: center; }
+.arcade-panel[data-game="bowling"] .arcade-round__title { grid-column: 1 / -1; margin: 0; font-size: 10px; }
+.arcade-panel[data-game="bowling"] .arcade-value { font-size: 28px; }
+.arcade-panel[data-game="bowling"] .arcade-status { margin: 0; min-height: 0; font-size: 11px; }
+.arcade-panel[data-game="bowling"] .arcade-round__actions { grid-column: 1 / -1; gap: 6px; }
+.arcade-panel[data-game="bowling"] .arcade-round__actions button { min-height: 44px; padding: 8px 10px; }
+.destination-guide:not([hidden]) [data-bearing] { will-change: transform; }
+@media (max-width: 768px)
+{
+    .arcade-active.bowling-active .guided-tour { display: none; }
+    .arcade-active .arcade-panel[data-game="bowling"] { top: 8px; padding: 10px; }
+    .arcade-active .arcade-panel[data-game="bowling"] .arcade-round { grid-template-columns: 100px 1fr; }
+    .arcade-active .arcade-panel[data-game="bowling"] .arcade-value { font-size: 18px; white-space: nowrap; }
+    .arcade-active .arcade-panel[data-game="bowling"] .arcade-status { line-height: 1.4; max-height: 32px; overflow: hidden; }
+}
+@media (max-height: 550px)
+{
+    .arcade-active.bowling-active :is(.guided-tour, .experience-hud) { display: none; }
+    .arcade-active .arcade-panel[data-game="bowling"] { top: 8px; width: calc(100vw - 20px); }
+}
+@media (max-height: 550px) and (min-aspect-ratio: 1/1)
+{
+    .arcade-active .arcade-panel[data-game="bowling"] { top: 4px; padding: 6px 10px; }
+    .arcade-active .arcade-panel[data-game="bowling"] .arcade-round { grid-template-columns: 100px 1fr auto; gap: 4px 10px; }
+    .arcade-active .arcade-panel[data-game="bowling"] .arcade-round__title { display: none; }
+    .arcade-active .arcade-panel[data-game="bowling"] .arcade-round__actions { grid-column: 3; grid-row: 1; flex-wrap: nowrap; }
+    .arcade-active .arcade-panel[data-game="bowling"] .arcade-value { font-size: 18px; white-space: nowrap; }
+    .arcade-active .arcade-panel[data-game="bowling"] .arcade-value::before { content: 'NEON BOWLING'; display: block; font-size: 8px; line-height: 1.5; letter-spacing: .03em; }
+    .arcade-active .arcade-panel[data-game="bowling"] .arcade-status { max-height: 32px; overflow: hidden; }
+}
+.has-visitor-guide :is(.explorer-controls, .experience-hud, .career-hud, .destination-guide) { visibility: hidden; }
+@media (max-width: 768px) {
+    .destination-guide { top: 254px; right: 8px; padding: 12px; width: calc(100vw - 16px); }
+    .destination-guide__hint { margin-top: 8px !important; }
+    .visitor-guide header { padding: 24px 18px 18px; }
+    .visitor-guide h1 { font-size: 25px; }
+    .visitor-guide section { padding: 18px; }
+    .visitor-guide__choices :is(button, a) { padding: 12px; }
+    .visitor-guide__choices strong { font-size: 13px; }
+}
+@media (max-width: 360px), (max-height: 550px) {
+    .visitor-guide__choices { grid-template-columns: 1fr; }
+    .destination-guide { max-height: 42dvh; overflow-y: auto; }
 }

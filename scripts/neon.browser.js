@@ -29,14 +29,27 @@
     cycle.update(); w.materials.cyber.update(w)
     const night = w.materials.cyber.shared.uNeonIntensity.value
     check('No sun at night', w.materials.cyber.shared.uSunColor.value.r === 0)
+    const headlights = w.advancedLighting.settings
+    const headlightSettings = [headlights.headlightConesEnabled, headlights.headlightConesAutoNight]
+    headlights.headlightConesEnabled = true; headlights.headlightConesAutoNight = true
+    w.advancedLighting.update()
+    check('No direct headlight cones even when forced on at night', !w.advancedLighting.headlightCones.group.visible)
+    headlights.headlightConesEnabled = headlightSettings[0]
+    headlights.headlightConesAutoNight = headlightSettings[1]
+    const shared = w.materials.cyber.shared
+    check('Local neon spill obeys the tier budget', shared.uSpillCount.value <= Math.min(8, a.quality.settings.lights))
+    check('Spill light positions are finite', shared.uSpillPosition.value.every(p => p.toArray().every(Number.isFinite)))
     cycle.settings.currentTime = 14 / 24
     cycle.update(); w.materials.cyber.update(w)
     check('Daytime neon dims but stays visible', w.materials.cyber.shared.uNeonIntensity.value > 0 && w.materials.cyber.shared.uNeonIntensity.value < night)
     check('Warm key sun by day', w.materials.cyber.shared.uSunColor.value.r > 3)
+    const clearSun = shared.uSunColor.value.r
     const auto = w.weather.settings.autoCycle
     w.weather.settings.autoCycle = false
     w.weather.setWeather('rain'); w.weather.update()
+    w.materials.cyber.update(w)
     check('Daytime rain preview persists', w.weather.state === 'rain')
+    check('Rain clouds dim the key sunlight', shared.uSunColor.value.r < clearSun * 0.5)
     Object.assign(cycle.settings, original)
     w.weather.setWeather(weather); w.weather.settings.autoCycle = auto
     cycle.update(); w.materials.cyber.update(w)
@@ -52,7 +65,8 @@
     for(let i = 0; i < 180; i++) w.physics.world.step(1 / 60)
     h.keys.climb = false
     check('Climbs while flying', h.mode === 'flying' && body.position.z > 8)
-    check('Zones ignore a car overhead', e.proximity.position.x > 1e4)
+    check('Sky columns read the flying chassis while ground zones reject it', e.proximity.airborne && e.proximity.position === body.position
+        && w.areas.items.filter(a => a.hasKey && !a.skyAccess).every(a => !a.contains(body.position, true)))
     e.exitCar()
     check('Cannot get out mid-air', !e.active)
     for(let i = 0; i < 120; i++) w.physics.world.step(1 / 60)

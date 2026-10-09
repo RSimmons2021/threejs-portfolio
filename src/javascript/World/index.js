@@ -29,10 +29,15 @@ import AmbientSounds from './AmbientSounds.js'
 import Minimap from './Minimap.js'
 import ExperienceHUD from './ExperienceHUD.js'
 import GuidedTour from './GuidedTour.js'
+import VisitorGuide from './VisitorGuide.js'
 import WorldDiagnostics from './WorldDiagnostics.js'
 import ExperienceDirector from './ExperienceDirector.js'
 import City from './City.js'
 import NeonCity from './NeonCity.js'
+import NeonProjects from './NeonProjects.js'
+import NeonCrowd from './NeonCrowd.js'
+import EntryBeacons from './EntryBeacons.js'
+import MiniGameDirector from './MiniGames/MiniGameDirector.js'
 import NeonSky from './NeonSky.js'
 import CameraRig from './CameraRig.js'
 import NeonTraffic from './NeonTraffic.js'
@@ -90,6 +95,7 @@ export default class World
         this.started = true
         this.startedAt = this.time.elapsed
         document.body.classList.add('has-started')
+        this.renderer.domElement.tabIndex = 0
         this.sounds.startEngine()
 
         // Remove data left by the retired reactive-world tracking feature.
@@ -126,6 +132,8 @@ export default class World
         if(this.neonCity)
         {
             this.container.add(this.neonCity.container)
+            this.neonProjects = new NeonProjects(this)
+            this.container.add(this.neonProjects.container)
             this.neonTraffic = new NeonTraffic(this)
             this.container.add(this.neonTraffic.container)
         }
@@ -178,10 +186,19 @@ export default class World
         // object and the avatar it rebuilds for cosmetics already exists.
         this.careerRPG = new CareerRPG(this)
         this.container.add(this.careerRPG.container)
+        if(this.config.neon) this.neonCrowd = new NeonCrowd(this)
         // After CareerRPG: the room's stations register themselves as career
         // zones so they share the same walk-up prompt as the street doors.
         this.interiors = new Interiors(this)
         this.container.add(this.interiors.container)
+        if(this.config.neon) this.miniGames = new MiniGameDirector(this)
+        if(this.config.neon)
+        {
+            this.entryBeacons = new EntryBeacons(this)
+            this.container.add(this.entryBeacons.container)
+            this.visitorGuide = new VisitorGuide(this)
+            this.container.add(this.visitorGuide.container)
+        }
         this.loadDeferredContent()
     }
 
@@ -225,10 +242,6 @@ export default class World
 
             // Sound
             gsap.fromTo(this.sounds.engine.volume, { master: 0 }, { master: 0.7, duration: 0.5, delay: 0.3, ease: 'power2.in' })
-            window.setTimeout(() =>
-            {
-                this.sounds.play('reveal')
-            }, 400)
 
             // Controls
             if(this.controls.touch)
@@ -569,11 +582,18 @@ export default class World
         this.scene.add(this.advancedLighting.container)
 
         this.sounds.setVehicleStateProvider(() => ({
-            speed: this.advancedLighting.dynamicState.speedFactor,
+            speed: this.hoverFlight?.airborne
+                ? Math.min(Math.hypot(this.physics.car.chassis.body.velocity.x, this.physics.car.chassis.body.velocity.y, this.physics.car.chassis.body.velocity.z) / 30, 1)
+                : this.advancedLighting.dynamicState.speedFactor,
             braking: this.controls.actions.brake ? 1 : 0,
             // Normalised steering angle, so the tyre layer can tell a hard
             // corner from a lane change rather than squealing at any input.
-            cornering: Math.min(Math.abs(this.physics.car.steering) / this.physics.car.options.controlsSteeringMax, 1)
+            cornering: Math.min(Math.abs(this.physics.car.steering) / this.physics.car.options.controlsSteeringMax, 1),
+            flying: !!this.hoverFlight?.airborne,
+            altitude: this.physics.car.chassis.body.position.z,
+            indoors: !!this.interiors?.active,
+            onFoot: !!this.explorer?.active,
+            boost: !!this.controls.actions.boost
         }))
     }
 
@@ -641,6 +661,7 @@ export default class World
     setAmbientSounds()
     {
         this.ambientSounds = new AmbientSounds({
+            urban: this.config.neon,
             time: this.time,
             weather: this.weather,
             dayNightCycle: this.dayNightCycle,
@@ -684,6 +705,7 @@ export default class World
     setGuidedTour()
     {
         this.guidedTour = new GuidedTour({
+            world: this,
             camera: this.camera,
             physics: this.physics,
             controls: this.controls

@@ -293,7 +293,9 @@ export default class Application
                     // renderPosition, not position: the car mesh and walker are
                     // drawn from the interpolated pose, and a camera tracking the
                     // raw one lags them by a fraction of a step.
-                    const position = this.world.explorer?.renderPosition || this.world.car.chassis.object.position
+                    // Read the last drawn pose here, without advancing this
+                    // frame's smoothing before the physics tick has run.
+                    const position = this.world.explorer?.active ? this.world.explorer.avatar.position : this.world.car.chassis.object.position
                     this.camera.target.x = position.x
                     this.camera.target.y = position.y
                 }
@@ -404,8 +406,8 @@ export default class Application
         }
         this.passes.composer.addPass(this.passes.screenFxPass)
 
-        // Time tick
-        this.time.on('tick', () =>
+        // Final frame phase: all simulation and visual-pose ticks have run.
+        this.time.on('render', () =>
         {
             const rawDelta = this.time.rawDelta || this.time.delta
             if(this.world?.started && !document.hidden) this.quality.sample(rawDelta, performance.now())
@@ -414,6 +416,8 @@ export default class Application
             // Ground-mist reconstruction uniforms (world-anchored fog in ScreenFx)
             this.world?.cameraRig?.update(this.time.delta)
             this.world?.explorer?.updateCamera()
+            this.world?.miniGames?.updateCamera()
+            this.world?.visitorGuide?.updateBearing()
             if(this.world?.neonCity) this.world.materials.cyber.update(this.world)
             this.passes.horizontalBlurPass.enabled = false
             this.passes.verticalBlurPass.enabled = false

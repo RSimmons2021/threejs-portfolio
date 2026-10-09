@@ -366,8 +366,8 @@ export default class Objects
             this.time.on('tick', () =>
             {
                 const smoothing = this.time.delta / 1000
-                object.container.position.copy(renderPosition(object.collision.body, smoothing))
-                object.container.quaternion.copy(renderQuaternion(object.collision.body, smoothing))
+                object.container.position.copy(renderPosition(object.collision.body, smoothing, this.time.elapsed))
+                object.container.quaternion.copy(renderQuaternion(object.collision.body, smoothing, this.time.elapsed))
             })
         }
 

@@ -1,5 +1,6 @@
 import * as THREE from 'three'
-import { renderPosition } from '../Utils/renderTransform.js'
+import { renderPosition, renderQuaternion } from '../Utils/renderTransform.js'
+import { showCabinInterior } from './CabinInterior.js'
 import CANNON from 'cannon'
 import { TransformControls } from 'three/examples/jsm/controls/TransformControls.js'
 
@@ -112,11 +113,13 @@ export default class Car
         this.chassis = {}
         this.chassis.offset = new THREE.Vector3(0, 0, - 0.28)
         this.chassis.object = this.objects.getConvertedMesh(this.models.chassis.scene.children)
+        if(this.config.neon && !this.config.cyberTruck)
+            this.chassis.interiorMaterial = showCabinInterior(this.chassis.object, this.materials.cyber.forSlot('nd_atlas'))
         // The smoothed chassis translation for this frame. Everything bolted to
         // the car reads this one value: calling the smoother again would advance
         // the filter a second time and hand back a different position, which is
         // exactly how the wheels ended up jittering against the body.
-        this.chassis.renderPosition = new THREE.Vector3().copy(renderPosition(this.physics.car.chassis.body, this.time.delta / 1000))
+        this.chassis.renderPosition = new THREE.Vector3().copy(renderPosition(this.physics.car.chassis.body, this.time.delta / 1000, this.time.elapsed))
         this.chassis.object.position.copy(this.chassis.renderPosition)
         this.chassis.oldPosition = this.chassis.object.position.clone()
         this.container.add(this.chassis.object)
@@ -137,9 +140,9 @@ export default class Car
             // Update if mode physics
             if(!this.transformControls.enabled)
             {
-                this.chassis.renderPosition.copy(renderPosition(this.physics.car.chassis.body, this.time.delta / 1000))
+                this.chassis.renderPosition.copy(renderPosition(this.physics.car.chassis.body, this.time.delta / 1000, this.time.elapsed))
                 this.chassis.object.position.copy(this.chassis.renderPosition).add(this.chassis.offset)
-                this.chassis.object.quaternion.copy(this.physics.car.chassis.body.quaternion)
+                this.chassis.object.quaternion.copy(renderQuaternion(this.physics.car.chassis.body, this.time.delta / 1000, this.time.elapsed))
                 // Hover flight: bank into turns, nose down under thrust, gentle bob.
                 const hover = this.physics.car.hover
                 if(hover && (hover.visual.roll || hover.visual.pitch || hover.visual.bob))

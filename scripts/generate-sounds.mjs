@@ -16,11 +16,13 @@
 import { mkdir, writeFile, readFile, access, cp } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
 import path from 'node:path'
+import { CYBER_SOUNDS } from './cyber-sound-manifest.mjs'
+import { BOWLING_SOUNDS } from './bowling-sound-manifest.mjs'
 
 const ROOT = path.resolve(import.meta.dirname, '..')
 const OUT = path.join(ROOT, 'static/sounds')
 const BACKUP = path.join(ROOT, 'static/sounds-original')
-const ENDPOINT = 'https://api.elevenlabs.io/v1/sound-generation'
+const ENDPOINT = 'https://api.elevenlabs.io/v1/sound-generation?output_format=mp3_44100_128'
 
 const args = process.argv.slice(2)
 const FORCE = args.includes('--force')
@@ -120,7 +122,9 @@ const MANIFEST = [
       prompt: 'A soft low synthetic warning pulse, single, warm and non alarming, quiet' }
 ]
 
-const selected = MANIFEST.filter((s) => !ONLY.length || ONLY.includes(s.group))
+// The new pack is opt-in: --only=cyber. It never overwrites old samples.
+const selected = [...MANIFEST, ...(ONLY.includes('cyber') ? CYBER_SOUNDS : []), ...(ONLY.includes('bowling') ? BOWLING_SOUNDS : [])]
+    .filter((s) => !ONLY.length || ONLY.includes(s.group))
 
 if(LIST)
 {
@@ -165,7 +169,7 @@ for(const [index, item] of selected.entries())
 
     const body = {
         text: item.prompt,
-        output_format: 'mp3_44100_128',
+        model_id: 'eleven_text_to_sound_v2',
         prompt_influence: item.influence ?? 0.3
     }
     if(item.duration) body.duration_seconds = item.duration
@@ -192,8 +196,8 @@ for(const [index, item] of selected.entries())
 
         if(!response.ok)
         {
-            const detail = await response.text()
-            console.error(`${label} — FAILED ${response.status}: ${detail.slice(0, 200)}`)
+            // Avoid printing service response bodies (could include credentials).
+            console.error(`${label} — FAILED HTTP ${response.status}`)
             failed++
             // 401/402 will not fix themselves; stop rather than burn the list.
             if(response.status === 401 || response.status === 402) break

@@ -31,15 +31,20 @@ const SNAP_DISTANCE_SQUARED = 4
 
 const states = new WeakMap()
 
-export function renderPosition(_body, _delta)
+function sample(_body, _delta, _frame)
 {
     let state = states.get(_body)
     if(!state)
     {
-        state = { position: new THREE.Vector3().copy(_body.position) }
+        state = { position: new THREE.Vector3().copy(_body.position), quaternion: new THREE.Quaternion().copy(_body.quaternion), frame: _frame }
         states.set(_body, state)
-        return state.position
+        return state
     }
+
+    // A pose is advanced once per rendered frame, never once per reader.
+    // The model, follow camera and cockpit camera must see identical samples.
+    if(_frame !== undefined && state.frame === _frame) return state
+    state.frame = _frame
 
     const target = _body.position
     const dx = target.x - state.position.x
@@ -49,31 +54,27 @@ export function renderPosition(_body, _delta)
     if(dx * dx + dy * dy + dz * dz > SNAP_DISTANCE_SQUARED)
     {
         state.position.set(target.x, target.y, target.z)
-        return state.position
+        state.quaternion.copy(_body.quaternion)
+        return state
     }
 
     const alpha = 1 - Math.exp(- RATE * Math.min(_delta, 0.1))
     state.position.x += dx * alpha
     state.position.y += dy * alpha
     state.position.z += dz * alpha
-    return state.position
+    tempQuaternion.copy(_body.quaternion)
+    state.quaternion.slerp(tempQuaternion, alpha)
+    return state
 }
 
-export function renderQuaternion(_body, _delta)
+export function renderPosition(_body, _delta, _frame)
 {
-    let state = states.get(_body)
-    if(!state || !state.quaternion)
-    {
-        const quaternion = new THREE.Quaternion(_body.quaternion.x, _body.quaternion.y, _body.quaternion.z, _body.quaternion.w)
-        if(state) state.quaternion = quaternion
-        else states.set(_body, { position: new THREE.Vector3().copy(_body.position), quaternion })
-        return quaternion
-    }
+    return sample(_body, _delta, _frame).position
+}
 
-    const alpha = 1 - Math.exp(- RATE * Math.min(_delta, 0.1))
-    tempQuaternion.set(_body.quaternion.x, _body.quaternion.y, _body.quaternion.z, _body.quaternion.w)
-    state.quaternion.slerp(tempQuaternion, alpha)
-    return state.quaternion
+export function renderQuaternion(_body, _delta, _frame)
+{
+    return sample(_body, _delta, _frame).quaternion
 }
 
 const tempQuaternion = new THREE.Quaternion()

@@ -103,6 +103,7 @@ export default class WorldDiagnostics extends EventEmitter
     {
         this.onKeyDown = (_event) =>
         {
+            if(_event.defaultPrevented || _event.target?.closest?.('input, textarea, select, [contenteditable="true"], dialog[open]')) return
             if(_event.code === 'KeyX' && !_event.repeat)
             {
                 this.toggle()

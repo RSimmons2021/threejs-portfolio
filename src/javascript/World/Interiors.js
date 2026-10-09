@@ -1,6 +1,7 @@
 import * as THREE from 'three'
 import CANNON from 'cannon'
 import createInteriorMaterial from './createInteriorMaterial.js'
+import apartmentMaterials from './ApartmentMaterials.js'
 
 // Interiors are real rooms you walk into, not cards. Each one is parked far
 // outside the city (nothing else is built past x = 200) and the walker is
@@ -24,10 +25,12 @@ export default class Interiors
         this.setInterface()
         this.setStations()
         this.world.time.on('tick', () => this.update())
+        window.addEventListener('portfolio:navigate', () => { if(this.active) this.leave() })
     }
 
     setRoom()
     {
+        if(this.world.config.neon) { this.setCyberRoom(); return }
         this.room = new THREE.Group()
         this.room.name = 'Apartment interior'
         this.room.position.set(ROOM_ORIGIN.x, ROOM_ORIGIN.y, 0)
@@ -99,6 +102,39 @@ export default class Interiors
         }
     }
 
+    setCyberRoom()
+    {
+        this.room = this.world.resources.items.apartmentInterior.scene.clone(true)
+        this.room.name = 'Cyberpunk capsule apartment'
+        this.room.position.set(ROOM_ORIGIN.x, ROOM_ORIGIN.y, 0)
+        this.room.visible = false
+        const materials = apartmentMaterials(this.world, ROOM_ORIGIN)
+        this.room.traverse(mesh =>
+        {
+            if(mesh.isMesh) mesh.material = materials[mesh.material.name] || materials.nd_atlas
+        })
+        this.container.add(this.room)
+        this.lit = []
+        // The door is visually shut, so its collision must be shut too.
+        // Furniture keeps the player out of beds, cabinets and desk geometry.
+        const fixtures = [
+            [9.4, 0.3, 3.6, 0, 3.65, 1.8], [9.4, 0.3, 3.6, 0, -3.55, 1.8],
+            [0.3, 7.4, 3.6, -4.65, 0, 1.8], [0.3, 7.4, 3.6, 4.65, 0, 1.8],
+            [2.15, 1.8, 0.7, 3.4, 1.7, 0.35], [2.4, 0.8, 0.76, -2.3, 2.6, 0.38],
+            [0.5, 0.6, 1.2, -3.95, 2.65, 0.6], [1.2, 2.4, 0.9, -3.9, -1.4, 0.45],
+            [0.7, 0.7, 1.9, -4.2, -2.9, 0.95], [2.2, 0.9, 0.6, 1.6, -2.1, 0.3]
+        ]
+        for(const [sx, sy, sz, x, y, z] of fixtures)
+        {
+            const body = new CANNON.Body({ mass: 0 })
+            body.addShape(new CANNON.Box(new CANNON.Vec3(sx / 2, sy / 2, sz / 2)))
+            body.position.set(ROOM_ORIGIN.x + x, ROOM_ORIGIN.y + y, z)
+            body.collisionRole = 'interior-wall'
+            this.world.physics.world.addBody(body)
+            this.bodies.push(body)
+        }
+    }
+
     // Things in the room you walk up to and press E on, the same interaction the
     // street uses. Registered with CareerRPG so they share the entry prompt.
     setStations()
@@ -114,10 +150,11 @@ export default class Interiors
         {
             const area = this.world.areas.add({
                 position: new THREE.Vector2(ROOM_ORIGIN.x + station.x, ROOM_ORIGIN.y + station.y),
-                halfExtents: new THREE.Vector2(1.5, 1.5)
+                halfExtents: new THREE.Vector2(1.5, 1.5), skyAccess: false
             })
             area.on('interact', () => { if(this.active) station.run() })
             station.area = area
+            if(this.world.config.neon) area.container.visible = false
             rpg?.registerZone(area, station.label, station.run, station.verb)
         }
     }
@@ -158,6 +195,10 @@ export default class Interiors
         const explorer = this.world.explorer
         if(this.active || !explorer) return
 
+        // Entering the Home column from the sky lands on its clear sidewalk
+        // before switching to the interior's on-foot mode.
+        if(this.world.hoverFlight?.airborne) this.world.hoverFlight.forceLand()
+
         // Walk in from the car if you drove up: interiors are on foot only.
         if(!explorer.active) explorer.exitCar()
         if(!explorer.active) return
@@ -168,9 +209,12 @@ export default class Interiors
         this.returnToThirdPerson = !explorer.firstPerson
         if(this.returnToThirdPerson) explorer.toggleView()
         this.active = _building
+        this.room.visible = true
+        if(explorer.skating) explorer.setSkating(false)
         explorer.body.position.set(ROOM_ORIGIN.x, ROOM_ORIGIN.y - 2.2, 0.6)
         explorer.body.velocity.set(0, 0, 0)
         explorer.yaw = Math.PI * 0.5
+        explorer.pitch = -0.05
         document.body.classList.add('is-indoors')
         // The street drops to a muffled bleed and the room floor lifts in.
         this.world.ambientSounds?.setEnclosure(1)
@@ -190,6 +234,7 @@ export default class Interiors
         if(this.returnToThirdPerson && explorer.firstPerson) explorer.toggleView()
         this.returnToThirdPerson = false
         this.active = null
+        this.room.visible = !this.world.config.neon
         this.returnTo = null
         document.body.classList.remove('is-indoors')
         this.world.ambientSounds?.setEnclosure(0)
@@ -208,9 +253,12 @@ export default class Interiors
             for(const entry of this.lit) entry.mesh.material = createInteriorMaterial(entry.colour, glowing ? 0.45 : 0.12)
         }
         if(!this.active) return
+        // Games temporarily own the view/player and restore their arrival pose.
+        if(this.world.miniGames?.active) return
         // If anything else teleported the walker (a nav button, the arcade),
         // drop the indoor state rather than leaving the bar stranded on screen.
         const explorer = this.world.explorer
+        if(!explorer.active) { this.leave(); return }
         if(!explorer.firstPerson) explorer.toggleView()
 
         const p = explorer.body.position

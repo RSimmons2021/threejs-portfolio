@@ -10,6 +10,7 @@ export default class CameraRig
     {
         this.world = world
         this.camera = world.camera
+        this.camera.chaseRig = this
         this.instance = world.camera.instance
         this.colliders = world.neonCity?.colliders || []
         this.position = new THREE.Vector3()
@@ -18,6 +19,9 @@ export default class CameraRig
         this.target = new THREE.Vector3()
         this.ray = new THREE.Ray()
         this.hit = new THREE.Vector3()
+        this.toCam = new THREE.Vector3()
+        this.ahead = new THREE.Vector3()
+        this.lastSubject = new THREE.Vector3()
         this.yaw = 0
         this.orbit = { yaw: 0, pitch: 0, idle: 0, drag: null }
         this.distanceScale = 1
@@ -35,7 +39,7 @@ export default class CameraRig
         const canvas = this.world.renderer.domElement
         window.addEventListener('keydown', (event) =>
         {
-            if(event.code !== 'KeyC' || event.repeat || event.target?.closest?.('input, textarea, select, [contenteditable="true"]')) return
+            if(event.code !== 'KeyC' || event.repeat || event.target?.closest?.('input, textarea, select, [contenteditable="true"], dialog[open]')) return
             this.mode = this.mode === 'chase' ? 'classic' : 'chase'
             try { localStorage.setItem('portfolio-camera', this.mode) } catch {}
             this.applyMode()
@@ -88,16 +92,28 @@ export default class CameraRig
         }
         const dt = Math.min(delta, 50) / 1000
         const onFoot = w.explorer?.active
-        const p = w.explorer?.renderPosition || w.car.chassis.object.position
-        const heading = onFoot ? w.explorer.heading : w.physics.car.angle
+        const p = onFoot ? w.explorer.renderPosition : w.car.chassis.object.position
+        const heading = onFoot ? w.explorer.heading : w.explorer.renderCarHeading
+        if(this.initialised && p.distanceToSquared(this.lastSubject) > 100) this.initialised = false
+        this.lastSubject.copy(p)
         const speed = onFoot ? 0 : Math.abs(w.physics.car.speed) * 1000      // m/s
+        if(this.wasOnFoot === undefined) this.yaw = heading
+        else if(onFoot !== this.wasOnFoot)
+        {
+            // Keep the view when exiting/re-entering. Walking must not steer
+            // its own camera: A/D would otherwise rotate the input basis every
+            // frame and send the player round in circles.
+            this.yaw = w.controls.getViewYaw()
+            this.orbit.yaw = 0
+        }
+        this.wasOnFoot = onFoot
         // Heading follows with a little lag so turns read on screen.
         const diff = Math.atan2(Math.sin(heading - this.yaw), Math.cos(heading - this.yaw))
-        this.yaw += diff * Math.min(1, dt * (onFoot ? 4 : 3.2))
+        if(!onFoot) this.yaw += diff * Math.min(1, dt * 3.2)
         if(!this.orbit.drag)
         {
             this.orbit.idle += dt
-            if(this.orbit.idle > 2.5 || speed > 6)
+            if(!onFoot && (this.orbit.idle > 2.5 || speed > 6))
             {
                 this.orbit.yaw *= Math.max(0, 1 - dt * 2.2)
                 this.orbit.pitch *= Math.max(0, 1 - dt * 2.2)
@@ -112,7 +128,7 @@ export default class CameraRig
         this.desired.set(p.x - Math.cos(yaw) * distance, p.y - Math.sin(yaw) * distance, p.z + height)
 
         // Pull in when a tower or bridge sits between the subject and the camera.
-        const toCam = this.desired.clone().sub(this.target)
+        const toCam = this.toCam.copy(this.desired).sub(this.target)
         const full = toCam.length()
         this.ray.set(this.target, toCam.divideScalar(full))
         let nearest = full
@@ -127,16 +143,17 @@ export default class CameraRig
         this.desired.copy(this.target).addScaledVector(this.ray.direction, full * this.pull)
         this.desired.z = Math.max(this.desired.z, 0.8)
 
-        const ahead = new THREE.Vector3(p.x + Math.cos(this.yaw) * lookAhead, p.y + Math.sin(this.yaw) * lookAhead, p.z + (onFoot ? 1.4 : 1.2))
+        const lookYaw = onFoot ? yaw : this.yaw
+        const ahead = this.ahead.set(p.x + Math.cos(lookYaw) * lookAhead, p.y + Math.sin(lookYaw) * lookAhead, p.z + (onFoot ? 1.4 : 1.2))
         if(!this.initialised)
         {
             this.position.copy(this.desired)
             this.look.copy(ahead)
             this.initialised = true
         }
-        const k = Math.min(1, dt * 7)
+        const k = 1 - Math.exp(-dt * 7)
         this.position.lerp(this.desired, k)
-        this.look.lerp(ahead, Math.min(1, dt * 9))
+        this.look.lerp(ahead, 1 - Math.exp(-dt * 9))
         this.instance.position.copy(this.position).add(this.camera.shake.offset)
         this.instance.up.set(0, 0, 1)
         this.instance.lookAt(this.look)

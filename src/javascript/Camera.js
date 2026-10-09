@@ -105,7 +105,10 @@ export default class Camera
         // Time tick
         this.time.on('tick', () =>
         {
-            if(!this.orbitControls.enabled)
+            // Leave the last rendered view intact while a dedicated rig owns
+            // it. Input reads this view during simulation; an invisible
+            // classic-camera write would silently rotate its movement basis.
+            if(!this.orbitControls.enabled && !(this.firstPerson && !this.targetOverride) && !this.chaseRig?.active)
             {
                 this.targetEased.x += (this.target.x - this.targetEased.x) * this.easing
                 this.targetEased.y += (this.target.y - this.targetEased.y) * this.easing
@@ -358,7 +361,7 @@ export default class Camera
         // Method to trigger shake based on impact velocity
         this.shake.trigger = (impactVelocity) =>
         {
-            if(!this.shake.enabled) return
+            if(!this.shake.enabled || this.firstPerson) return
 
             // Scale shake intensity based on impact (reduced from 0.1 to 0.02, max from 0.5 to 0.1)
             this.shake.intensity = Math.min(impactVelocity * 0.02, 0.1)
@@ -375,7 +378,7 @@ export default class Camera
                 this.shake.offset.z = (Math.random() - 0.5) * this.shake.intensity * 0.5
 
                 // Apply shake to camera position
-                if(!this.orbitControls.enabled)
+                if(!this.orbitControls.enabled && !this.firstPerson && !this.chaseRig?.active)
                 {
                     this.instance.position.add(this.shake.offset)
                 }

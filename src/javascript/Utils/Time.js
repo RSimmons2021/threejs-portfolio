@@ -49,6 +49,9 @@ export default class Time extends EventEmitter
         }
 
         this.trigger('tick')
+        // Rendering is a final phase, independent of listener registration
+        // order or when the asynchronous world finished loading.
+        this.trigger('render')
     }
 
     /**

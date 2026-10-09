@@ -47,6 +47,8 @@ export default class Project
         this.boards.y = 5
         this.boards.color = this.theme.accent || '#f8d665'
         this.boards.threeColor = new THREE.Color(this.boards.color)
+        // NeonProjects binds the Blender holo panels after NeonCity reads the kit.
+        if(this.resources.config.neon) return
 
         if(this.debug)
         {
@@ -161,7 +163,8 @@ export default class Project
         // Area
         this.floor.area = this.areas.add({
             position: new THREE.Vector2(this.x + this.link.x, this.y + this.floor.y + this.link.y),
-            halfExtents: new THREE.Vector2(this.link.halfExtents.x, this.link.halfExtents.y)
+            halfExtents: new THREE.Vector2(this.link.halfExtents.x, this.link.halfExtents.y),
+            entryLabel: this.name, entryColor: this.theme.accent
         })
         this.floor.area.on('interact', () =>
         {
@@ -181,10 +184,10 @@ export default class Project
         this.floor.areaLabel.position.z = 0.001
         this.floor.areaLabel.matrixAutoUpdate = false
         this.floor.areaLabel.updateMatrix()
-        this.floor.container.add(this.floor.areaLabel)
+        if(!this.resources.config.neon) this.floor.container.add(this.floor.areaLabel)
 
         // Project name/description text
-        this.setProjectDescription()
+        if(!this.resources.config.neon) this.setProjectDescription()
     }
 
     setPortalHandler(_handler)
@@ -217,7 +220,7 @@ export default class Project
 
         this.time.on('tick', () =>
         {
-            const pulse = 1 + Math.sin(this.time.elapsed * 0.0025) * 0.08
+            const pulse = this.resources.config.reducedMotion ? 1 : 1 + Math.sin(this.time.elapsed * 0.0025) * 0.04
             this.portalBeacon.mesh.scale.setScalar(pulse)
             this.portalBeacon.mesh.rotation.z += this.time.delta * 0.00018
             this.portalBeacon.material.opacity = this.floor.area.isIn ? 0.58 : 0.22

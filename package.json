@@ -9,7 +9,17 @@
     "test:arcade": "node --test scripts/arcade.test.mjs",
     "build": "vite build",
     "test:cyber-assets": "node --test scripts/cyber-assets.test.mjs",
-    "test:quality": "node --test scripts/quality.test.mjs"
+    "test:quality": "node --test scripts/quality.test.mjs",
+    "test:lighting-movement": "node --test scripts/lighting-movement.test.mjs",
+    "test:minigames": "node --test scripts/minigames.test.mjs",
+    "test:entry-skate": "node --test scripts/entry-skate.test.mjs",
+    "test:camera-audio": "node --test scripts/camera-pose.test.mjs scripts/cyber-audio.test.mjs",
+    "test:visitor-play": "node --test scripts/visitor-play.test.mjs",
+    "test:interface-details": "node --test scripts/cabin-floor.test.mjs scripts/interface-input.test.mjs scripts/city-guide.test.mjs",
+    "test:bowling-guide": "node --test scripts/bowling-audio.test.mjs scripts/city-guide.test.mjs scripts/dynamic-guide.test.mjs",
+    "sounds:bowling": "node --env-file=.env scripts/generate-sounds.mjs --only=bowling",
+    "sounds:cyber": "node --env-file=.env scripts/generate-sounds.mjs --only=cyber",
+    "sounds:master": "node scripts/master-cyber-sounds.mjs"
   },
   "devDependencies": {
     "vite": "^5.2.11",
