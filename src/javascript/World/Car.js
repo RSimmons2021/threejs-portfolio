@@ -286,12 +286,8 @@ export default class Car
             _child.material = this.backLightsReverse.material
         }
 
-        const reverseBox = new THREE.Box3().setFromObject(this.backLightsReverse.object)
-        const reverseCenter = reverseBox.getCenter(new THREE.Vector3())
-        this.backLightsReverse.glow = createGlowSprite('rgba(255, 236, 160, 0.9)', 'rgba(255, 220, 120, 0)')
-        this.backLightsReverse.glow.position.copy(reverseCenter)
-        this.backLightsReverse.glow.scale.set(1.3, 1.3, 1.3)
-        this.backLightsReverse.object.add(this.backLightsReverse.glow)
+        // Keep the reverse-light lenses, not the yellow halo behind the car.
+        // The cyber material's under-car spill is a separate, unchanged effect.
 
         this.chassis.object.add(this.backLightsReverse.object)
 
@@ -307,7 +303,6 @@ export default class Car
             // Glows only appear once night falls (dayNightCycle is attached by World after creation)
             const nightFactor = this.dayNightCycle ? this.dayNightCycle.nightFactor : 0
             this.backLightsBrake.glow.material.opacity = nightFactor * (braking ? 0.85 : 0.25)
-            this.backLightsReverse.glow.material.opacity = nightFactor * (reversing ? 0.7 : 0.15)
         })
     }
 

@@ -410,7 +410,8 @@ export default class CareerRPG
         this.$panel.className = 'career-hud'
         this.$panel.setAttribute('aria-label', 'Career progress')
         this.$panel.innerHTML = `
-            <p class="career-hud__mode">OPTIONAL / CAREER PLAY</p>
+            <div class="career-hud__heading"><p class="career-hud__mode">OPTIONAL / CAREER PLAY</p><span class="career-hud__summary"><strong data-summary-credits>0</strong> cr</span><button type="button" data-career="details" aria-expanded="false" aria-controls="career-progress-details">Progress</button></div>
+            <div id="career-progress-details">
             <div class="career-hud__top">
                 <span class="career-hud__day" data-day>DAY 1</span>
                 <span class="career-hud__clock" data-clock>08:00</span>
@@ -426,11 +427,16 @@ export default class CareerRPG
                     <em data-value>0</em>
                 </div>`).join('')}</div>
             <ol class="career-hud__log" data-log hidden></ol>
-            <div class="career-hud__bag" data-bag hidden></div>`
+            <div class="career-hud__bag" data-bag hidden></div></div>`
         document.body.appendChild(this.$panel)
+        this.progressExpanded = false
+        this.progressQuery = window.matchMedia('(max-width: 768px), (max-height: 550px)')
+        this.progressQuery.addEventListener('change', () => this.setProgressExpanded(this.progressExpanded))
+        this.setProgressExpanded(false)
 
         this.$panel.addEventListener('click', (_event) =>
         {
+            if(_event.target.closest('[data-career="details"]')) this.setProgressExpanded(!this.progressExpanded)
             if(_event.target.closest('[data-career="log"]')) this.togglePanel('log')
             if(_event.target.closest('[data-career="bag"]')) this.togglePanel('bag')
             const equip = _event.target.closest('[data-equip]')
@@ -447,10 +453,22 @@ export default class CareerRPG
         document.body.appendChild(this.$prompt)
     }
 
+    setProgressExpanded(expanded)
+    {
+        this.progressExpanded = expanded
+        const details = this.$panel.querySelector('#career-progress-details')
+        details.hidden = this.progressQuery.matches && !expanded
+        const button = this.$panel.querySelector('[data-career="details"]')
+        button.setAttribute('aria-expanded', String(!details.hidden))
+        button.textContent = expanded ? 'Less' : 'Progress'
+        this.$panel.dataset.expanded = String(expanded)
+    }
+
     // One drawer at a time: the HUD sits over the city and should not grow into
     // a wall of text.
     togglePanel(_which)
     {
+        this.setProgressExpanded(true)
         for(const name of ['log', 'bag'])
         {
             const $el = this.$panel.querySelector(`[data-${name}]`)
@@ -511,6 +529,7 @@ export default class CareerRPG
         $clock.textContent = this.hourLabel
         $clock.dataset.late = String(this.exhausted)
         this.$panel.querySelector('[data-credits]').textContent = s.credits
+        this.$panel.querySelector('[data-summary-credits]').textContent = s.credits
         this.$panel.querySelector('[data-focus]').style.transform = `scaleX(${s.focus / MAX_FOCUS})`
         this.$panel.querySelector('.career-hud__focus').dataset.low = String(s.focus < 20)
 

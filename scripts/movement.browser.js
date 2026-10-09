@@ -39,12 +39,19 @@
         }
         clear(); rig.mode = 'chase'; rig.yaw = 0; rig.orbit.yaw = 0
         rig.orbit.pitch = 0; rig.orbit.drag = null; rig.wasOnFoot = true; rig.initialised = false
+        setView(0)
         controls.actions.right = true
+        // Capture the explicitly authored view before the first chase update.
+        e.update()
         for(let i = 0; i < 240; i++) { rig.update(1000 / 60); e.update() }
-        check('Holding strafe does not spin the walking camera', Math.abs(rig.yaw) < 0.001 && e.body.velocity.y < -3.1)
+        check(`Held strafe remains stable while the walking camera follows behind (yaw=${rig.yaw.toFixed(3)}, velocity=${e.body.velocity.toString()})`, Math.cos(rig.yaw + Math.PI / 2) > .999 && e.body.velocity.y < -3.1)
         rig.orbit.yaw = 0.8; rig.orbit.idle = 0
         for(let i = 0; i < 300; i++) { rig.update(1000 / 60); e.update() }
-        check('Walking retains the chosen orbit direction', Math.abs(rig.orbit.yaw - 0.8) < 0.001)
+        check('Walking recenters an idle orbit behind the character', Math.abs(rig.orbit.yaw) < .001)
+        rig.orbit.yaw = .8; rig.orbit.drag = { id: 99, x: 0, y: 0 }
+        rig.update(1000 / 60)
+        check('Deliberate camera drag retains the chosen orbit', rig.orbit.yaw === .8)
+        rig.orbit.drag = null
 
         if(controls.touch)
         {

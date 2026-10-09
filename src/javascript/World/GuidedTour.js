@@ -105,6 +105,7 @@ export default class GuidedTour
         {
             this.controls.actions[action] = false
         }
+        if(this.world?.explorer?.movementInput) this.world.explorer.movementInput.held = false
     }
 
     setActive(_id)

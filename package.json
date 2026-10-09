@@ -13,6 +13,7 @@
     "test:lighting-movement": "node --test scripts/lighting-movement.test.mjs",
     "test:minigames": "node --test scripts/minigames.test.mjs",
     "test:entry-skate": "node --test scripts/entry-skate.test.mjs",
+    "test:exploration-polish": "node --test scripts/exploration-polish.test.mjs",
     "test:camera-audio": "node --test scripts/camera-pose.test.mjs scripts/cyber-audio.test.mjs",
     "test:visitor-play": "node --test scripts/visitor-play.test.mjs",
     "test:interface-details": "node --test scripts/cabin-floor.test.mjs scripts/interface-input.test.mjs scripts/city-guide.test.mjs",

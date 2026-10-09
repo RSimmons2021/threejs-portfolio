@@ -2,7 +2,12 @@
 (async () =>
 {
     const app = window.application, results = []
-    if(innerWidth <= 768) window.dispatchEvent(new Event('touchstart'))
+    if(innerWidth <= 768)
+    {
+        const touch = new Touch({ identifier: 99, target: document.body, clientX: 1, clientY: 1 })
+        window.dispatchEvent(new TouchEvent('touchstart', { changedTouches: [touch], touches: [touch] }))
+        window.dispatchEvent(new TouchEvent('touchend', { changedTouches: [touch], touches: [] }))
+    }
     const check = (name, value) => { if(!value) throw new Error(name); results.push(name) }
     const frames = async count => { for(let i = 0; i < count; i++) await new Promise(requestAnimationFrame) }
     window.validationErrors = []
@@ -28,7 +33,7 @@
     guide.$dialog.querySelector('[data-destination="projects"]').click(); await frames(20)
     check('Information selection releases movement lock', !guide.$dialog.open && !w.experienceDirector.locks.has('guide'))
     check('Project choice points to Zoan first', guide.destination.project.name === 'Zoan Collective')
-    check('Street guide is one bounded instanced draw', guide.markers.isInstancedMesh && guide.markers.count > 0 && guide.markers.count <= 28)
+    check('Hybrid street guide uses two bounded batches', guide.container.children.length === 2 && guide.markers.isInstancedMesh && guide.markers.count > 0 && guide.markers.count <= 16 && guide.ribbon.geometry.attributes.position.count === 128)
     check('Directions include distance and a direct-read option', /m to destination/.test(guide.$direction.textContent) && guide.$read.textContent === 'Read case study')
     const rect = guide.$route.getBoundingClientRect()
     check('Directions fit the viewport', rect.left >= 0 && rect.right <= innerWidth && rect.bottom <= innerHeight)
@@ -75,7 +80,7 @@
     check('Car shell is opaque and rendered from inside', w.car.chassis.interiorMaterial.side === 2 && !w.car.chassis.interiorMaterial.transparent)
     check('Shared city material remains front-sided', w.materials.cyber.forSlot('nd_atlas').side === 0)
     const tools = document.querySelector('.experience-tools').getBoundingClientRect(), controls = e.panel.getBoundingClientRect()
-    check('Mobile toolbar does not cover movement controls', innerWidth > 768 || tools.top >= controls.bottom)
+    check('Mobile toolbar does not cover movement controls', innerWidth > 768 || tools.top >= controls.bottom || tools.left >= controls.right || controls.left >= tools.right || tools.bottom <= controls.top)
     check('Native project select has a 44px touch target', document.querySelector('.guided-tour__project').getBoundingClientRect().height >= 44)
     check('No runtime errors', window.validationErrors.length === 0)
     return { passed: results.length, viewport: [innerWidth, innerHeight], results }

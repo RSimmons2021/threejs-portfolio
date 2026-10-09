@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { cityGuideRoute, guideBearing, cityGuideMarkers, smoothGuideRotation } from '../src/javascript/World/cityGuideRules.js'
+import { cityGuideRoute, guideBearing, roundedGuidePath, sampleGuidePath, projectGuidePath, flightGuidePath, guideArrived, smoothGuideRotation } from '../src/javascript/World/cityGuideRules.js'
 
 test('project routes stay on the avenue until the selected case-study column', () =>
 {
@@ -23,20 +23,36 @@ test('guide rotation takes the short arc across the wrap and is frame-rate indep
     assert.equal(smoothGuideRotation(179, -179, 1 / 60, true), 181)
 })
 
-test('street arrows follow the player, point to the next turn and keep a bounded window', () =>
+test('rounded street route is anchored, bounded and contained at junctions', () =>
 {
-    const path = [[0, -30], [140, -30], [140, -35]]
-    const first = cityGuideMarkers(path, 1, { x: 0, y: -30 })
-    assert.equal(first.length, 28)
-    assert.equal(cityGuideMarkers(path, 1, { x: .4, y: -30 })[0].x, 2.4)
-    const player = { x: .4, y: -29 }
-    const turned = cityGuideMarkers(path, 1, player)[0]
-    assert.ok(Math.abs(Math.hypot(turned.x - player.x, turned.y - player.y) - 2) < 1e-9)
-    assert.ok(Math.abs(turned.yaw - Math.atan2(-1, 139.6)) < 1e-9)
-    const advanced = cityGuideMarkers(path, 1, { x: 8, y: -30 })
-    assert.equal(advanced[0].x, 10)
-    assert.equal(advanced.length, 28)
-    assert.ok(cityGuideMarkers(path, 2, { x: 140, y: -32 }).every(p => p.x === 140))
+    const path = roundedGuidePath([[0, -30], [140, -30], [140, -35]])
+    assert.ok(path.length <= 64)
+    assert.ok(path.every(p => p.x >= 0 && p.x <= 140 && p.y <= -30 && p.y >= -35 && p.z === .09))
+    assert.ok(path.slice(1).every((p, i) => p.s > path[i].s))
+    const snapshot = JSON.stringify(path), record = {}
+    assert.equal(sampleGuidePath(path, 14, record), record, 'samples reuse the caller record')
+    assert.equal(record.x, 14)
+    assert.equal(projectGuidePath(path, { x: 8, y: -29, z: .5 }), 8)
+    sampleGuidePath(path, 21, record)
+    assert.equal(JSON.stringify(path), snapshot, 'player sampling cannot move the street route')
+    const singleton = roundedGuidePath([[16,-56.5],[16,-56.5]])
+    assert.equal(singleton.length, 1)
+    assert.ok(Object.values(sampleGuidePath(singleton, 0)).every(Number.isFinite))
+})
+
+test('flight approach turns down only inside the destination column and waits for touchdown', () =>
+{
+    const destination = { x: 40, y: -35 }, pool = []
+    const path = flightGuidePath({ x: 0, y: -35, z: 40 }, destination, pool)
+    const first = path[0]
+    assert.equal(sampleGuidePath(path, 10).z, 39.25)
+    assert.ok(path.filter(p => p.z < 39.25).every(p => Math.hypot(p.x - 40, p.y + 35) <= 5))
+    assert.deepEqual(path[path.length - 1], { x: 40, y: -35, z: .09, s: path[path.length - 1].s })
+    assert.equal(flightGuidePath({ x: 40, y: -35, z: 20 }, destination, pool), pool)
+    assert.equal(pool[0], first, 'flight rebuilds reuse point records')
+    assert.equal(sampleGuidePath(pool, 7).pitch, -Math.PI / 2)
+    assert.equal(guideArrived({ x: 40, y: -35, z: 20 }, destination), false)
+    assert.equal(guideArrived({ x: 40, y: -35, z: .5 }, destination), true)
 })
 test('contact and arcade use distinct approaches and bearings wrap safely', () =>
 {

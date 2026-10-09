@@ -23,6 +23,11 @@ Regenerate only these effects: `npm run sounds:bowling`. Master only these effec
 
 ## Dynamic guide follow-up
 
+This section records the previous implementation. The subsequent
+[hybrid guidance and exploration polish](hybrid-guide-polish.md) keeps a dynamic
+lead arrow but replaces the fully moving trail with a street-anchored ribbon
+and fewer fading chevrons.
+
 The visitor wanted the 3D arrows to keep moving and pointing from the character, not remain attached to fixed street coordinates. A red-capable test reproduced the frozen first arrow after lateral player movement. The trail now begins 2 m ahead of the **rendered** player position and follows the remaining street corners with continuous 3 m spacing. It updates in the existing render phase alongside the compass, so it moves smoothly instead of jumping at 250 ms intervals. It follows walking, skateboarding and driving; in flight it floats just below the vehicle and points directly toward the selected light column.
 
 Overshot waypoints advance and excursions more than 6 m off the current segment replan from the current position. Arrival hides the trail while leaving the information card available. The 28-instance cap and single draw remain unchanged; marker records and the transform object are reused. Information stays cyan and optional-game guidance violet.

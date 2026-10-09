@@ -41,6 +41,7 @@ export default class NeonProjects
                 panel.position.set(project.x - 5 + slide * 5, project.y + 5, 0)
                 panel.updateMatrix()
                 kiosks.push({ matrix: panel.matrix.clone(), rect })
+                this.addCollision(world, 'holo_panel', panel.matrix)
                 for(const part of kit.get('kit_holo_panel_lod0') || [])
                     if(part.slot !== 'nd_screen') frames.push(part.geometry.clone().applyMatrix4(panel.matrix))
                 this.panels.push(panel)
@@ -49,6 +50,7 @@ export default class NeonProjects
                 {
                     transform.position.set(...hero.p); transform.rotation.set(0, 0, hero.rotZ || 0); transform.updateMatrix()
                     heroes.push({ matrix: transform.matrix.clone(), rect })
+                    this.addCollision(world, 'billboard_wall', transform.matrix)
                 }
             })
             const label = document.createElement('canvas')
@@ -78,5 +80,18 @@ export default class NeonProjects
             mesh.computeBoundingSphere()
             this.container.add(mesh)
         }
+    }
+
+    addCollision(world, module, matrix)
+    {
+        const bounds = new THREE.Box3()
+        for(const part of world.neonCity.kit.get(`kit_${module}_lod0`) || [])
+        {
+            if(!part.geometry.boundingBox) part.geometry.computeBoundingBox()
+            bounds.union(part.geometry.boundingBox.clone().applyMatrix4(matrix))
+        }
+        if(bounds.isEmpty()) return
+        const center = bounds.getCenter(new THREE.Vector3()), size = bounds.getSize(new THREE.Vector3())
+        world.neonCity.addBox(center.toArray(), size.toArray().map(value => Math.max(.16, value)), 0, 'project-board')
     }
 }

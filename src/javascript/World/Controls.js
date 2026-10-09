@@ -32,6 +32,24 @@ export default class Controls extends EventEmitter
         return this.lastViewYaw
     }
 
+    setTravelMode(onFoot, skating = false)
+    {
+        this.travelMode = { onFoot, skating }
+        const boost = this.touch?.boost
+        if(!boost) return
+        boost.$element.setAttribute('aria-label', onFoot ? skating ? 'Step off skateboard and walk' : 'Get on skateboard' : 'Boost the car')
+        boost.$element.setAttribute('aria-pressed', String(onFoot && skating))
+        boost.$icon.style.backgroundImage = onFoot ? 'none' : `url(${mobileDoubleTriangle})`
+        boost.$icon.textContent = onFoot ? skating ? 'WALK' : 'BOARD' : ''
+        boost.$icon.style.font = '10px var(--font-ui)'
+        boost.$icon.style.color = '#cee5e9'
+        boost.$icon.style.width = onFoot ? '52px' : '22px'
+        boost.$icon.style.left = onFoot ? 'calc(50% - 26px)' : 'calc(50% - 11px)'
+        boost.$icon.style.textAlign = 'center'
+        boost.$icon.style.lineHeight = '26px'
+        if(onFoot) this.actions.boost = false
+    }
+
     setActions()
     {
         this.actions = {}
@@ -338,7 +356,12 @@ export default class Controls extends EventEmitter
         this.touch.boost = {}
 
         // Element
-        this.touch.boost.$element = document.createElement('div')
+        this.touch.boost.$element = document.createElement('button')
+        this.touch.boost.$element.type = 'button'
+        this.touch.boost.$element.setAttribute('aria-label', 'Boost the car')
+        this.touch.boost.$element.style.background = 'transparent'
+        this.touch.boost.$element.style.border = '0'
+        this.touch.boost.$element.style.padding = '0'
         this.touch.boost.$element.style.userSelect = 'none'
         this.touch.boost.$element.style.position = 'fixed'
         this.touch.boost.$element.style.bottom = 'calc(70px * 3 + 15px)'
@@ -385,6 +408,8 @@ export default class Controls extends EventEmitter
         {
             _event.preventDefault()
 
+            if(this.onFootBoost?.()) return
+
             const touch = _event.changedTouches[0]
 
             if(touch)
@@ -423,6 +448,8 @@ export default class Controls extends EventEmitter
         }
 
         this.touch.boost.$element.addEventListener('touchstart', this.touch.boost.events.touchstart)
+        this.touch.boost.$element.addEventListener('click', () => this.onFootBoost?.())
+        this.setTravelMode(this.travelMode?.onFoot || false, this.travelMode?.skating || false)
 
         /**
          * Forward

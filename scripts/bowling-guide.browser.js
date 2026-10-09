@@ -75,7 +75,7 @@
     await frames(20)
     const after = Array.from(w.visitorGuide.markers.instanceMatrix.array.slice(0, 16))
     const player = w.explorer.renderPosition
-    check('Street chevrons dynamically follow the smoothed visitor position', !before.every((v, i) => Math.abs(v - after[i]) < .001) && Math.abs(Math.hypot(after[12] - player.x, after[13] - player.y) - 2) < .01, { before: before.slice(12, 15), after: after.slice(12, 15) })
+    check('Lead chevron dynamically follows the smoothed visitor position', !before.every((v, i) => Math.abs(v - after[i]) < .001) && Math.abs(Math.hypot(after[12] - player.x, after[13] - player.y) - 2) < .01, { before: before.slice(12, 15), after: after.slice(12, 15) })
     w.visitorGuide.clear()
     return { passed: checks.every(c => c.passed), checks }
 })()

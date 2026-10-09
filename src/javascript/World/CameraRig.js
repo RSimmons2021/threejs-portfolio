@@ -96,24 +96,24 @@ export default class CameraRig
         const heading = onFoot ? w.explorer.heading : w.explorer.renderCarHeading
         if(this.initialised && p.distanceToSquared(this.lastSubject) > 100) this.initialised = false
         this.lastSubject.copy(p)
-        const speed = onFoot ? 0 : Math.abs(w.physics.car.speed) * 1000      // m/s
+        const speed = onFoot ? Math.hypot(w.explorer.body.velocity.x, w.explorer.body.velocity.y) : Math.abs(w.physics.car.speed) * 1000
         if(this.wasOnFoot === undefined) this.yaw = heading
         else if(onFoot !== this.wasOnFoot)
         {
-            // Keep the view when exiting/re-entering. Walking must not steer
-            // its own camera: A/D would otherwise rotate the input basis every
-            // frame and send the player round in circles.
+            // Keep the entry view, then ease behind the subject. Explorer locks
+            // held movement to its initial view basis so following cannot turn
+            // a held lateral input into a spiral.
             this.yaw = w.controls.getViewYaw()
             this.orbit.yaw = 0
         }
         this.wasOnFoot = onFoot
         // Heading follows with a little lag so turns read on screen.
         const diff = Math.atan2(Math.sin(heading - this.yaw), Math.cos(heading - this.yaw))
-        if(!onFoot) this.yaw += diff * Math.min(1, dt * 3.2)
+        this.yaw += diff * (1 - Math.exp(-dt * (onFoot ? 5 : 3.2)))
         if(!this.orbit.drag)
         {
             this.orbit.idle += dt
-            if(!onFoot && (this.orbit.idle > 2.5 || speed > 6))
+            if(this.orbit.idle > 2.5 || speed > 6 || (onFoot && speed > .2 && this.orbit.idle > .6))
             {
                 this.orbit.yaw *= Math.max(0, 1 - dt * 2.2)
                 this.orbit.pitch *= Math.max(0, 1 - dt * 2.2)

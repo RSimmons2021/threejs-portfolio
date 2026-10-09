@@ -3070,7 +3070,10 @@ body.is-touch-input .interior-bar kbd { display: none; }
 .destination-guide__heading small { color: var(--ui-accent); font-size: 9px; letter-spacing: .06em; }
 .destination-guide h2 { font-size: 14px; line-height: 1.4; }
 .destination-guide__heading button { padding: 0; width: 44px; flex: 0 0 44px; font-size: 22px; background: transparent; }
+.destination-guide__heading .destination-guide__toggle { display: none; width: auto; flex-basis: auto; padding: 0 10px; font-size: 10px; }
 .destination-guide > p { margin-top: 10px; color: var(--ui-dim); font-variant-numeric: tabular-nums; }
+.destination-guide__details[hidden] { display: none; }
+.destination-guide__hint { margin-top: 10px; color: var(--ui-dim); }
 .destination-guide__actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
 .destination-guide__actions button { flex: 1 1 auto; padding: 8px; font-size: 11px; }
 .destination-guide__hint { font-size: 10px; line-height: 1.6; }
@@ -3124,7 +3127,7 @@ body.is-touch-input .interior-bar kbd { display: none; }
 }
 .has-visitor-guide :is(.explorer-controls, .experience-hud, .career-hud, .destination-guide) { visibility: hidden; }
 @media (max-width: 768px) {
-    .destination-guide { top: 254px; right: 8px; padding: 12px; width: calc(100vw - 16px); }
+    .destination-guide { top: 254px; right: 8px; padding: 8px 10px; width: calc(100vw - 16px); }
     .destination-guide__hint { margin-top: 8px !important; }
     .visitor-guide header { padding: 24px 18px 18px; }
     .visitor-guide h1 { font-size: 25px; }
@@ -3132,7 +3135,68 @@ body.is-touch-input .interior-bar kbd { display: none; }
     .visitor-guide__choices :is(button, a) { padding: 12px; }
     .visitor-guide__choices strong { font-size: 13px; }
 }
+@media (max-width: 768px), (max-height: 550px) {
+    .destination-guide__heading { gap: 8px; }
+    .destination-guide__heading .destination-guide__toggle { display: block; }
+    .destination-guide h2 { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; }
+    .destination-guide > p { margin-top: 4px; font-size: 11px; }
+    .destination-guide[data-expanded="true"] h2 { white-space: normal; }
+    .destination-guide[data-expanded="true"] { max-height: min(42dvh, calc(100dvh - 270px)); overflow-y: auto; }
+}
+@media (max-height: 550px) and (min-aspect-ratio: 1/1) {
+    .destination-guide { top: 158px; right: 8px; width: min(330px, 45vw); }
+    .destination-guide[data-expanded="true"] { max-height: calc(100dvh - 170px); }
+}
 @media (max-width: 360px), (max-height: 550px) {
     .visitor-guide__choices { grid-template-columns: 1fr; }
     .destination-guide { max-height: 42dvh; overflow-y: auto; }
+}
+
+/* Optional play starts as a small invitation, not a wall over the city. */
+.arcade-panel__heading { display: flex; align-items: center; gap: 10px; }
+.arcade-panel__heading > div { flex: 1; min-width: 0; }
+.arcade-menu-toggle, .career-hud__heading [data-career="details"] { display: none; }
+.career-hud__heading { display: flex; align-items: center; gap: 8px; }
+.career-hud__heading .career-hud__mode { flex: 1; margin: 0 0 10px; }
+.career-hud__summary { display: none; }
+#career-progress-details[hidden] { display: none; }
+@media (max-width: 768px), (max-height: 550px) {
+    .is-neon-district .career-hud, .arcade-panel:not([data-game]) {
+        top: 254px; bottom: auto; left: 8px; right: 8px;
+        width: calc(100vw - 16px); padding: 8px 10px; box-sizing: border-box;
+        max-height: min(44dvh, calc(100dvh - 270px)); overflow-y: auto;
+    }
+    .career-hud__heading .career-hud__mode { margin: 0; font-size: 9px; }
+    .career-hud__summary { display: inline; font-size: 10px; white-space: nowrap; color: var(--ui-dim); }
+    .career-hud__heading [data-career="details"] {
+        display: block; min-height: 44px; padding: 0 10px; flex: 0 0 auto;
+        font: 10px var(--font-ui); color: var(--ui-text); background: #122d3a;
+        border: 1px solid var(--ui-border); border-radius: 5px;
+    }
+    .career-hud__heading button:focus-visible { outline: 2px solid var(--ui-accent); outline-offset: 2px; }
+    #career-progress-details:not([hidden]) { margin-top: 10px; }
+    .career-hud__top { flex-wrap: wrap; }
+    .arcade-panel:not([data-game]) h2 { margin: 4px 0 0; font-size: 15px; line-height: 1.4; }
+    .arcade-panel:not([data-game]) .arcade-panel__eyebrow { font-size: 8px; letter-spacing: 0; line-height: 1.5; }
+    .arcade-panel .arcade-menu-toggle { display: block; min-height: 44px; padding: 8px 12px; font-size: 11px; }
+    .arcade-panel:not([data-game]) .arcade-menu:not([hidden]) { margin-top: 10px; }
+    .arcade-menu button strong { font-size: 13px; }
+    .arcade-menu button span { font-size: 10px; }
+    .has-arcade-invitation .career-hud { display: none; }
+    .has-destination-guide .arcade-panel:not([data-game]) { top: 344px; max-height: min(40dvh, calc(100dvh - 360px)); }
+}
+@media (max-height: 550px) and (min-aspect-ratio: 1/1) {
+    .is-neon-district .explorer-controls {
+        top: 104px; left: 8px; right: auto; transform: none;
+        width: min(320px, calc(55vw - 24px)); box-sizing: border-box;
+    }
+    .explorer-controls p { display: none; }
+    .explorer-controls__buttons { flex-wrap: wrap; }
+    .is-neon-district .explorer-controls button { padding: 6px; font-size: 9px; }
+    .is-neon-district .experience-tools { top: 104px; right: 8px; max-width: 45vw; }
+    .experience-tools :is(button, a, summary) { padding: 0 5px; font-size: 8px; }
+    .is-neon-district .career-hud, .arcade-panel:not([data-game]) {
+        top: 158px; left: auto; right: 8px; width: min(330px, 45vw); max-height: calc(100dvh - 170px);
+    }
+    .has-destination-guide .arcade-panel:not([data-game]) { top: 250px; max-height: calc(100dvh - 260px); }
 }

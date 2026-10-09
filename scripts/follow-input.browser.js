@@ -17,20 +17,25 @@
         {
             w.guidedTour.clearControls(); e.setSkating(skate)
             e.body.position.set(0, -15, 0.4); e.body.velocity.set(0, 0, 0)
-            rig.yaw = yaw; rig.orbit.yaw = 0; rig.orbit.pitch = 0; rig.initialised = false
+            rig.yaw = yaw; e.heading = yaw; rig.orbit.yaw = 0; rig.orbit.pitch = 0; rig.initialised = false
             await frames(3)
+            const startView = w.controls.getViewYaw()
             a.up = true; await frames(40); a.up = false
-            const v = e.body.velocity, view = w.controls.getViewYaw()
-            const aligned = (v.x * Math.cos(view) + v.y * Math.sin(view)) / Math.max(Math.hypot(v.x, v.y), 0.01)
-            check(`${skate ? 'Skateboard' : 'Walk'} W follows the visible chase heading ${yaw.toFixed(2)}`, aligned > 0.995)
+            const v = e.body.velocity
+            const aligned = (v.x * Math.cos(startView) + v.y * Math.sin(startView)) / Math.max(Math.hypot(v.x, v.y), 0.01)
+            check(`${skate ? 'Skateboard' : 'Walk'} W retains the initial view direction ${yaw.toFixed(2)}`, aligned > 0.995)
         }
         w.guidedTour.clearControls(); e.setSkating(false)
         e.body.position.set(0, -15, 0.4); e.body.velocity.set(0, 0, 0)
-        rig.yaw = 0; rig.orbit.yaw = 0.8; rig.initialised = false
-        await frames(3); a.right = true; await frames(40); a.right = false
-        const view = w.controls.getViewYaw(), v = e.body.velocity
-        check('Live strafe follows the orbited view without rotating it',
-            (v.x * Math.sin(view) - v.y * Math.cos(view)) / Math.max(Math.hypot(v.x, v.y), 0.01) > 0.995 && rig.orbit.yaw === 0.8)
+        e.heading = 0; rig.yaw = 0; rig.orbit.yaw = 0.8; rig.orbit.idle = 0; rig.initialised = false
+        await frames(3)
+        const view = w.controls.getViewYaw()
+        a.right = true; await frames(100); a.right = false
+        const v = e.body.velocity, p = e.renderPosition, cam = w.camera.instance.position
+        check('Live strafe keeps its initial direction as the orbit recenters',
+            (v.x * Math.sin(view) - v.y * Math.cos(view)) / Math.max(Math.hypot(v.x, v.y), 0.01) > 0.995 && Math.abs(rig.orbit.yaw) < .2)
+        check('Walking chase ends behind the character after strafing',
+            (cam.x-p.x)*Math.cos(e.heading)+(cam.y-p.y)*Math.sin(e.heading) < -2)
         return { passed: results.length, results }
     }
     finally { w.guidedTour.clearControls(); e.setSkating(false); e.enterCar(true); rig.initialised = false }

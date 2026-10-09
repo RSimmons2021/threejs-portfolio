@@ -2,7 +2,7 @@ import * as THREE from 'three'
 import CANNON from 'cannon'
 import { createPerson } from './Pedestrians.js'
 import { renderPosition } from '../Utils/renderTransform.js'
-import { movementVector } from './movementRules.js'
+import { movementVector, heldMovementYaw } from './movementRules.js'
 
 export default class Explorer
 {
@@ -33,6 +33,13 @@ export default class Explorer
         // On foot that is the way the walker is pointed (or looking, in first
         // person); in the car it is the chassis heading.
         this.heading = 0
+        this.movementInput = { held: false, yaw: 0 }
+        world.controls.onFootBoost = () =>
+        {
+            if(!this.active) return false
+            if(!this.blocked) this.setSkating(!this.skating)
+            return true
+        }
         world.physics.getPlayerHeading = () =>
         {
             if(!this.active) return world.physics.car.angle
@@ -138,6 +145,7 @@ export default class Explorer
         }
         this.runButton.setAttribute('aria-pressed', String(this.skating))
         this.runButton.classList.toggle('is-on', this.skating)
+        this.world.controls.setTravelMode?.(this.active, this.skating)
         if(this.board) this.board.visible = this.active && this.skating
         this.updateInterface()
     }
@@ -223,6 +231,9 @@ export default class Explorer
         w.physics.world.addBody(this.body)
         this.active = true
         this.yaw = w.physics.car.angle
+        this.heading = this.yaw
+        this.avatar.rotation.z = this.yaw - Math.PI / 2
+        this.movementInput.held = false
         this.avatar.visible = !this.firstPerson
         w.camera.pan.disable()
         this.updateInterface()
@@ -238,6 +249,7 @@ export default class Explorer
         }
         this.world.physics.world.removeBody(this.body)
         this.active = false
+        this.movementInput.held = false
         this.world.physics.onFoot = false
         this.avatar.visible = false
         if(this.board) this.board.visible = false
@@ -287,6 +299,7 @@ export default class Explorer
         this.viewButton.innerHTML = this.firstPerson ? 'City view <kbd>V</kbd>' : 'First person <kbd>V</kbd>'
         this.viewButton.setAttribute('aria-pressed', String(this.firstPerson))
         this.runButton.hidden = !this.active
+        this.world.controls.setTravelMode?.(this.active, this.skating)
         this.world.experienceHUD.updateInstructionText()
         const touch = this.world.config.touch || window.matchMedia('(max-width: 767px)').matches
         this.hint.textContent = touch
@@ -320,7 +333,7 @@ export default class Explorer
                 forward = Math.sin(joystick.angle.originalValue)
                 right = Math.cos(joystick.angle.originalValue)
             }
-            const angle = this.firstPerson ? this.yaw : w.controls.getViewYaw()
+            const angle = heldMovementYaw(this.movementInput, forward, right, this.firstPerson ? this.yaw : w.controls.getViewYaw(), this.firstPerson || !!w.cameraRig?.orbit.drag)
             const speed = this.blocked || document.hidden ? 0 : (this.skating ? 7.6 : 3.2)
             const target = movementVector(forward, right, angle, speed)
 

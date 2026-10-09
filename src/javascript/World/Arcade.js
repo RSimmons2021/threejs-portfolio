@@ -123,9 +123,10 @@ export default class Arcade
         this.$panel.className = 'arcade-panel'
         this.$panel.setAttribute('aria-label', 'After Hours Arcade games')
         this.$panel.innerHTML = `
-            <div class="arcade-panel__eyebrow">OPTIONAL PLAY / NOT PORTFOLIO INFORMATION</div>
+            <div class="arcade-panel__heading"><div><div class="arcade-panel__eyebrow">OPTIONAL PLAY / NOT PORTFOLIO INFORMATION</div>
             <h2>After Hours Arcade<span>↗</span></h2>
-            <div class="arcade-menu">
+            </div><button type="button" class="arcade-menu-toggle" data-action="menu-toggle" aria-expanded="false" aria-controls="arcade-games">Games</button></div>
+            <div id="arcade-games" class="arcade-menu">
                 <p>Eight optional games, open all day. Projects, experience, and résumé are in the Guide and Overview—no game is required.</p>
                 <button data-game="sprint"><strong>01 / Midnight Sprint ↗</strong><span>Eight checkpoints. Beat your ghost. Gold under 32s.</span></button>
                 <button data-game="bowling"><strong>02 / Neon Bowling ↗</strong><span>Drive into the ball. Three 8-second frames. Gold: 25 pins.</span></button>
@@ -156,11 +157,15 @@ export default class Arcade
         this.$value = this.$panel.querySelector('.arcade-value')
         this.$status = this.$panel.querySelector('.arcade-status')
         this.$continue = this.$panel.querySelector('[data-action="continue"]')
+        this.menuExpanded = false
+        this.menuQuery = window.matchMedia('(max-width: 768px), (max-height: 550px)')
+        this.menuQuery.addEventListener('change', () => this.render())
         this.$panel.addEventListener('click', event =>
         {
             const button = event.target.closest('button')
             if(!button) return
             if(button.dataset.game) this.start(button.dataset.game)
+            if(button.dataset.action === 'menu-toggle') { this.menuExpanded = !this.menuExpanded; this.render() }
             if(button.dataset.practice && this.state === 'idle' && this.world.miniGames && !this.world.miniGames.active)
             {
                 this.world.careerRPG.close()
@@ -169,7 +174,7 @@ export default class Arcade
             if(button.dataset.action === 'retry') this.start(this.game)
             if(button.dataset.action === 'exit') this.exit()
             if(button.dataset.action === 'smash') this.world.sections.playground.resetBricks()
-            if(button.dataset.action === 'dismiss') { this.dismissed = true; this.$panel.hidden = true }
+            if(button.dataset.action === 'dismiss') { this.dismissed = true; this.render() }
             if(button.dataset.action === 'continue')
             {
                 if(this.state === 'paused') this.beginCountdown()
@@ -310,7 +315,13 @@ export default class Arcade
 
     exit(returnToCourtyard = true)
     {
-        if(this.state === 'idle') { this.$panel.hidden = true; return }
+        if(this.state === 'idle')
+        {
+            this.$panel.hidden = true
+            this.menuExpanded = false
+            document.body.classList.remove('has-arcade-invitation')
+            return
+        }
         this.releaseRound()
         this.state = 'idle'
         this.bowling.reset()
@@ -364,7 +375,8 @@ export default class Arcade
             this.$panel.querySelector('.arcade-practice').hidden = !this.world.miniGames
             const inArcade = isInsideArcade(this.world.explorer?.position || this.body.position)
             if(!inArcade) this.dismissed = false
-            this.$panel.hidden = !(inArcade && !this.dismissed)
+            const hidden = !(inArcade && !this.dismissed)
+            if(this.$panel.hidden !== hidden) this.render()
             return
         }
         if(this.state === 'countdown')
@@ -426,7 +438,13 @@ export default class Arcade
     {
         const idle = this.state === 'idle'
         this.$panel.hidden = idle ? !(isInsideArcade(this.world.explorer?.position || this.body.position) && !this.dismissed) : false
-        this.$menu.hidden = !idle
+        if(this.$panel.hidden || !idle) this.menuExpanded = false
+        this.$menu.hidden = !idle || (this.menuQuery.matches && !this.menuExpanded)
+        this.$panel.querySelector('.arcade-panel__heading').hidden = !idle
+        this.$panel.dataset.expanded = String(this.menuExpanded)
+        this.$panel.querySelector('[data-action="menu-toggle"]').setAttribute('aria-expanded', String(!this.$menu.hidden))
+        this.$panel.querySelector('[data-action="menu-toggle"]').textContent = this.menuExpanded ? 'Less' : 'Games'
+        document.body.classList.toggle('has-arcade-invitation', idle && !this.$panel.hidden)
         this.$round.hidden = idle
         this.$panel.querySelector('.arcade-best').textContent = `LOCAL BESTS / Sprint: ${this.best.sprint ? this.best.sprint.toFixed(2) + 's' : 'set the first time'} · Bowling: ${this.best.bowling}/30`
         if(idle) return

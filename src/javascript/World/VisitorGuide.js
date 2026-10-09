@@ -1,5 +1,6 @@
 import * as THREE from 'three'
-import { cityGuideRoute, guideBearing, cityGuideMarkers, smoothGuideRotation, guideWaypoint, guideNeedsReroute } from './cityGuideRules.js'
+import { cityGuideRoute, guideBearing, smoothGuideRotation, guideWaypoint, guideNeedsReroute, guideArrived } from './cityGuideRules.js'
+import GuideTrail from './GuideTrail.js'
 
 export default class VisitorGuide
 {
@@ -53,7 +54,7 @@ export default class VisitorGuide
         this.$route.className = 'destination-guide'
         this.$route.hidden = true
         this.$route.setAttribute('aria-label', 'Directions to selected destination')
-        this.$route.innerHTML = '<div class="destination-guide__heading"><span data-bearing aria-hidden="true">↑</span><div><small data-category>PORTFOLIO INFORMATION</small><h2 data-name></h2></div><button type="button" data-route-clear aria-label="Clear destination">×</button></div><p data-direction></p><div class="destination-guide__actions"><button type="button" data-route-read>Read now</button><button type="button" data-route-jump>Jump there</button><button type="button" data-route-change>Change</button></div><p class="destination-guide__hint" data-hint></p>'
+        this.$route.innerHTML = '<div class="destination-guide__heading"><span data-bearing aria-hidden="true">↑</span><div><small data-category>PORTFOLIO INFORMATION</small><h2 data-name></h2></div><button type="button" class="destination-guide__toggle" data-route-details aria-expanded="false" aria-controls="destination-guide-details">Details</button><button type="button" data-route-clear aria-label="Clear destination">×</button></div><p data-direction></p><div id="destination-guide-details" class="destination-guide__details"><div class="destination-guide__actions"><button type="button" data-route-read>Read now</button><button type="button" data-route-jump>Jump there</button><button type="button" data-route-change>Change</button></div><p class="destination-guide__hint" data-hint></p></div>'
         document.body.appendChild(this.$route)
         this.$route.querySelector('[data-route-clear]').onclick = () => this.clear()
         this.$route.querySelector('[data-route-change]').onclick = () => this.open()
@@ -65,23 +66,29 @@ export default class VisitorGuide
         this.$hint = this.$route.querySelector('[data-hint]')
         this.$bearing = this.$route.querySelector('[data-bearing]')
         this.$direction = this.$route.querySelector('[data-direction]')
+        this.$details = this.$route.querySelector('.destination-guide__details')
+        this.$detailsToggle = this.$route.querySelector('[data-route-details]')
+        this.compactQuery = window.matchMedia('(max-width: 768px), (max-height: 550px)')
+        this.$detailsToggle.onclick = () => this.setDetails(!this.detailsExpanded)
+        this.compactQuery.addEventListener('change', () => this.setDetails(this.detailsExpanded))
+        this.setDetails(false)
+    }
+
+    setDetails(expanded)
+    {
+        this.detailsExpanded = expanded
+        this.$details.hidden = this.compactQuery.matches && !expanded
+        this.$detailsToggle.setAttribute('aria-expanded', String(!this.$details.hidden))
+        this.$detailsToggle.textContent = expanded ? 'Less' : 'Details'
+        this.$route.dataset.expanded = String(expanded)
     }
 
     buildMarkers()
     {
-        const geometry = new THREE.BufferGeometry()
-        geometry.setAttribute('position', new THREE.Float32BufferAttribute([
-            -.6,-.48,0, .05,0,0, -.6,.48,0, -.4,.48,0, .28,0,0, -.4,-.48,0
-        ], 3))
-        geometry.setIndex([0,1,5, 5,1,4, 1,2,3, 1,3,4])
-        this.markerMaterial = new THREE.MeshBasicMaterial({ color: '#68e9f5', side: THREE.DoubleSide, toneMapped: false })
-        this.markers = new THREE.InstancedMesh(geometry, this.markerMaterial, 28)
-        this.markers.count = 0
-        this.markers.frustumCulled = false
-        this.container.add(this.markers)
-        this.transform = new THREE.Object3D()
-        this.markerPoints = []
-        this.flightPath = [[0, 0], [0, 0]]
+        this.trail = new GuideTrail(this.container)
+        this.markers = this.trail.markers
+        this.markerMaterial = this.trail.markerMaterial
+        this.ribbon = this.trail.ribbon
     }
 
     open()
@@ -117,6 +124,7 @@ export default class VisitorGuide
         else this.destination = { id: 'play', group: 'play', name: 'After Hours Arcade', x: -22, y: -43 }
         w.guidedTour.setActive(this.destination.group)
         this.$name.textContent = this.destination.name
+        this.$name.title = this.destination.name
         this.$category.textContent = id === 'play' ? 'OPTIONAL / GAMES' : 'PORTFOLIO / INFORMATION'
         this.$read.textContent = id === 'play' ? 'Games menu' : id === 'projects' ? 'Read case study' : 'Read now'
         this.$hint.textContent = id === 'play' ? 'Games are optional. Nothing in the portfolio requires a score.' : 'Follow the cyan street arrows—or use Read now / Jump there.'
@@ -124,6 +132,8 @@ export default class VisitorGuide
         document.body.dataset.guideCategory = this.$route.dataset.category
         document.body.classList.add('has-destination-guide')
         this.markerMaterial.color.set(id === 'play' ? '#e8a6ff' : '#68e9f5')
+        this.trail.clear()
+        this.setDetails(false)
         this.rebuildRoute()
         this.lastUpdate = -Infinity
         this.bearingRotation = null
@@ -141,26 +151,13 @@ export default class VisitorGuide
     {
         this.path = cityGuideRoute(this.world.explorer.renderPosition, this.destination)
         this.waypoint = Math.min(1, this.path.length - 1)
+        this.trail.setGroundPath(this.path)
         this.drawMarkers()
     }
 
     drawMarkers()
     {
-        const p = this.world.explorer.renderPosition
-        const flying = p.z > 3
-        this.flightPath[1][0] = this.destination.x
-        this.flightPath[1][1] = this.destination.y
-        const points = cityGuideMarkers(flying ? this.flightPath : this.path, flying ? 1 : this.waypoint, p, 28, this.markerPoints)
-        const height = flying ? p.z - .75 : .09
-        for(const [index, point] of points.entries())
-        {
-            this.transform.position.set(point.x, point.y, height)
-            this.transform.rotation.z = point.yaw
-            this.transform.updateMatrix()
-            this.markers.setMatrixAt(index, this.transform.matrix)
-        }
-        this.markers.count = points.length
-        this.markers.instanceMatrix.needsUpdate = true
+        this.trail.update(this.world.explorer.renderPosition, this.destination, this.world.time.delta / 1000, this.world.config.reducedMotion)
     }
 
     read()
@@ -202,17 +199,17 @@ export default class VisitorGuide
     {
         this.destination = null
         this.$route.hidden = true
-        this.markers.count = 0
+        this.trail.clear()
         document.body.classList.remove('has-destination-guide')
         delete document.body.dataset.guideCategory
     }
 
     // Called in the existing render phase, after the follow/first-person camera.
-    // The tiny compass transform and one instanced trail follow the rendered
-    // player every frame; text labels stay at 4 Hz. No extra animation loop.
+    // The compass and lead arrow follow the rendered pose every frame; the
+    // street ribbon is cached and fades by progress. Labels stay at 4 Hz.
     updateBearing()
     {
-        if(!this.destination || this.$route.hidden) return
+        if(!this.destination || this.$route.hidden) { this.trail.setVisible(false); return }
         const p = this.world.explorer.renderPosition
         if(p.z <= 3)
         {
@@ -223,8 +220,7 @@ export default class VisitorGuide
         const bearing = guideBearing(p, target, this.world.controls.getViewYaw())
         this.bearingRotation = smoothGuideRotation(this.bearingRotation, bearing.rotation, this.world.time.delta / 1000, this.world.config.reducedMotion)
         this.$bearing.style.transform = `rotate(${this.bearingRotation}deg)`
-        this.markers.visible = Math.hypot(this.destination.x - p.x, this.destination.y - p.y) >= 3
-        if(this.markers.visible) this.drawMarkers()
+        this.drawMarkers()
     }
 
     update()
@@ -240,13 +236,14 @@ export default class VisitorGuide
         this.lastUpdate = w.time.elapsed
         const hidden = !this.destination || !!document.querySelector('dialog[open]') || !!w.miniGames.active || w.arcade.state !== 'idle' || !!w.interiors.active
         this.$route.hidden = hidden
-        this.markers.visible = !hidden
+        this.trail.setVisible(!hidden)
         if(hidden) return
         const destination = this.destination
         const distance = Math.hypot(destination.x - p.x, destination.y - p.y)
-        if(distance < 3) this.markers.visible = false
+        const arrived = guideArrived(p, destination)
+        if(arrived) this.trail.setVisible(false)
         const target = p.z > 3 ? [destination.x, destination.y] : this.path[this.waypoint]
         const bearing = guideBearing(p, target, w.controls.getViewYaw())
-        this.$direction.textContent = distance < 3 ? 'You’re here · use the light column or the button below.' : `${bearing.direction} · ${Math.ceil(distance)} m to destination${p.z > 3 ? ' · fly to the light column' : ' · follow the street arrows'}`
+        this.$direction.textContent = arrived ? 'You’re here · use the light column or the button below.' : `${bearing.direction} · ${Math.ceil(distance)} m to destination${p.z > 3 ? ' · fly to the light column' : ' · follow the street arrows'}`
     }
 }
