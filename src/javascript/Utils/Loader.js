@@ -28,6 +28,15 @@ export default class Loader extends EventEmitter
 
         this.loaders = [
             {
+                extensions: ['json'],
+                action: async (_resource) =>
+                {
+                    const response = await fetch(_resource.source)
+                    if(!response.ok) throw new Error(`Asset request failed: ${response.status}`)
+                    return response.json()
+                }
+            },
+            {
                 extensions: ['jpg', 'jpeg', 'png', 'webp'],
                 action: (_resource) => this.loadImage(_resource)
             },

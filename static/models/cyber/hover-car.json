@@ -1,0 +1,157 @@
+{
+ "frame": "Chassis mesh frame used by Car.js (+X forward, Z up, origin = physics chassis centre; Car.js adds chassis.offset z -0.28).",
+ "durationSeconds": 0.8,
+ "easing": "easeInOutCubic; pods rise 0.05 m extra at the midpoint",
+ "wheels": {
+  "wheel_FL": {
+   "drive": {
+    "pos": [
+     0.72,
+     0.74,
+     0.18
+    ],
+    "rotX": 0.0
+   },
+   "fly": {
+    "pos": [
+     0.72,
+     0.66,
+     0.3
+    ],
+    "rotX": -1.5707963267948966
+   }
+  },
+  "wheel_FR": {
+   "drive": {
+    "pos": [
+     0.72,
+     -0.74,
+     0.18
+    ],
+    "rotX": 0.0
+   },
+   "fly": {
+    "pos": [
+     0.72,
+     -0.66,
+     0.3
+    ],
+    "rotX": 1.5707963267948966
+   }
+  },
+  "wheel_BL": {
+   "drive": {
+    "pos": [
+     -0.68,
+     0.74,
+     0.18
+    ],
+    "rotX": 0.0
+   },
+   "fly": {
+    "pos": [
+     -0.68,
+     0.66,
+     0.3
+    ],
+    "rotX": -1.5707963267948966
+   }
+  },
+  "wheel_BR": {
+   "drive": {
+    "pos": [
+     -0.68,
+     -0.74,
+     0.18
+    ],
+    "rotX": 0.0
+   },
+   "fly": {
+    "pos": [
+     -0.68,
+     -0.66,
+     0.3
+    ],
+    "rotX": 1.5707963267948966
+   }
+  }
+ },
+ "compose": "wheel.quaternion = chassis.quaternion * Rx(lerp(drive.rotX, fly.rotX, t)) * spin(axle Y). Position: in DRIVE use the physics wheel body; in FLY use chassis.matrixWorld * fly.pos; blend by t.",
+ "emissive": {
+  "nd_thruster (wheel fan rings + hover_thrusters)": {
+   "drive": 0.0,
+   "fly": 1.0,
+   "rampSeconds": 0.5,
+   "boostMultiplier": 1.6
+  },
+  "hover_brake light bars": "unchanged (brake input)"
+ },
+ "physicsOptions": {
+  "note": "Recommended Physics.js car.options for this body (was the F1 values).",
+  "chassisWidth": 1.3,
+  "chassisDepth": 2.35,
+  "chassisHeight": 0.9,
+  "chassisOffsetZ": 0.32,
+  "wheelFrontOffsetDepth": 0.72,
+  "wheelBackOffsetDepth": -0.68,
+  "wheelOffsetWidth": 0.74,
+  "wheelRadius": 0.25,
+  "wheelHeight": 0.2
+ },
+ "modes": {
+  "drive": "RaycastVehicle active, pods are wheels, fan glow off, tyres spin from physics.",
+  "fly": "RaycastVehicle removed, pods folded fan-down, glow on, no spin (or slow fan spin around local Y)."
+ },
+ "cockpit": {
+  "reference": "cyberpunk inspo vids/Screenshot_20261008-182511.png",
+  "eye": {
+   "meshFrame": [
+    -0.05,
+    0.0,
+    0.92
+   ],
+   "bodyFrameZ": 0.64,
+   "pitchDeg": -6,
+   "fovDeg": 75,
+   "near": 0.05,
+   "note": "Explorer.updateCamera uses p.z + 0.85 for the car: change it to + 0.64 and x - 0.05 along the heading for this cabin."
+  },
+  "slots": {
+   "nd_dash": {
+    "size_m": [
+     1.0,
+     0.155
+    ],
+    "aspect": 6.45,
+    "canvas": [
+     1024,
+     160
+    ],
+    "uv": "0..1, u left->right as seen by the driver, v bottom->top",
+    "content": "Live CanvasTexture each frame: left = speed (km/h, from physics.car.speed) + AUTOPILOT/MODE; mid-left = MODE DRIVE|FLIGHT, ALT m, LANE, BOOST; centre = circular minimap (reuse Minimap.js projection/draw into this canvas); right = NEXT STOP arrow + distance + destination name (guided tour target or nearest project).",
+    "mock": "textures/dash_mock.png",
+    "updateHz": 15
+   },
+   "nd_mirror": {
+    "size_m": [
+     0.13,
+     0.04
+    ],
+    "content": "Optional low-res rear camera render target (128 x 40) on High/Ultra; static dark gradient on Medium/Low."
+   },
+   "nd_hud": {
+    "size_m": [
+     0.28,
+     0.055
+    ],
+    "content": "Additive, transparent windscreen HUD: speed + heading tick. Fades out when not in first person."
+   },
+   "nd_glass": "Canopy: transparent (opacity ~0.18), depthWrite false, render after opaque, double-sided OFF."
+  },
+  "interior": "Inward-facing tub, centred seat, tan leather door cards, bronze bezel + pillars, yoke with cyan strip, right-hand armrest."
+ },
+ "glb": {
+  "parts": "hover-chassis/-wheel/-brake/-reverse/-antenna/-thrusters.glb (Car.js resource keys)",
+  "assembled": "hover-car-assembled.glb (preview, garage, tour ghost; animations drive_to_fly / fly_to_drive)"
+ }
+}

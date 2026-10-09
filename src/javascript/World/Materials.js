@@ -1,6 +1,7 @@
 import * as THREE from 'three'
 import FloorShadowMaterial from '../Materials/FloorShadow.js'
 import MatcapMaterial from '../Materials/Matcap.js'
+import CyberMaterials from './CyberMaterials.js'
 
 export default class Materials
 {
@@ -23,6 +24,7 @@ export default class Materials
         this.setPures()
         this.setShades()
         this.setFloorShadow()
+        if(this.resources.config.neon) this.cyber = new CyberMaterials(this)
     }
 
     setPures()
@@ -40,6 +42,7 @@ export default class Materials
 
     getCelMaterial(_color, _emission = 0)
     {
+        if(this.cyber) return this.cyber.create({ color: _color, emission: _emission })
         const key = `cel${_color.getHexString()}${_emission ? 'Glow' : ''}`
         if(this.shades.items[key]) return this.shades.items[key]
         const material = this.shades.items.white.clone()

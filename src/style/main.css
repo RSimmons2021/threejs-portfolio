@@ -2661,3 +2661,95 @@ body.is-touch-input .interior-bar kbd { display: none; }
 .career-offer { display: grid; gap: 6px; margin-bottom: 16px; padding: 14px 16px; background: #172334; }
 .career-offer__line { margin: 0; font-size: 12px; letter-spacing: .05em; color: #93d6d0; }
 .career-offer__line b { color: #fff0d2; font-size: 14px; }
+.performance-monitor {
+    position: fixed;
+    top: 148px;
+    bottom: auto;
+    left: 16px;
+    z-index: 850;
+    width: min(340px, calc(100vw - 32px));
+    box-sizing: border-box;
+    padding: 12px;
+    border: 1px solid #35626b;
+    background: #071216ed;
+    color: #ade7ed;
+    font: 11px/1.5 'JetBrains Mono', monospace;
+}
+.performance-monitor[hidden] { display: none; }
+.performance-monitor output { display: block; white-space: pre-line; margin: 8px 0; }
+.performance-monitor small { display: block; margin-top: 8px; font-size: 8px; overflow-wrap: anywhere; color: #7b9fa7; }
+@media (max-width: 768px) {
+    .performance-monitor { top: 105px; left: 12px; width: min(300px, calc(100vw - 24px)); max-height: 40vh; overflow: auto; }
+}
+.performance-monitor select, .performance-monitor button {
+    min-height: 44px; background: #122c33; color: #a9eff9; border: 1px solid #35626b; font: inherit; padding: 6px;
+}
+.is-neon-district { --neon-accent: #22e5ff; }
+.is-neon-district .explorer-controls, .is-neon-district .guided-tour,
+.is-neon-district .experience-hud__pill, .is-neon-district .experience-hud__tip,
+.is-neon-district .experience-tools, .is-neon-district .arcade-panel {
+    background: #08141cee;
+    border-color: #2b606a;
+    color: #cee5e9;
+}
+.is-neon-district .explorer-controls button, .is-neon-district .guided-tour__button {
+    color: #93edf6;
+    border-color: #2b606a;
+    background: #10232e;
+}
+.is-neon-district .explorer-controls button:hover,
+.is-neon-district .guided-tour__button.is-active { background: #18424c; color: #d7fbff; }
+.is-neon-district .experience-hud__value { color: #68e9f5; }
+.is-neon-district .arcade-panel h2,
+.is-neon-district .arcade-panel p,
+.is-neon-district .arcade-panel strong,
+.is-neon-district .arcade-panel span,
+.is-neon-district .arcade-panel small,
+.is-neon-district .arcade-panel .arcade-round__title,
+.is-neon-district .arcade-panel .arcade-value,
+.is-neon-district .arcade-panel .arcade-status { color: #cee5e9; }
+.is-neon-district .arcade-panel__eyebrow,
+.is-neon-district .arcade-panel .arcade-best,
+.is-neon-district .arcade-panel .arcade-round small { color: #9eb8c1; }
+.is-neon-district .arcade-panel button,
+.is-neon-district .arcade-menu > button[data-game="bowling"],
+.is-neon-district .arcade-panel .arcade-small,
+.is-neon-district .experience-tools button {
+    background: #10232e; color: #cee5e9; border-color: #2b606a;
+}
+.is-neon-district .arcade-panel button:hover { background: #18424c; }
+.is-neon-district .arcade-panel h2 span,
+.is-neon-district .experience-tools button span { color: #68e9f5; }
+@media (max-width: 768px) {
+    .is-neon-district .experience-tools { top: 205px; right: 12px; }
+    .is-neon-district .experience-tools button { min-height: 44px; }
+}
+
+/* ----------------------------------------------------------------- Neon District flight */
+.flight-pad {
+    position: fixed;
+    z-index: 23;
+    /* Sits above the existing right-hand touch column (boost / brake / horn / reset). */
+    right: max(16px, env(safe-area-inset-right));
+    bottom: calc(312px + env(safe-area-inset-bottom));
+    display: none;
+    flex-direction: column;
+    gap: 10px;
+}
+.flight-pad button {
+    width: 60px;
+    height: 60px;
+    border: 1px solid #22e5ff99;
+    border-radius: 50%;
+    background: #05080bcc;
+    color: #22e5ff;
+    font: 700 20px/1 'JetBrains Mono', monospace;
+    touch-action: none;
+    user-select: none;
+}
+.flight-pad button:active { background: #22e5ff; color: #05080b; }
+@media (pointer: coarse) { .flight-pad:not([hidden]) { display: flex; } }
+@media (pointer: coarse) and (max-height: 600px) {
+    /* Landscape: beside the touch column instead of above it. */
+    .flight-pad { right: calc(112px + env(safe-area-inset-right)); bottom: calc(24px + env(safe-area-inset-bottom)); }
+}

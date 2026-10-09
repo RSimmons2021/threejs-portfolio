@@ -67,6 +67,7 @@ export default class Car
             this.models.backLightsBrake = this.resources.items.carDefaultBackLightsBrake
             this.models.backLightsReverse = this.resources.items.carDefaultBackLightsReverse
             this.models.wheel = this.resources.items.carDefaultWheel
+            this.models.thrusters = this.resources.items.carDefaultThrusters
         }
     }
 
@@ -119,6 +120,11 @@ export default class Car
         this.chassis.object.position.copy(this.chassis.renderPosition)
         this.chassis.oldPosition = this.chassis.object.position.clone()
         this.container.add(this.chassis.object)
+        if(this.models.thrusters)
+        {
+            this.thrusters = this.objects.getConvertedMesh(this.models.thrusters.scene.children)
+            this.chassis.object.add(this.thrusters)
+        }
 
         this.shadows.add(this.chassis.object, { sizeX: 3, sizeY: 2, offsetZ: 0.2 })
 
@@ -134,6 +140,16 @@ export default class Car
                 this.chassis.renderPosition.copy(renderPosition(this.physics.car.chassis.body, this.time.delta / 1000))
                 this.chassis.object.position.copy(this.chassis.renderPosition).add(this.chassis.offset)
                 this.chassis.object.quaternion.copy(this.physics.car.chassis.body.quaternion)
+                // Hover flight: bank into turns, nose down under thrust, gentle bob.
+                const hover = this.physics.car.hover
+                if(hover && (hover.visual.roll || hover.visual.pitch || hover.visual.bob))
+                {
+                    this.hoverTilt ||= new THREE.Quaternion()
+                    this.hoverEuler ||= new THREE.Euler()
+                    this.hoverEuler.set(hover.visual.roll, hover.visual.pitch, 0, 'XYZ')
+                    this.chassis.object.quaternion.multiply(this.hoverTilt.setFromEuler(this.hoverEuler))
+                    this.chassis.object.position.z += hover.visual.bob
+                }
             }
 
             // Update position
@@ -328,6 +344,25 @@ export default class Car
                         smoothed.z + (wheelBody.position.z - chassisBody.position.z)
                     )
                     wheelObject.quaternion.copy(wheelBody.quaternion)
+                }
+                // Hover pods: blend from the physics wheel pose to the folded,
+                // fan-down flight pose (static/models/cyber/hover-car.json).
+                const hover = this.physics.car.hover
+                const spec = hover?.spec?.wheels
+                if(spec && hover.fold > 0.001)
+                {
+                    const names = ['wheel_FL', 'wheel_FR', 'wheel_BL', 'wheel_BR']
+                    this.foldTmp ||= { v: new THREE.Vector3(), q: new THREE.Quaternion(), r: new THREE.Quaternion(), x: new THREE.Vector3(1, 0, 0) }
+                    const t = this.foldTmp
+                    this.chassis.object.updateMatrixWorld()
+                    this.wheels.items.forEach((wheelObject, i) =>
+                    {
+                        const fly = spec[names[i]].fly
+                        t.v.set(fly.pos[0], fly.pos[1], fly.pos[2]).applyMatrix4(this.chassis.object.matrixWorld)
+                        wheelObject.position.lerp(t.v, hover.fold)
+                        t.q.copy(this.chassis.object.quaternion).multiply(t.r.setFromAxisAngle(t.x, fly.rotX))
+                        wheelObject.quaternion.slerp(t.q, hover.fold)
+                    })
                 }
             }
         })

@@ -123,6 +123,10 @@ export default class CareerRPG
     {
         const cycle = this.world.dayNightCycle
         if(!cycle) return
+        // Neon District keeps the visitor's clock (or an explicit lighting
+        // preview). Career hours still pace rewards, shifts and sleep, but
+        // must not silently replace the art direction's time source.
+        if(this.world.config.neon) return
         cycle.settings.realTime = false
         cycle.settings.autoPlay = false
         cycle.settings.currentTime = (this.state.hour % 24) / 24

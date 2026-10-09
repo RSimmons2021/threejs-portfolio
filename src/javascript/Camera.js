@@ -54,7 +54,11 @@ export default class Camera
 
         // Items
         this.angle.items = {
-            default: new THREE.Vector3(1.135, - 1.45, 1.15),
+            // Center the preview on its street canyon. The former lateral
+            // offset places the camera inside the new, taller facades.
+            default: this.config.neon
+                ? new THREE.Vector3(0.12, - 1.5, 0.75)
+                : new THREE.Vector3(1.135, - 1.45, 1.15),
             projects: new THREE.Vector3(0.38, - 1.4, 1.63)
         }
 
@@ -127,7 +131,7 @@ export default class Camera
         this.zoom.easing = 0.1
         this.zoom.minDistance = 14
         this.zoom.amplitude = 15
-        this.zoom.value = this.config.cyberTruck ? 0.3 : 0.8
+        this.zoom.value = this.config.cyberTruck || this.config.neon ? 0.3 : 0.8
         this.zoom.targetValue = this.zoom.value
         this.zoom.distance = this.zoom.minDistance + this.zoom.amplitude * this.zoom.value
 

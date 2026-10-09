@@ -147,3 +147,6 @@ tags
 
 # ElevenLabs regeneration (scripts/generate-sounds.mjs)
 static/sounds-original/
+
+# Local mood references, never shipped or committed.
+cyberpunk inspo vids/

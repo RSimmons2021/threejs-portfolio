@@ -70,6 +70,26 @@ const DEFAULT_CAR_RESOURCES = [
     { name: 'carDefaultAntena', source: './models/nyc/f1-antenna.glb' }
 ]
 
+const HOVER_CAR_RESOURCES = [
+    { name: 'carDefaultChassis', source: './models/cyber/hover-chassis.glb' },
+    { name: 'carDefaultWheel', source: './models/cyber/hover-wheel.glb' },
+    { name: 'carDefaultBackLightsBrake', source: './models/cyber/hover-brake.glb' },
+    { name: 'carDefaultBackLightsReverse', source: './models/cyber/hover-reverse.glb' },
+    { name: 'carDefaultAntena', source: './models/cyber/hover-antenna.glb' },
+    { name: 'carDefaultThrusters', source: './models/cyber/hover-thrusters.glb' },
+    { name: 'hoverCarSpec', source: './models/cyber/hover-car.json' }
+]
+
+const NEON_RESOURCES = [
+    { name: 'cyberKit', source: './models/cyber/city-kit.glb' },
+    { name: 'cyberLayout', source: './models/cyber/district-layout.json' },
+    { name: 'cyberSigns', source: './models/cyber/signs-atlas.json' },
+    { name: 'cyberLightVolume', source: './models/cyber/light-volume.json' },
+    { name: 'cyberTraffic', source: './models/cyber/traffic.glb' },
+    ...['kit_color', 'kit_mask', 'signs_color', 'signs_halo', 'light_volume', 'light_sun'].map(name =>
+        ({ name: `cyber_${name}`, source: `./models/cyber/textures/${name}.png`, type: 'texture' }))
+]
+
 const CYBER_TRUCK_RESOURCES = [
     { name: 'carCyberTruckChassis', source: './models/car/cyberTruck/chassis.glb' },
     { name: 'carCyberTruckWheel', source: './models/car/cyberTruck/wheel.glb' },
@@ -144,8 +164,9 @@ export default class Resources extends EventEmitter
 
     loadCore()
     {
-        const carResources = this.config.cyberTruck ? [...DEFAULT_CAR_RESOURCES, ...CYBER_TRUCK_RESOURCES] : DEFAULT_CAR_RESOURCES
-        return this.loadStage('core', [...CORE_RESOURCES, ...carResources])
+        const baseCar = this.config.neon ? HOVER_CAR_RESOURCES : DEFAULT_CAR_RESOURCES
+        const carResources = this.config.cyberTruck ? [...baseCar, ...CYBER_TRUCK_RESOURCES] : baseCar
+        return this.loadStage('core', [...CORE_RESOURCES, ...carResources, ...(this.config.neon ? NEON_RESOURCES : [])])
     }
 
     loadDeferred()

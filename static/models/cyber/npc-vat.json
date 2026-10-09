@@ -1,0 +1,38 @@
+{
+ "texture": "textures/npc_vat.png",
+ "vertices": 714,
+ "frames": 144,
+ "boundsMin": [
+  -0.36339,
+  -0.56417,
+  -0.03609
+ ],
+ "boundsMax": [
+  0.36339,
+  0.58543,
+  1.81233
+ ],
+ "clips": {
+  "idle": {
+   "row": 0,
+   "frames": 60,
+   "fps": 30,
+   "loop": true
+  },
+  "walk": {
+   "row": 60,
+   "frames": 24,
+   "fps": 30,
+   "loop": true
+  },
+  "talk": {
+   "row": 84,
+   "frames": 60,
+   "fps": 30,
+   "loop": true
+  }
+ },
+ "lookup": "Vertex index lives in TEXCOORD_1.x as (index + 0.5) / vertices. Frame row r is stored bottom-up: with THREE.TextureLoader (flipY = true, the default) sample v = (r + 0.5) / frames. Use NearestFilter, no mipmaps.",
+ "decode": "position = boundsMin + rgb * (boundsMax - boundsMin) in the NPC object frame (Z up, faces +Y). Flat-shade with dFdx/dFdy. Blend between adjacent rows for smooth playback.",
+ "variants": "Per-instance variant 0..5: if uv.y is inside the variant block (v 0.25..0.5, u 0..0.375) add variant * 0.0625 to uv.x."
+}

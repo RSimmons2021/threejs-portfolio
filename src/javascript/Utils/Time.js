@@ -14,6 +14,7 @@ export default class Time extends EventEmitter
         this.elapsed = 0
         this.delta = 16
         this.running = false
+        this.frameInterval = 0
 
         this.tick = this.tick.bind(this)
         this.resume()
@@ -32,8 +33,13 @@ export default class Time extends EventEmitter
         this.ticker = window.requestAnimationFrame(this.tick)
 
         const current = performance.now()
+        // Medium/Low limit rendering to 60 Hz on 90/120 Hz phone panels,
+        // leaving thermal headroom. Physics still consumes the actual elapsed
+        // interval, and skipped RAF callbacks never enter FPS measurements.
+        if(current - this.current + 0.5 < this.frameInterval) return
 
         this.delta = current - this.current
+        this.rawDelta = this.delta
         this.elapsed = current - this.start
         this.current = current
 

@@ -166,6 +166,20 @@ export default class Physics
             this.car.options.wheelHeight = 0.36
         }
 
+        // Neon District hover car body (static/models/cyber/hover-car.json -> physicsOptions)
+        if(this.config.neon && !this.config.cyberTruck)
+        {
+            this.car.options.chassisWidth = 1.3
+            this.car.options.chassisHeight = 0.9
+            this.car.options.chassisDepth = 2.35
+            this.car.options.chassisOffset.set(0, 0, 0.32)
+            this.car.options.wheelFrontOffsetDepth = 0.72
+            this.car.options.wheelBackOffsetDepth = -0.68
+            this.car.options.wheelOffsetWidth = 0.74
+            this.car.options.wheelRadius = 0.25
+            this.car.options.wheelHeight = 0.2
+        }
+
         /**
          * Upsize down
          */
@@ -198,7 +212,8 @@ export default class Physics
 
             this.car.chassis.body = new CANNON.Body({ mass: this.car.options.chassisMass })
             this.car.chassis.body.allowSleep = false
-            this.car.chassis.body.position.set(0, 0, 12)
+            const entry = this.config.entryPosition
+            this.car.chassis.body.position.set(entry.x, entry.y, entry.z)
             this.car.chassis.body.sleep()
             this.car.chassis.body.addShape(this.car.chassis.shape, this.car.options.chassisOffset)
             this.car.chassis.body.quaternion.setFromAxisAngle(new CANNON.Vec3(0, 0, 1), - Math.PI * 0.5)

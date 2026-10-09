@@ -7,7 +7,9 @@
     "assets:billboards": "node scripts/build-billboards.mjs",
     "test:assets": "node --test scripts/assets.test.mjs",
     "test:arcade": "node --test scripts/arcade.test.mjs",
-    "build": "vite build"
+    "build": "vite build",
+    "test:cyber-assets": "node --test scripts/cyber-assets.test.mjs",
+    "test:quality": "node --test scripts/quality.test.mjs"
   },
   "devDependencies": {
     "vite": "^5.2.11",

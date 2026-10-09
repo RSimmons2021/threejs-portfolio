@@ -32,6 +32,13 @@ import GuidedTour from './GuidedTour.js'
 import WorldDiagnostics from './WorldDiagnostics.js'
 import ExperienceDirector from './ExperienceDirector.js'
 import City from './City.js'
+import NeonCity from './NeonCity.js'
+import NeonSky from './NeonSky.js'
+import CameraRig from './CameraRig.js'
+import NeonTraffic from './NeonTraffic.js'
+import HoverFlight from './HoverFlight.js'
+import CockpitDash from './CockpitDash.js'
+import { previewTime } from './neonDistrictRules.js'
 import Arcade from './Arcade.js'
 import Explorer from './Explorer.js'
 import Pedestrians from './Pedestrians.js'
@@ -52,6 +59,7 @@ export default class World
         this.scene = _options.scene
         this.renderer = _options.renderer
         this.passes = _options.passes
+        this.quality = _options.quality
 
         // Debug
         if(this.debug)
@@ -80,6 +88,7 @@ export default class World
         }
 
         this.started = true
+        this.startedAt = this.time.elapsed
         document.body.classList.add('has-started')
         this.sounds.startEngine()
 
@@ -111,11 +120,38 @@ export default class World
         this.setSections()
         this.setParticleTrails()
         this.setAdvancedLighting()
-        this.city = new City({ resources: this.resources, materials: this.materials, physics: this.physics, time: this.time, lighting: this.advancedLighting })
+        if(this.config.neon) this.neonCity = new NeonCity(this)
+        this.city = new City({ resources: this.resources, materials: this.materials, physics: this.physics, time: this.time, lighting: this.advancedLighting, neon: this.config.neon })
         this.container.add(this.city.container)
+        if(this.neonCity)
+        {
+            this.container.add(this.neonCity.container)
+            this.neonTraffic = new NeonTraffic(this)
+            this.container.add(this.neonTraffic.container)
+        }
         this.setDayNightCycle()
+        const timePreview = previewTime(new URLSearchParams(location.search).get('time'))
+        if(timePreview !== null)
+        {
+            this.dayNightCycle.settings.realTime = false
+            this.dayNightCycle.settings.currentTime = timePreview
+        }
         this.setSky()
+        if(this.config.neon)
+        {
+            // The overcast dome and the street apron replace the cartoon sky and floor.
+            this.neonSky = new NeonSky(this)
+            this.sky.container.visible = false
+            this.floor.container.visible = false
+        }
         this.setWeather()
+        this.weather.setQuality(this.quality.settings)
+        const weatherPreview = new URLSearchParams(location.search).get('weather')
+        if(['clear', 'rain', 'fog'].includes(weatherPreview))
+        {
+            this.weather.settings.autoCycle = false
+            this.weather.setWeather(weatherPreview)
+        }
         this.setFireflies()
         this.setTireEffects()
         this.setAmbientSounds()
@@ -127,6 +163,15 @@ export default class World
         this.arcade = new Arcade(this)
         this.container.add(this.arcade.container)
         this.explorer = new Explorer(this)
+        if(this.config.neon)
+        {
+            this.hoverFlight = new HoverFlight(this)
+            this.cockpitDash = new CockpitDash(this)
+            this.cameraRig = new CameraRig(this)
+            // The analytic headlight in the city shader replaces the solid cone meshes.
+            this.advancedLighting.settings.headlightConesAutoNight = false
+            this.advancedLighting.settings.headlightConesEnabled = false
+        }
         this.pedestrians = new Pedestrians(this)
         this.container.add(this.pedestrians.container)
         // After Explorer, so the career areas inherit the walker-aware proximity
@@ -166,7 +211,12 @@ export default class World
 
             // Car
             this.physics.car.chassis.body.sleep()
-            this.physics.car.chassis.body.position.set(0, 0, 12)
+            const entry = this.config.entryPosition
+            this.physics.car.chassis.body.position.set(entry.x, entry.y, entry.z)
+            // Start inside the review slice, not in the unchanged intro plaza.
+            // Seed easing here to avoid an opening sweep through tower walls.
+            this.camera.target.set(entry.x, entry.y, 0)
+            this.camera.targetEased.copy(this.camera.target)
 
             window.setTimeout(() =>
             {

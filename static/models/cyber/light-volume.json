@@ -1,0 +1,48 @@
+{
+ "texture": "textures/light_volume.png",
+ "grid": {
+  "min": [
+   -120.0,
+   -100.0,
+   0.0
+  ],
+  "max": [
+   210.0,
+   41.0,
+   128.0
+  ],
+  "cell": [
+   3.0,
+   3.0,
+   4.0
+  ],
+  "dims": [
+   111,
+   48,
+   33
+  ],
+  "sampleZOffset": 0.5,
+  "tiles": [
+   8,
+   5
+  ]
+ },
+ "encoding": {
+  "a": "sky visibility 0..1 (linear)",
+  "rgb": "neon bounce, sqrt-encoded: bounce = rgb^2 * bounceScale",
+  "bounceScale": 0.5558
+ },
+ "sampling": "Load with THREE.TextureLoader (flipY = true), LinearFilter, no mipmaps, NoColorSpace. g = (worldPos - min) / cell  (grid coordinates; z uses worldPos.z - sampleZOffset). For slice s = floor(g.z) and s + 1: tile (s % tiles[0], floor(s / tiles[0])); uv = ((tileX * dims.x + clamp(g.x, 0, dims.x - 1) + 0.5) / (dims.x * tiles[0]), (tileY * dims.y + clamp(g.y, 0, dims.y - 1) + 0.5) / (dims.y * tiles[1])); mix the two samples by fract(g.z). Outside the grid: sky = 1, bounce = 0.",
+ "shading": "lit = albedo * ao * (skyColour * mix(0.08, 1.0, sky) + bounce * neonIntensity) + emissive; skyColour and neonIntensity come from the DayNightCycle palette (plan 7.2).",
+ "sun": {
+  "texture": "textures/light_sun.png",
+  "direction": [
+   -0.2767,
+   -0.76023,
+   0.58779
+  ],
+  "note": "Sun visibility (R) for the art-directed afternoon sun, same slice atlas/UVs as the light volume. direction points toward the sun."
+ },
+ "lights": 1284,
+ "cells": 175824
+}

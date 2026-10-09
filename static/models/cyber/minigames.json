@@ -1,0 +1,1491 @@
+{
+ "packetRun": {
+  "mode": "city flight",
+  "durationSeconds": 90,
+  "facilities": [
+   {
+    "id": 1,
+    "roof": [
+     -17.0,
+     8.65,
+     28
+    ],
+    "beacon": [
+     -17.0,
+     8.65,
+     28
+    ]
+   },
+   {
+    "id": 2,
+    "roof": [
+     -10.0,
+     -43.35,
+     36
+    ],
+    "beacon": [
+     -10.0,
+     -43.35,
+     36
+    ]
+   },
+   {
+    "id": 3,
+    "roof": [
+     10.0,
+     12.65,
+     40
+    ],
+    "beacon": [
+     10.0,
+     12.65,
+     40
+    ]
+   },
+   {
+    "id": 4,
+    "roof": [
+     19.0,
+     8.65,
+     32
+    ],
+    "beacon": [
+     19.0,
+     8.65,
+     32
+    ]
+   },
+   {
+    "id": 5,
+    "roof": [
+     33.0,
+     -11.35,
+     60
+    ],
+    "beacon": [
+     33.0,
+     -11.35,
+     60
+    ]
+   },
+   {
+    "id": 6,
+    "roof": [
+     68.0,
+     -14.35,
+     52
+    ],
+    "beacon": [
+     68.0,
+     -14.35,
+     52
+    ]
+   },
+   {
+    "id": 7,
+    "roof": [
+     103.0,
+     -53.0,
+     52
+    ],
+    "beacon": [
+     103.0,
+     -53.0,
+     52
+    ]
+   }
+  ],
+  "racks": [
+   {
+    "id": "A",
+    "roof": [
+     69.0,
+     -52.0,
+     60
+    ],
+    "intakeRing": [
+     69.0,
+     -52.0,
+     69.0
+    ]
+   },
+   {
+    "id": "B",
+    "roof": [
+     138.0,
+     -52.0,
+     60
+    ],
+    "intakeRing": [
+     138.0,
+     -52.0,
+     69.0
+    ]
+   },
+   {
+    "id": "C",
+    "roof": [
+     154.0,
+     -54.0,
+     60
+    ],
+    "intakeRing": [
+     154.0,
+     -54.0,
+     69.0
+    ]
+   }
+  ]
+ },
+ "beatTunnel": {
+  "mode": "city flight on rails (steer within the ring plane)",
+  "bpm": 100,
+  "speed": 12.0,
+  "path": [
+   [
+    -50,
+    -30,
+    16
+   ],
+   [
+    -25,
+    -30,
+    15
+   ],
+   [
+    -2,
+    -30,
+    14
+   ],
+   [
+    30,
+    -30,
+    18
+   ],
+   [
+    60,
+    -31,
+    19
+   ],
+   [
+    68,
+    -31,
+    19
+   ],
+   [
+    90,
+    -29,
+    26
+   ],
+   [
+    108,
+    -30,
+    27
+   ],
+   [
+    130,
+    -32,
+    28
+   ],
+   [
+    150,
+    -30,
+    32
+   ],
+   [
+    160,
+    -26,
+    40
+   ],
+   [
+    150,
+    -24,
+    46
+   ],
+   [
+    110,
+    -27,
+    46
+   ],
+   [
+    60,
+    -33,
+    46
+   ],
+   [
+    20,
+    -30,
+    40
+   ],
+   [
+    4,
+    -34,
+    28
+   ],
+   [
+    0,
+    -43,
+    17
+   ],
+   [
+    0,
+    -56,
+    14
+   ],
+   [
+    2,
+    -66,
+    16
+   ]
+  ],
+  "rings": [
+   {
+    "beat": 0,
+    "p": [
+     -41.7,
+     -30.0,
+     15.67
+    ],
+    "forward": [
+     0.999,
+     0.0,
+     -0.039
+    ],
+    "kind": "ring"
+   },
+   {
+    "beat": 1,
+    "p": [
+     -34.6,
+     -30.0,
+     15.39
+    ],
+    "forward": [
+     0.999,
+     0.0,
+     -0.04
+    ],
+    "kind": "ring"
+   },
+   {
+    "beat": 2,
+    "p": [
+     -27.53,
+     -30.0,
+     15.1
+    ],
+    "forward": [
+     0.999,
+     0.0,
+     -0.041
+    ],
+    "kind": "ring"
+   },
+   {
+    "beat": 3,
+    "p": [
+     -20.42,
+     -30.0,
+     14.72
+    ],
+    "forward": [
+     0.997,
+     0.0,
+     -0.074
+    ],
+    "kind": "ring"
+   },
+   {
+    "beat": 4,
+    "p": [
+     -13.94,
+     -30.0,
+     14.19
+    ],
+    "forward": [
+     0.997,
+     0.0,
+     -0.078
+    ],
+    "kind": "ring"
+   },
+   {
+    "beat": 5,
+    "p": [
+     -5.92,
+     -30.0,
+     13.88
+    ],
+    "forward": [
+     1.0,
+     0.0,
+     -0.001
+    ],
+    "kind": "ring"
+   },
+   {
+    "beat": 6,
+    "p": [
+     0.84,
+     -30.0,
+     14.21
+    ],
+    "forward": [
+     0.997,
+     0.002,
+     0.083
+    ],
+    "kind": "ring"
+   },
+   {
+    "beat": 7,
+    "p": [
+     8.61,
+     -29.96,
+     15.15
+    ],
+    "forward": [
+     0.991,
+     0.005,
+     0.137
+    ],
+    "kind": "ring"
+   },
+   {
+    "beat": 8,
+    "p": [
+     15.23,
+     -29.93,
+     16.13
+    ],
+    "forward": [
+     0.989,
+     0.003,
+     0.148
+    ],
+    "kind": "ring"
+   },
+   {
+    "beat": 9,
+    "p": [
+     21.93,
+     -29.93,
+     17.09
+    ],
+    "forward": [
+     0.991,
+     -0.002,
+     0.137
+    ],
+    "kind": "ring"
+   },
+   {
+    "beat": 10,
+    "p": [
+     30.0,
+     -30.0,
+     18.0
+    ],
+    "forward": [
+     0.996,
+     -0.014,
+     0.088
+    ],
+    "kind": "ring"
+   },
+   {
+    "beat": 11,
+    "p": [
+     36.48,
+     -30.15,
+     18.41
+    ],
+    "forward": [
+     0.998,
+     -0.028,
+     0.052
+    ],
+    "kind": "ring"
+   },
+   {
+    "beat": 12,
+    "p": [
+     44.86,
+     -30.44,
+     18.71
+    ],
+    "forward": [
+     0.999,
+     -0.037,
+     0.028
+    ],
+    "kind": "ring"
+   },
+   {
+    "beat": 13,
+    "p": [
+     51.21,
+     -30.68,
+     18.84
+    ],
+    "forward": [
+     0.999,
+     -0.039,
+     0.018
+    ],
+    "kind": "ring"
+   },
+   {
+    "beat": 14,
+    "p": [
+     57.9,
+     -30.94,
+     18.95
+    ],
+    "forward": [
+     0.999,
+     -0.035,
+     0.018
+    ],
+    "kind": "ring"
+   },
+   {
+    "beat": 15,
+    "p": [
+     64.85,
+     -31.19,
+     18.54
+    ],
+    "forward": [
+     0.98,
+     -0.001,
+     -0.197
+    ],
+    "kind": "gate"
+   },
+   {
+    "beat": 16,
+    "p": [
+     72.61,
+     -30.57,
+     20.4
+    ],
+    "forward": [
+     0.943,
+     0.099,
+     0.317
+    ],
+    "kind": "ring"
+   },
+   {
+    "beat": 17,
+    "p": [
+     79.59,
+     -29.81,
+     22.87
+    ],
+    "forward": [
+     0.938,
+     0.1,
+     0.332
+    ],
+    "kind": "ring"
+   },
+   {
+    "beat": 18,
+    "p": [
+     85.63,
+     -29.24,
+     24.87
+    ],
+    "forward": [
+     0.953,
+     0.078,
+     0.294
+    ],
+    "kind": "ring"
+   },
+   {
+    "beat": 19,
+    "p": [
+     92.88,
+     -28.98,
+     26.48
+    ],
+    "forward": [
+     0.99,
+     -0.004,
+     0.14
+    ],
+    "kind": "ring"
+   },
+   {
+    "beat": 20,
+    "p": [
+     99.85,
+     -29.31,
+     26.88
+    ],
+    "forward": [
+     0.997,
+     -0.076,
+     0.011
+    ],
+    "kind": "ring"
+   },
+   {
+    "beat": 21,
+    "p": [
+     107.01,
+     -29.92,
+     26.96
+    ],
+    "forward": [
+     0.996,
+     -0.081,
+     0.031
+    ],
+    "kind": "ring"
+   },
+   {
+    "beat": 22,
+    "p": [
+     114.37,
+     -30.65,
+     27.21
+    ],
+    "forward": [
+     0.993,
+     -0.116,
+     0.023
+    ],
+    "kind": "ring"
+   },
+   {
+    "beat": 23,
+    "p": [
+     121.15,
+     -31.44,
+     27.38
+    ],
+    "forward": [
+     0.994,
+     -0.108,
+     0.033
+    ],
+    "kind": "ring"
+   },
+   {
+    "beat": 24,
+    "p": [
+     128.94,
+     -31.99,
+     27.88
+    ],
+    "forward": [
+     0.995,
+     -0.029,
+     0.096
+    ],
+    "kind": "ring"
+   },
+   {
+    "beat": 25,
+    "p": [
+     135.38,
+     -31.83,
+     28.7
+    ],
+    "forward": [
+     0.989,
+     0.054,
+     0.138
+    ],
+    "kind": "ring"
+   },
+   {
+    "beat": 26,
+    "p": [
+     142.82,
+     -31.14,
+     29.97
+    ],
+    "forward": [
+     0.973,
+     0.117,
+     0.197
+    ],
+    "kind": "ring"
+   },
+   {
+    "beat": 27,
+    "p": [
+     149.23,
+     -30.15,
+     31.71
+    ],
+    "forward": [
+     0.931,
+     0.171,
+     0.322
+    ],
+    "kind": "ring"
+   },
+   {
+    "beat": 28,
+    "p": [
+     155.68,
+     -28.45,
+     35.01
+    ],
+    "forward": [
+     0.803,
+     0.275,
+     0.529
+    ],
+    "kind": "ring"
+   },
+   {
+    "beat": 29,
+    "p": [
+     160.0,
+     -26.0,
+     40.0
+    ],
+    "forward": [
+     0.094,
+     0.399,
+     0.912
+    ],
+    "kind": "ring"
+   },
+   {
+    "beat": 30,
+    "p": [
+     155.84,
+     -24.17,
+     44.7
+    ],
+    "forward": [
+     -0.919,
+     0.11,
+     0.38
+    ],
+    "kind": "ring"
+   },
+   {
+    "beat": 31,
+    "p": [
+     148.69,
+     -24.03,
+     46.14
+    ],
+    "forward": [
+     -0.994,
+     -0.025,
+     0.103
+    ],
+    "kind": "gate"
+   },
+   {
+    "beat": 32,
+    "p": [
+     140.52,
+     -24.44,
+     46.44
+    ],
+    "forward": [
+     -0.998,
+     -0.06,
+     0.01
+    ],
+    "kind": "ring"
+   },
+   {
+    "beat": 33,
+    "p": [
+     132.5,
+     -25.0,
+     46.38
+    ],
+    "forward": [
+     -0.997,
+     -0.075,
+     -0.016
+    ],
+    "kind": "ring"
+   },
+   {
+    "beat": 34,
+    "p": [
+     125.93,
+     -25.53,
+     46.24
+    ],
+    "forward": [
+     -0.996,
+     -0.083,
+     -0.022
+    ],
+    "kind": "ring"
+   },
+   {
+    "beat": 35,
+    "p": [
+     119.12,
+     -26.13,
+     46.1
+    ],
+    "forward": [
+     -0.996,
+     -0.09,
+     -0.019
+    ],
+    "kind": "ring"
+   },
+   {
+    "beat": 36,
+    "p": [
+     112.26,
+     -26.78,
+     46.01
+    ],
+    "forward": [
+     -0.995,
+     -0.096,
+     -0.009
+    ],
+    "kind": "ring"
+   },
+   {
+    "beat": 37,
+    "p": [
+     105.36,
+     -27.52,
+     46.03
+    ],
+    "forward": [
+     -0.993,
+     -0.116,
+     0.008
+    ],
+    "kind": "ring"
+   },
+   {
+    "beat": 38,
+    "p": [
+     97.97,
+     -28.5,
+     46.14
+    ],
+    "forward": [
+     -0.99,
+     -0.137,
+     0.018
+    ],
+    "kind": "ring"
+   },
+   {
+    "beat": 39,
+    "p": [
+     90.24,
+     -29.62,
+     46.29
+    ],
+    "forward": [
+     -0.989,
+     -0.144,
+     0.019
+    ],
+    "kind": "ring"
+   },
+   {
+    "beat": 40,
+    "p": [
+     82.38,
+     -30.75,
+     46.41
+    ],
+    "forward": [
+     -0.99,
+     -0.14,
+     0.013
+    ],
+    "kind": "ring"
+   },
+   {
+    "beat": 41,
+    "p": [
+     77.16,
+     -31.45,
+     46.44
+    ],
+    "forward": [
+     -0.991,
+     -0.13,
+     0.004
+    ],
+    "kind": "ring"
+   },
+   {
+    "beat": 42,
+    "p": [
+     69.52,
+     -32.33,
+     46.38
+    ],
+    "forward": [
+     -0.994,
+     -0.105,
+     -0.015
+    ],
+    "kind": "ring"
+   },
+   {
+    "beat": 43,
+    "p": [
+     62.29,
+     -32.9,
+     46.14
+    ],
+    "forward": [
+     -0.997,
+     -0.063,
+     -0.046
+    ],
+    "kind": "ring"
+   },
+   {
+    "beat": 44,
+    "p": [
+     55.49,
+     -33.03,
+     45.67
+    ],
+    "forward": [
+     -0.997,
+     0.005,
+     -0.076
+    ],
+    "kind": "ring"
+   },
+   {
+    "beat": 45,
+    "p": [
+     46.51,
+     -32.54,
+     44.83
+    ],
+    "forward": [
+     -0.991,
+     0.079,
+     -0.104
+    ],
+    "kind": "ring"
+   },
+   {
+    "beat": 46,
+    "p": [
+     39.98,
+     -31.87,
+     44.04
+    ],
+    "forward": [
+     -0.986,
+     0.11,
+     -0.128
+    ],
+    "kind": "ring"
+   },
+   {
+    "beat": 47,
+    "p": [
+     33.79,
+     -31.13,
+     43.12
+    ],
+    "forward": [
+     -0.98,
+     0.12,
+     -0.157
+    ],
+    "kind": "gate"
+   },
+   {
+    "beat": 48,
+    "p": [
+     26.3,
+     -30.3,
+     41.68
+    ],
+    "forward": [
+     -0.973,
+     0.095,
+     -0.21
+    ],
+    "kind": "ring"
+   },
+   {
+    "beat": 49,
+    "p": [
+     20.0,
+     -30.0,
+     40.0
+    ],
+    "forward": [
+     -0.956,
+     0.002,
+     -0.293
+    ],
+    "kind": "ring"
+   },
+   {
+    "beat": 50,
+    "p": [
+     13.06,
+     -30.53,
+     36.81
+    ],
+    "forward": [
+     -0.849,
+     -0.12,
+     -0.514
+    ],
+    "kind": "ring"
+   },
+   {
+    "beat": 51,
+    "p": [
+     7.76,
+     -31.95,
+     32.36
+    ],
+    "forward": [
+     -0.669,
+     -0.264,
+     -0.695
+    ],
+    "kind": "ring"
+   },
+   {
+    "beat": 52,
+    "p": [
+     3.52,
+     -34.33,
+     27.42
+    ],
+    "forward": [
+     -0.579,
+     -0.405,
+     -0.708
+    ],
+    "kind": "ring"
+   },
+   {
+    "beat": 53,
+    "p": [
+     1.0,
+     -37.94,
+     21.94
+    ],
+    "forward": [
+     -0.209,
+     -0.588,
+     -0.781
+    ],
+    "kind": "ring"
+   },
+   {
+    "beat": 54,
+    "p": [
+     0.0,
+     -43.0,
+     17.0
+    ],
+    "forward": [
+     -0.143,
+     -0.821,
+     -0.553
+    ],
+    "kind": "ring"
+   },
+   {
+    "beat": 55,
+    "p": [
+     -0.38,
+     -49.44,
+     14.69
+    ],
+    "forward": [
+     0.012,
+     -0.98,
+     -0.197
+    ],
+    "kind": "ring"
+   },
+   {
+    "beat": 56,
+    "p": [
+     0.06,
+     -56.58,
+     13.99
+    ],
+    "forward": [
+     0.098,
+     -0.995,
+     -0.018
+    ],
+    "kind": "ring"
+   },
+   {
+    "beat": 57,
+    "p": [
+     1.37,
+     -63.36,
+     15.25
+    ],
+    "forward": [
+     0.227,
+     -0.935,
+     0.274
+    ],
+    "kind": "ring"
+   }
+  ],
+  "blockedRings": [],
+  "audio": "Procedural WebAudio: 100 BPM kit + pad; binaural drone 200 Hz L / 208 Hz R (8 Hz alpha). Ring hits play a chord stab."
+ },
+ "arenas": {
+  "signal_noise": {
+   "origin": [
+    420,
+    320,
+    0
+   ],
+   "shell": "mg_lab_shell",
+   "size": [
+    20,
+    14,
+    6
+   ],
+   "place": {
+    "mg_post_emitter": [
+     [
+      0,
+      6.0,
+      0,
+      0
+     ]
+    ],
+    "mg_bin_positive": [
+     [
+      -5,
+      1.5,
+      0,
+      0
+     ]
+    ],
+    "mg_bin_neutral": [
+     [
+      0,
+      3.0,
+      0,
+      0
+     ]
+    ],
+    "mg_bin_negative": [
+     [
+      5,
+      1.5,
+      0,
+      0
+     ]
+    ]
+   },
+   "player": [
+    0,
+    -2.5,
+    0
+   ],
+   "note": "First person on foot facing +Y. Posts arc from the emitter toward the player; flick left = positive bin, right = negative, down = neutral."
+  },
+  "triage": {
+   "origin": [
+    480,
+    320,
+    0
+   ],
+   "shell": "mg_triage_hall",
+   "size": [
+    24,
+    14,
+    6
+   ],
+   "place": {
+    "mg_conveyor": [
+     [
+      0,
+      4.0,
+      0,
+      0
+     ],
+     [
+      0,
+      0.0,
+      0,
+      0
+     ],
+     [
+      0,
+      -4.0,
+      0,
+      0
+     ]
+    ],
+    "mg_scanner_gate": [
+     [
+      0,
+      0,
+      0,
+      0
+     ]
+    ],
+    "mg_junction": [
+     [
+      0,
+      -6.2,
+      0,
+      0
+     ]
+    ],
+    "mg_junction_paddle": [
+     [
+      0,
+      -6.2,
+      0,
+      0
+     ]
+    ],
+    "mg_filing_chute": [
+     [
+      3.4,
+      -6.2,
+      0,
+      0
+     ]
+    ],
+    "mg_human_desk": [
+     [
+      -4.2,
+      -6.2,
+      0,
+      1.5708
+     ]
+    ],
+    "mg_agent_drone": [
+     [
+      0,
+      0.8,
+      3.0,
+      0
+     ]
+    ],
+    "mg_lever_base_allow": [
+     [
+      1.6,
+      -4.2,
+      0,
+      0
+     ]
+    ],
+    "mg_lever_handle": [
+     [
+      1.6,
+      -4.2,
+      1.0,
+      0
+     ],
+     [
+      -1.6,
+      -4.2,
+      1.0,
+      0
+     ]
+    ],
+    "mg_lever_base_deny": [
+     [
+      -1.6,
+      -4.2,
+      0,
+      0
+     ]
+    ],
+    "mg_alarm_beacon": [
+     [
+      -11,
+      6,
+      5.5,
+      0
+     ],
+     [
+      11,
+      6,
+      5.5,
+      0
+     ]
+    ]
+   },
+   "belt": {
+    "from": [
+     0,
+     6,
+     0.9
+    ],
+    "to": [
+     0,
+     -6.2,
+     0.9
+    ],
+    "speed": 1.2
+   },
+   "player": [
+    0,
+    -5.0,
+    0
+   ],
+   "note": "HANDOFF uses folder + junction/chute/desk; CONTAINMENT uses pods + levers. Same hall."
+  },
+  "ship_it": {
+   "origin": [
+    540,
+    320,
+    0
+   ],
+   "shell": "mg_rooftop_studio",
+   "size": [
+    22,
+    16,
+    0
+   ],
+   "place": {
+    "mg_station": [
+     [
+      -7,
+      3.5,
+      0,
+      0
+     ],
+     [
+      -2.5,
+      5.5,
+      0,
+      0
+     ],
+     [
+      2.5,
+      5.5,
+      0,
+      0
+     ],
+     [
+      7,
+      3.5,
+      0,
+      0
+     ]
+    ],
+    "mg_review_booth": [
+     [
+      8.0,
+      -3.5,
+      0,
+      -1.5708
+     ]
+    ],
+    "mg_launch_pad_small": [
+     [
+      -6,
+      -5,
+      0,
+      0
+     ],
+     [
+      -2.5,
+      -5,
+      0,
+      0
+     ]
+    ],
+    "mg_app_phone": [
+     [
+      -6,
+      -5,
+      0.15,
+      0
+     ],
+     [
+      -2.5,
+      -5,
+      0.15,
+      0
+     ]
+    ]
+   },
+   "stations": [
+    "CODE",
+    "BUILD iOS",
+    "BUILD ANDROID",
+    "PAYMENTS"
+   ],
+   "skyline": "textures/apartment_window.jpg as a far backdrop ring",
+   "player": [
+    0,
+    0,
+    0
+   ],
+   "note": "On foot or skateboard. Task orbs spawn mid-deck and are carried to stations."
+  }
+ },
+ "assets": {
+  "packet": {
+   "node": "mg_packet",
+   "tris": 24
+  },
+  "packet_ttl": {
+   "node": "mg_packet_ttl",
+   "tris": 192
+  },
+  "facility_beacon": {
+   "node": "mg_facility_beacon",
+   "tris": 72
+  },
+  "rack_tower": {
+   "node": "mg_rack_tower",
+   "tris": 512
+  },
+  "intake_ring": {
+   "node": "mg_intake_ring",
+   "tris": 128
+  },
+  "beat_ring": {
+   "node": "mg_beat_ring",
+   "tris": 168
+  },
+  "beat_gate": {
+   "node": "mg_beat_gate",
+   "tris": 240
+  },
+  "speaker_stack": {
+   "node": "mg_speaker_stack",
+   "tris": 476
+  },
+  "wave_ribbon": {
+   "node": "mg_wave_ribbon",
+   "tris": 240
+  },
+  "post_card": {
+   "node": "mg_post_card",
+   "tris": 12
+  },
+  "bin_positive": {
+   "node": "mg_bin_positive",
+   "tris": 82
+  },
+  "bin_neutral": {
+   "node": "mg_bin_neutral",
+   "tris": 82
+  },
+  "bin_negative": {
+   "node": "mg_bin_negative",
+   "tris": 82
+  },
+  "post_emitter": {
+   "node": "mg_post_emitter",
+   "tris": 136
+  },
+  "lab_shell": {
+   "node": "mg_lab_shell",
+   "tris": 204
+  },
+  "conveyor": {
+   "node": "mg_conveyor",
+   "tris": 72
+  },
+  "junction": {
+   "node": "mg_junction",
+   "tris": 36
+  },
+  "junction_paddle": {
+   "node": "mg_junction_paddle",
+   "tris": 32
+  },
+  "doc_folder": {
+   "node": "mg_doc_folder",
+   "tris": 26
+  },
+  "toolcall_pod": {
+   "node": "mg_toolcall_pod",
+   "tris": 74
+  },
+  "scanner_gate": {
+   "node": "mg_scanner_gate",
+   "tris": 62
+  },
+  "agent_drone": {
+   "node": "mg_agent_drone",
+   "tris": 256
+  },
+  "human_desk": {
+   "node": "mg_human_desk",
+   "tris": 126
+  },
+  "filing_chute": {
+   "node": "mg_filing_chute",
+   "tris": 36
+  },
+  "lever_base_allow": {
+   "node": "mg_lever_base_allow",
+   "tris": 24
+  },
+  "lever_base_deny": {
+   "node": "mg_lever_base_deny",
+   "tris": 24
+  },
+  "lever_handle": {
+   "node": "mg_lever_handle",
+   "tris": 40
+  },
+  "alarm_beacon": {
+   "node": "mg_alarm_beacon",
+   "tris": 72
+  },
+  "triage_hall": {
+   "node": "mg_triage_hall",
+   "tris": 228
+  },
+  "station": {
+   "node": "mg_station",
+   "tris": 80
+  },
+  "task_orb": {
+   "node": "mg_task_orb",
+   "tris": 80
+  },
+  "app_phone": {
+   "node": "mg_app_phone",
+   "tris": 14
+  },
+  "launch_pad_small": {
+   "node": "mg_launch_pad_small",
+   "tris": 142
+  },
+  "review_booth": {
+   "node": "mg_review_booth",
+   "tris": 76
+  },
+  "rooftop_studio": {
+   "node": "mg_rooftop_studio",
+   "tris": 1456
+  }
+ }
+}

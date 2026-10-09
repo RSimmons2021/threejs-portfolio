@@ -104,7 +104,7 @@ export default class Weather
             {
                 return false
             }
-            if(_name === 'rain' && !this.isNight() && this.getPrecipitationType() !== 'snow')
+            if(_name === 'rain' && !this.config.neon && !this.isNight() && this.getPrecipitationType() !== 'snow')
             {
                 return false
             }
@@ -209,6 +209,14 @@ export default class Weather
         this.container.add(this.rain.splashes)
     }
 
+    setQuality(settings)
+    {
+        this.rain.activeCount = Math.min(this.rain.count, settings.rain)
+        this.rain.geometry.setDrawRange(0, this.rain.activeCount)
+        this.rain.streakGeometry.setDrawRange(0, this.rain.activeCount * 2)
+        this.rain.splashes.count = Math.min(64, Math.floor(settings.rain / 4))
+    }
+
     updateRain(_rainValue)
     {
         // Swap between rain streaks and snow flakes when the season demands it
@@ -253,7 +261,7 @@ export default class Weather
         const speedScale = isSnow ? 0.14 : 1
         const elapsed = this.time.elapsed * 0.001
 
-        for(let i = 0; i < this.rain.count; i++)
+        for(let i = 0; i < (this.rain.activeCount || this.rain.count); i++)
         {
             positions[i * 3 + 2] -= this.rain.fallSpeeds[i] * speedScale * deltaSeconds
 
@@ -279,7 +287,7 @@ export default class Weather
         if(!isSnow)
         {
             const streak = this.rain.streakPositions
-            for(let i = 0; i < this.rain.count; i++)
+            for(let i = 0; i < (this.rain.activeCount || this.rain.count); i++)
             {
                 streak[i * 6] = positions[i * 3]
                 streak[i * 6 + 1] = positions[i * 3 + 1]
@@ -307,7 +315,7 @@ export default class Weather
         const deltaSeconds = Math.min(this.time.delta, 60) / 1000
 
         // Rain is night-only (snow may fall anytime): if day breaks while it rains, clear up
-        if(this.state === 'rain' && !this.isNight() && this.getPrecipitationType() !== 'snow')
+        if(this.settings.autoCycle && !this.config.neon && this.state === 'rain' && !this.isNight() && this.getPrecipitationType() !== 'snow')
         {
             this.setWeather('clear')
         }

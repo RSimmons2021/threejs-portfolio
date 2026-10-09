@@ -121,6 +121,12 @@ export default class Objects
         {
             // Create clone mesh with normal material
             const mesh = _mesh.clone()
+            const slot = _mesh.material?.name
+            if(this.materials.cyber && slot?.startsWith('nd_'))
+            {
+                mesh.material = this.materials.cyber.forSlot(slot)
+                return mesh
+            }
             mesh.material = _mesh.name.startsWith('cel_') && _mesh.material.color
                 ? this.materials.getCelMaterial(_mesh.material.color)
                 : this.materials.shades.items.white
@@ -226,6 +232,21 @@ export default class Objects
             if(_child.name.match(/^center_?[0-9]{0,3}?/i))
             {
                 center.set(_child.position.x, _child.position.y, _child.position.z)
+            }
+
+            // Multi-material glTF nodes arrive as a Group of primitives.
+            if(!(_child instanceof THREE.Mesh) && _child.children?.length)
+            {
+                _child.updateMatrixWorld(true)
+                _child.traverse((_nested) =>
+                {
+                    if(!(_nested instanceof THREE.Mesh)) return
+                    const mesh = this.parsers.default.apply(_nested, _options)
+                    mesh.position.setFromMatrixPosition(_nested.matrixWorld)
+                    mesh.quaternion.setFromRotationMatrix(_nested.matrixWorld)
+                    container.add(mesh)
+                })
+                continue
             }
 
             if(_child instanceof THREE.Mesh)

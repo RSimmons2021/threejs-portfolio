@@ -1,0 +1,406 @@
+{
+ "name": "Neon District assets",
+ "generated": "2026-10-09",
+ "source": "assets/blender/neon-district.blend + scripts/neon-district/*.py (Blender 5.2)",
+ "conventions": {
+  "units": "metres",
+  "up": "Z (export_yup=false, same as static/models/nyc)",
+  "facing": "facade modules: wall plane y=0, outward -Y; car: +X forward; characters/boards: +Y forward",
+  "atlas": "UV0 -> textures/kit_color.png (sRGB) + textures/kit_mask.png (linear: R window glass, G window id, B always-emissive)",
+  "ao": "COLOR_0 = baked ambient occlusion (grey)",
+  "materialSlots": {
+   "nd_atlas": "opaque atlas material",
+   "nd_glass": "transparent canopy/skybridge glass",
+   "nd_screen": "billboard/terminal/holo screen, uv 0..1, map a project canvas",
+   "nd_sign": "sign face, uv 0..1 -> remap to a signs-atlas.json rect",
+   "nd_thruster": "dimmable blue thruster glow (0 in drive, 1 in flight)",
+   "nd_dash": "live dashboard canvas",
+   "nd_mirror": "rear-view screen",
+   "nd_hud": "additive windscreen HUD",
+   "nd_card": "mini-game card / icon face, uv 0..1 -> minigame-atlas.json rect",
+   "nd_belt": "conveyor belt, scroll V over time",
+   "nd_window": "interior window: map textures/apartment_window.jpg (or a live render target)"
+  }
+ },
+ "totalBytes": 4610175,
+ "files": {
+  "apartment-interior.glb": {
+   "bytes": 131492,
+   "triangles": 1472,
+   "nodes": [
+    "apt_furniture_warm",
+    "apt_monitors",
+    "apt_posters",
+    "apt_screens",
+    "apt_shell",
+    "apt_window"
+   ],
+   "materials": [
+    "nd_atlas",
+    "nd_sign",
+    "nd_screen",
+    "nd_window"
+   ],
+   "animations": []
+  },
+  "city-kit.glb": {
+   "bytes": 560084,
+   "triangles": 5806,
+   "nodes": [
+    "kit_ac_cluster_lod0",
+    "kit_billboard_wall_lod0",
+    "kit_billboard_wall_lod1",
+    "kit_bollard_lod0",
+    "kit_bollard_lod1",
+    "kit_clutter_boxes_lod0",
+    "kit_corner_column_lod0",
+    "kit_corner_column_lod1",
+    "kit_crown_antenna_lod0",
+    "kit_crown_antenna_lod1",
+    "kit_crown_billboard_lod0",
+    "kit_crown_billboard_lod1",
+    "kit_crown_tank_lod0",
+    "kit_crown_tank_lod1",
+    "kit_dumpster_lod0",
+    "kit_fire_escape_lod0",
+    "kit_holo_panel_lod0",
+    "kit_kiosk_lod0",
+    "kit_launch_pad_lod0",
+    "kit_launch_pad_lod1",
+    "kit_ledge_spot_lod0",
+    "kit_ledge_spot_lod1",
+    "kit_neon_tube_lod0",
+    "kit_parapet_lod0",
+    "kit_parapet_lod1",
+    "kit_pipe_run_lod0",
+    "kit_planter_tree_lod0",
+    "kit_planter_tree_lod1",
+    "kit_roof_tile_lod0",
+    "kit_roof_tile_lod1",
+    "kit_rooftop_pad_lod0",
+    "kit_rooftop_pad_lod1",
+    "kit_scaffold_lod0",
+    "kit_sign_blade_lod0",
+    "kit_sign_box_lod0",
+    "kit_skybridge_lod0",
+    "kit_skybridge_lod1",
+    "kit_skyline_a_lod0",
+    "kit_skyline_b_lod0",
+    "kit_skyline_c_lod0",
+    "kit_steam_vent_lod0",
+    "kit_storefront_door_lod0",
+    "kit_storefront_door_lod1",
+    "kit_storefront_lod0",
+    "kit_storefront_lod1",
+    "kit_street_lamp_lod0",
+    "kit_street_lamp_lod1",
+    "kit_terminal_lod0",
+    "kit_vending_lod0",
+    "kit_wall_balcony_lod0",
+    "kit_wall_balcony_lod1",
+    "kit_wall_strip_lod0",
+    "kit_wall_strip_lod1",
+    "kit_wall_window_lod0",
+    "kit_wall_window_lod1"
+   ],
+   "materials": [
+    "nd_atlas",
+    "nd_screen",
+    "nd_sign",
+    "nd_glass"
+   ],
+   "animations": []
+  },
+  "hover-antenna.glb": {
+   "bytes": 3476,
+   "triangles": 24,
+   "nodes": [
+    "hover_antenna"
+   ],
+   "materials": [
+    "nd_atlas"
+   ],
+   "animations": []
+  },
+  "hover-brake.glb": {
+   "bytes": 4364,
+   "triangles": 34,
+   "nodes": [
+    "hover_brake"
+   ],
+   "materials": [
+    "nd_atlas"
+   ],
+   "animations": []
+  },
+  "hover-car-assembled.glb": {
+   "bytes": 135352,
+   "triangles": 1388,
+   "nodes": [
+    "antenna",
+    "brake",
+    "chassis",
+    "reverse",
+    "thrusters",
+    "wheel_BL",
+    "wheel_BR",
+    "wheel_FL",
+    "wheel_FR",
+    "hover_car"
+   ],
+   "materials": [
+    "nd_atlas",
+    "nd_glass",
+    "nd_dash",
+    "nd_mirror",
+    "nd_hud",
+    "nd_thruster"
+   ],
+   "animations": [
+    "drive_to_fly",
+    "fly_to_drive"
+   ]
+  },
+  "hover-chassis.glb": {
+   "bytes": 69700,
+   "triangles": 770,
+   "nodes": [
+    "hover_chassis"
+   ],
+   "materials": [
+    "nd_atlas",
+    "nd_glass",
+    "nd_dash",
+    "nd_mirror",
+    "nd_hud"
+   ],
+   "animations": []
+  },
+  "hover-reverse.glb": {
+   "bytes": 3460,
+   "triangles": 24,
+   "nodes": [
+    "hover_reverse"
+   ],
+   "materials": [
+    "nd_atlas"
+   ],
+   "animations": []
+  },
+  "hover-thrusters.glb": {
+   "bytes": 13536,
+   "triangles": 140,
+   "nodes": [
+    "hover_thrusters"
+   ],
+   "materials": [
+    "nd_atlas",
+    "nd_thruster"
+   ],
+   "animations": []
+  },
+  "hover-wheel.glb": {
+   "bytes": 35760,
+   "triangles": 396,
+   "nodes": [
+    "hover_wheel"
+   ],
+   "materials": [
+    "nd_atlas",
+    "nd_thruster"
+   ],
+   "animations": []
+  },
+  "hoverboard.glb": {
+   "bytes": 9056,
+   "triangles": 80,
+   "nodes": [
+    "hoverboard"
+   ],
+   "materials": [
+    "nd_atlas",
+    "nd_thruster"
+   ],
+   "animations": []
+  },
+  "minigames.glb": {
+   "bytes": 515980,
+   "triangles": 5606,
+   "nodes": [
+    "mg_agent_drone",
+    "mg_alarm_beacon",
+    "mg_app_phone",
+    "mg_beat_gate",
+    "mg_beat_ring",
+    "mg_bin_negative",
+    "mg_bin_neutral",
+    "mg_bin_positive",
+    "mg_conveyor",
+    "mg_doc_folder",
+    "mg_facility_beacon",
+    "mg_filing_chute",
+    "mg_human_desk",
+    "mg_intake_ring",
+    "mg_junction",
+    "mg_junction_paddle",
+    "mg_lab_shell",
+    "mg_launch_pad_small",
+    "mg_lever_base_allow",
+    "mg_lever_base_deny",
+    "mg_lever_handle",
+    "mg_packet",
+    "mg_packet_ttl",
+    "mg_post_card",
+    "mg_post_emitter",
+    "mg_rack_tower",
+    "mg_review_booth",
+    "mg_rooftop_studio",
+    "mg_scanner_gate",
+    "mg_speaker_stack",
+    "mg_station",
+    "mg_task_orb",
+    "mg_toolcall_pod",
+    "mg_triage_hall",
+    "mg_wave_ribbon"
+   ],
+   "materials": [
+    "nd_atlas",
+    "nd_card",
+    "nd_belt",
+    "nd_screen",
+    "nd_window"
+   ],
+   "animations": []
+  },
+  "npc.glb": {
+   "bytes": 38088,
+   "triangles": 376,
+   "nodes": [
+    "npc_body"
+   ],
+   "materials": [
+    "nd_atlas"
+   ],
+   "animations": []
+  },
+  "player.glb": {
+   "bytes": 134428,
+   "triangles": 534,
+   "nodes": [
+    "head",
+    "forearm.L",
+    "upper_arm.L",
+    "forearm.R",
+    "upper_arm.R",
+    "chest",
+    "spine",
+    "foot.L",
+    "shin.L",
+    "thigh.L",
+    "foot.R",
+    "shin.R",
+    "thigh.R",
+    "hips",
+    "root",
+    "player_body",
+    "player_rig"
+   ],
+   "materials": [
+    "nd_atlas"
+   ],
+   "animations": [
+    "idle",
+    "walk",
+    "run",
+    "skate",
+    "wave",
+    "enter_car"
+   ]
+  },
+  "skateboard.glb": {
+   "bytes": 17156,
+   "triangles": 176,
+   "nodes": [
+    "skateboard_wheel_0",
+    "skateboard_wheel_1",
+    "skateboard_wheel_2",
+    "skateboard_wheel_3",
+    "skateboard"
+   ],
+   "materials": [
+    "nd_atlas"
+   ],
+   "animations": []
+  },
+  "traffic.glb": {
+   "bytes": 93536,
+   "triangles": 1104,
+   "nodes": [
+    "traffic_bus",
+    "traffic_cab",
+    "traffic_hauler",
+    "traffic_pod",
+    "traffic_police",
+    "traffic_van"
+   ],
+   "materials": [
+    "nd_atlas"
+   ],
+   "animations": []
+  },
+  "textures/apartment_window.jpg": {
+   "bytes": 54376
+  },
+  "textures/dash_mock.png": {
+   "bytes": 120852
+  },
+  "textures/kit_color.png": {
+   "bytes": 128546
+  },
+  "textures/kit_mask.png": {
+   "bytes": 20756
+  },
+  "textures/light_sun.png": {
+   "bytes": 12772
+  },
+  "textures/light_volume.png": {
+   "bytes": 134666
+  },
+  "textures/minigame_atlas.png": {
+   "bytes": 917286
+  },
+  "textures/npc_vat.png": {
+   "bytes": 56513
+  },
+  "textures/signs_color.png": {
+   "bytes": 824628
+  },
+  "textures/signs_halo.png": {
+   "bytes": 138463
+  },
+  "city-kit.json": {
+   "bytes": 8649
+  },
+  "district-layout.json": {
+   "bytes": 386562
+  },
+  "hover-car.json": {
+   "bytes": 3886
+  },
+  "light-volume.json": {
+   "bytes": 1390
+  },
+  "minigame-atlas.json": {
+   "bytes": 11001
+  },
+  "minigames.json": {
+   "bytes": 17377
+  },
+  "npc-vat.json": {
+   "bytes": 973
+  },
+  "signs-atlas.json": {
+   "bytes": 6011
+  }
+ }
+}

@@ -36,7 +36,13 @@ export default class Explorer
             return this.firstPerson ? this.yaw : this.heading
         }
         const explorer = this
-        this.proximity = { get position() { return explorer.position } }
+        // Interaction zones ignore a car that is flying overhead.
+        const far = new CANNON.Vec3(1e5, 1e5, 0)
+        this.proximity = { get position()
+        {
+            const hover = explorer.world.physics.car.hover
+            return !explorer.active && hover?.airborne ? far : explorer.position
+        } }
         world.areas.car = this.proximity
         world.areas.items.forEach(area => { area.car = this.proximity })
         this.setInterface()
@@ -174,7 +180,8 @@ export default class Explorer
     {
         if(this.blocked || this.active) return
         const w = this.world, car = w.physics.car.chassis.body
-        if(car.position.z > 2) return
+        const hover = w.physics.car.hover
+        if(hover ? hover.airborne : car.position.z > 2) return
         // Test candidate exits against existing bodies so a parked car beside a
         // wall cannot spawn the walker inside it.
         const offsets = [[0, 2], [0, -2], [2.8, 0], [-2.8, 0], [0, 3.5]]
@@ -184,7 +191,7 @@ export default class Explorer
                 if(body === car || !body.collisionResponse || body.shapes.some(shape => shape.type === CANNON.Shape.types.PLANE)) return false
                 body.computeAABB()
                 const a = body.aabb
-                return a.upperBound.z > 0.5 && a.lowerBound.z < 1.8 &&
+                return a.upperBound.z > car.position.z + 0.1 && a.lowerBound.z < car.position.z + 1.4 &&
                     p.x > a.lowerBound.x - 0.4 && p.x < a.upperBound.x + 0.4 &&
                     p.y > a.lowerBound.y - 0.4 && p.y < a.upperBound.y + 0.4
             }))
@@ -192,7 +199,7 @@ export default class Explorer
         w.guidedTour.clearControls()
         this.parked = { position: car.position.clone(), quaternion: car.quaternion.clone() }
         w.physics.onFoot = true
-        this.body.position.set(spot.x, spot.y, 0.6)
+        this.body.position.set(spot.x, spot.y, Math.max(0.6, car.position.z + 0.2))
         this.body.velocity.set(0, 0, 0)
         w.physics.world.addBody(this.body)
         this.active = true
@@ -207,7 +214,7 @@ export default class Explorer
         if(!this.active) return
         if(!force && (this.blocked || this.distanceToCar() > 4))
         {
-            this.hint.textContent = 'Walk back to your F1 car to get in.'
+            this.hint.textContent = 'Walk back to your car to get in.'
             return
         }
         this.world.physics.world.removeBody(this.body)
@@ -235,7 +242,7 @@ export default class Explorer
         this.firstPerson = !this.firstPerson
         this.yaw = this.active ? this.yaw : this.world.physics.car.angle
         this.lastCarAngle = this.world.physics.car.angle
-        this.pitch = 0
+        this.pitch = !this.active && this.world.config.neon ? -0.1 : 0
         const camera = this.world.camera
         camera.firstPerson = this.firstPerson
         camera.instance.near = this.firstPerson ? 0.08 : 1
@@ -264,10 +271,13 @@ export default class Explorer
         this.world.experienceHUD.updateInstructionText()
         const touch = this.world.config.touch || window.matchMedia('(max-width: 767px)').matches
         this.hint.textContent = touch
-            ? (this.active ? 'Joystick walks · Skateboard doubles your pace · Enter beside your car' : 'Exit car to explore on foot') + (this.firstPerson ? ' · Drag to look' : '')
+            ? (this.active ? 'Joystick walks · Skateboard doubles your pace · Enter beside your car'
+                : this.world.physics.car.hover?.airborne ? 'Joystick steers · ▲ ▼ climb / descend · Land to exit' : 'Take off to fly · Exit car to explore on foot') + (this.firstPerson ? ' · Drag to look' : '')
             : this.active
                 ? `WASD / arrows walk · Shift ${this.skating ? 'steps off the board' : 'grabs the skateboard'} · F enter car · E interact` + (this.firstPerson ? ' · Drag to look / Esc release mouse' : '')
-                : 'F exit car · V change view' + (this.firstPerson ? ' · Click / drag to look · Esc release mouse' : '')
+                : this.world.physics.car.hover?.airborne
+                    ? 'T land · E / Q climb / descend · Shift boost · V cockpit view'
+                    : 'F exit car · V change view' + (this.world.physics.car.hover ? ' · T take off' : '') + (this.firstPerson ? ' · Click / drag to look · Esc release mouse' : '')
     }
 
     update()
@@ -353,7 +363,10 @@ export default class Explorer
             this.lastCarAngle = angle
         }
         const p = this.renderPosition
-        camera.position.set(p.x, p.y, p.z + (this.active ? 1.27 : 0.85))
+        // Hover car cockpit eye: body +0.64 m, a little behind centre (hover-car.json -> cockpit.eye).
+        const neonCar = !this.active && this.world.config.neon
+        camera.position.set(p.x, p.y, p.z + (this.active ? 1.27 : neonCar ? 0.64 : 0.85))
+        if(neonCar) { camera.position.x -= Math.cos(this.world.physics.car.angle) * 0.05; camera.position.y -= Math.sin(this.world.physics.car.angle) * 0.05 }
         this.lookTarget.set(p.x + Math.cos(this.yaw) * Math.cos(this.pitch), p.y + Math.sin(this.yaw) * Math.cos(this.pitch), camera.position.z + Math.sin(this.pitch))
         camera.lookAt(this.lookTarget)
         camera.updateMatrixWorld()

@@ -23,7 +23,7 @@ Roads sit below the existing floor labels, interaction zones, and contact shadow
 
 ## Project sources
 
-1. [Zoan Collective](https://zoancollective.site) — retained studio project.
+1. [Zoan Collective](https://zoancollective.com) — retained studio project.
 2. [Agent Lab](https://ai-agent-portal-site.vercel.app/) — `README_agent_portal_site.md`.
 3. [DeepSeek Harness Desktop](https://github.com/RSimmons2021/deepseek-harness-desktop) — repository README; described as a fork, with upstream attribution.
 4. [Agent Relay](https://openai-agent-site.vercel.app/) — `README_openai_agent_site.md`; identified as an independent application.

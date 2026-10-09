@@ -12,6 +12,10 @@ import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js'
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js'
 import BlurPass from './Passes/Blur.js'
 import ScreenFxPass from './Passes/ScreenFx.js'
+import Quality, { detectTier } from './Quality.js'
+import PerformanceMonitor from './PerformanceMonitor.js'
+import NeonBloom from './Passes/NeonBloom.js'
+import { neonEnabled, entryPosition } from './World/neonDistrictRules.js'
 
 export default class Application
 {
@@ -39,6 +43,8 @@ export default class Application
         this.setCamera()
         this.setPasses()
         this.setWorld()
+        this.applyQuality()
+        this.performanceMonitor = new PerformanceMonitor(this)
         this.setLifecycle()
         this.startLoading()
     }
@@ -52,6 +58,9 @@ export default class Application
         this.config.debug = window.location.hash === '#debug'
         this.config.cyberTruck = window.location.hash === '#cybertruck'
         this.config.touch = false
+        this.config.neon = neonEnabled(location.search)
+        this.config.entryPosition = entryPosition(this.config.neon)
+        document.body.classList.toggle('is-neon-district', this.config.neon)
         this.config.reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
         window.addEventListener('touchstart', () =>
@@ -210,6 +219,16 @@ export default class Application
             alpha: true,
             powerPreference: 'high-performance'
         })
+        const gl = this.renderer.getContext()
+        const extension = gl.getExtension('WEBGL_debug_renderer_info')
+        this.gpu = extension ? gl.getParameter(extension.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER)
+        const params = new URLSearchParams(location.search)
+        let saved = ''
+        try { saved = localStorage.getItem('portfolio-quality') || '' } catch {}
+        const tier = detectTier({ touch: navigator.maxTouchPoints > 0 || matchMedia('(pointer: coarse)').matches,
+            gpu: this.gpu, override: params.get('quality') || saved })
+        this.quality = new Quality({ tier, deviceDpr: window.devicePixelRatio, onChange: () => this.applyQuality() })
+        this.performance.currentDpr = this.quality.settings.dpr
         // this.renderer.setClearColor(0x414141, 1)
         // Alpha 0: pixels the scene never draws stay transparent through the
         // composer, which is how ScreenFx knows where to composite the sky.
@@ -238,7 +257,9 @@ export default class Application
         // Resize event
         this.sizes.on('resize', () =>
         {
-            this.performance.currentDpr = Math.min(window.devicePixelRatio, this.performance.maxDpr)
+            this.quality.deviceDpr = window.devicePixelRatio
+            this.quality.settings.dpr = Math.min(window.devicePixelRatio, this.quality.settings.dpr)
+            this.performance.currentDpr = this.quality.settings.dpr
             this.renderer.setPixelRatio(this.performance.currentDpr)
             this.renderer.setSize(this.sizes.viewport.width, this.sizes.viewport.height)
         })
@@ -301,13 +322,12 @@ export default class Application
 
         // MSAA render target (WebGL2): smooths the aliased matcap edges cheaply.
         // Fewer samples on touch devices to keep fill-rate cost down.
-        const touchDevice = window.matchMedia('(pointer: coarse)').matches || navigator.maxTouchPoints > 0
         const composerTarget = new THREE.WebGLRenderTarget(
             this.sizes.viewport.width,
             this.sizes.viewport.height,
             {
                 type: THREE.HalfFloatType,
-                samples: this.renderer.capabilities.isWebGL2 ? (touchDevice ? 2 : 4) : 0
+                samples: this.renderer.capabilities.isWebGL2 ? this.quality.settings.msaa : 0
             }
         )
 
@@ -377,44 +397,26 @@ export default class Application
         this.passes.composer.addPass(this.passes.renderPass)
         this.passes.composer.addPass(this.passes.horizontalBlurPass)
         this.passes.composer.addPass(this.passes.verticalBlurPass)
+        if(this.config.neon)
+        {
+            this.passes.neonBloom = new NeonBloom(this.quality.settings, this.passes.screenFxPass.material)
+            this.passes.composer.addPass(this.passes.neonBloom)
+        }
         this.passes.composer.addPass(this.passes.screenFxPass)
 
         // Time tick
         this.time.on('tick', () =>
         {
-            this.performance.samples.push(this.time.delta)
-            if(this.performance.samples.length >= this.performance.sampleSize)
-            {
-                const total = this.performance.samples.reduce((sum, value) => sum + value, 0)
-                const averageDelta = total / this.performance.samples.length
-                this.performance.samples.length = 0
-
-                let nextDpr = this.performance.currentDpr
-                if(averageDelta > 21)
-                {
-                    if(!this.performance.msaaDropped) this.dropMultisampling()
-                    else nextDpr = Math.max(this.performance.minDpr, this.performance.currentDpr - 0.1)
-                }
-                else if(averageDelta < 17 && this.performance.msaaDropped)
-                {
-                    nextDpr = Math.min(this.performance.maxDpr, this.performance.currentDpr + 0.1)
-                }
-
-                if(Math.abs(nextDpr - this.performance.currentDpr) > 0.01)
-                {
-                    this.performance.currentDpr = nextDpr
-                    this.renderer.setPixelRatio(this.performance.currentDpr)
-                    this.passes.composer.setPixelRatio(this.performance.currentDpr)
-                    this.renderer.setSize(this.sizes.viewport.width, this.sizes.viewport.height)
-                    this.passes.composer.setSize(this.sizes.viewport.width, this.sizes.viewport.height)
-                }
-            }
+            const rawDelta = this.time.rawDelta || this.time.delta
+            if(this.world?.started && !document.hidden) this.quality.sample(rawDelta, performance.now())
+            this.performanceMonitor?.updateBenchmark(rawDelta)
 
             // Ground-mist reconstruction uniforms (world-anchored fog in ScreenFx)
+            this.world?.cameraRig?.update(this.time.delta)
             this.world?.explorer?.updateCamera()
-            const firstPerson = this.world?.explorer?.firstPerson && !this.world.explorer.blocked
-            this.passes.horizontalBlurPass.enabled = !firstPerson
-            this.passes.verticalBlurPass.enabled = !firstPerson
+            if(this.world?.neonCity) this.world.materials.cyber.update(this.world)
+            this.passes.horizontalBlurPass.enabled = false
+            this.passes.verticalBlurPass.enabled = false
             const screenFxUniforms = this.passes.screenFxPass.material.uniforms
             screenFxUniforms.uTime.value = this.time.elapsed
             screenFxUniforms.uCameraPosition.value.setFromMatrixPosition(this.camera.instance.matrixWorld)
@@ -422,7 +424,10 @@ export default class Application
 
 
             // Renderer
+            this.renderer.info.reset()
+            this.renderer.info.autoReset = false
             this.passes.composer.render()
+            this.performanceMonitor?.record(rawDelta)
             // this.renderer.domElement.style.background = 'black'
             // this.renderer.render(this.scene, this.camera.instance)
         })
@@ -440,6 +445,27 @@ export default class Application
         })
     }
 
+    applyQuality()
+    {
+        const settings = this.quality.settings
+        this.time.frameInterval = ['low', 'medium'].includes(this.quality.tier) ? 1000 / 60 : 0
+        this.performance.currentDpr = settings.dpr
+        this.renderer.setPixelRatio(settings.dpr)
+        this.passes?.composer?.setPixelRatio(settings.dpr)
+        if(settings.msaa === 0 && this.passes?.composer?.renderTarget1.samples > 0) this.dropMultisampling()
+        if(this.camera)
+        {
+            // Neon District: distance is handled by fog and per-cell culling;
+            // the far plane only has to reach the skyline ring.
+            this.camera.instance.far = this.config.neon ? 480 : settings.far
+            this.camera.instance.updateProjectionMatrix()
+        }
+        this.world?.neonCity?.setQuality(settings)
+        this.world?.neonTraffic?.setQuality(settings)
+        this.world?.weather?.setQuality(settings)
+        this.passes?.neonBloom?.setQuality(settings)
+    }
+
     /**
      * Set world
      */
@@ -448,6 +474,8 @@ export default class Application
     dropMultisampling()
     {
         this.performance.msaaDropped = true
+        this.quality.msaaDropped = true
+        this.quality.settings.msaa = 0
         for(const target of [this.passes.composer.renderTarget1, this.passes.composer.renderTarget2])
         {
             if(!target || !target.samples) continue
@@ -467,7 +495,8 @@ export default class Application
             camera: this.camera,
             scene: this.scene,
             renderer: this.renderer,
-            passes: this.passes
+            passes: this.passes,
+            quality: this.quality
         })
         this.scene.add(this.world.container)
     }
@@ -508,6 +537,7 @@ export default class Application
         }
 
         this.performance.samples.length = 0
+        this.quality.samples.length = 0
         this.world?.sounds?.resume()
         this.time.resume()
     }
@@ -528,8 +558,10 @@ export default class Application
         this.sizes.off('resize')
 
         this.world?.sounds?.dispose()
+        this.performanceMonitor?.dispose()
         this.resources.dispose()
         this.camera.dispose()
+        this.passes.neonBloom?.dispose()
         this.passes.composer.dispose()
         this.renderer.dispose()
 

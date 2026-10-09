@@ -1,0 +1,413 @@
+{
+ "texture": "textures/signs_color.png",
+ "halo": "textures/signs_halo.png",
+ "uvNote": "uv = [u0, v0, u1, v1] with v up from the bottom (three.js TextureLoader default flipY = true).",
+ "designs": [
+  {
+   "id": 0,
+   "kind": "blade",
+   "text": "\u62c9\u9eba",
+   "sub": null,
+   "color": "#ff2bd6",
+   "uv": [
+    0.01172,
+    0.75,
+    0.09766,
+    1.0
+   ],
+   "aspect": 0.3438
+  },
+  {
+   "id": 1,
+   "kind": "blade",
+   "text": "\u85ac\u5c40",
+   "sub": null,
+   "color": "#9dff3a",
+   "uv": [
+    0.10938,
+    0.75,
+    0.19531,
+    1.0
+   ],
+   "aspect": 0.3438
+  },
+  {
+   "id": 2,
+   "kind": "blade",
+   "text": "\u30db\u30c6\u30eb",
+   "sub": null,
+   "color": "#22e5ff",
+   "uv": [
+    0.20703,
+    0.75,
+    0.29297,
+    1.0
+   ],
+   "aspect": 0.3438
+  },
+  {
+   "id": 3,
+   "kind": "blade",
+   "text": "\u96fb\u8133",
+   "sub": null,
+   "color": "#a77bff",
+   "uv": [
+    0.30469,
+    0.75,
+    0.39062,
+    1.0
+   ],
+   "aspect": 0.3438
+  },
+  {
+   "id": 4,
+   "kind": "blade",
+   "text": "\u9152\u5834",
+   "sub": null,
+   "color": "#ffb02e",
+   "uv": [
+    0.40234,
+    0.75,
+    0.48828,
+    1.0
+   ],
+   "aspect": 0.3438
+  },
+  {
+   "id": 5,
+   "kind": "blade",
+   "text": "\u7fa9\u4f53",
+   "sub": null,
+   "color": "#ff2a2a",
+   "uv": [
+    0.5,
+    0.75,
+    0.58594,
+    1.0
+   ],
+   "aspect": 0.3438
+  },
+  {
+   "id": 6,
+   "kind": "blade",
+   "text": "\u4fee\u7406",
+   "sub": null,
+   "color": "#ffb02e",
+   "uv": [
+    0.59766,
+    0.75,
+    0.68359,
+    1.0
+   ],
+   "aspect": 0.3438
+  },
+  {
+   "id": 7,
+   "kind": "blade",
+   "text": "\u591c\u5e02",
+   "sub": null,
+   "color": "#ff2bd6",
+   "uv": [
+    0.69531,
+    0.75,
+    0.78125,
+    1.0
+   ],
+   "aspect": 0.3438
+  },
+  {
+   "id": 8,
+   "kind": "blade",
+   "text": "\u5360\u3044",
+   "sub": null,
+   "color": "#a77bff",
+   "uv": [
+    0.79297,
+    0.75,
+    0.87891,
+    1.0
+   ],
+   "aspect": 0.3438
+  },
+  {
+   "id": 9,
+   "kind": "blade",
+   "text": "\u30ab\u30e9\u30aa\u30b1",
+   "sub": null,
+   "color": "#22e5ff",
+   "uv": [
+    0.89062,
+    0.75,
+    0.97656,
+    1.0
+   ],
+   "aspect": 0.3438
+  },
+  {
+   "id": 10,
+   "kind": "box",
+   "text": "NOODLES",
+   "sub": "24H \u00b7 \u62c9\u9eba",
+   "color": "#ffb02e",
+   "uv": [
+    0.00391,
+    0.65234,
+    0.24609,
+    0.73828
+   ],
+   "aspect": 2.8182
+  },
+  {
+   "id": 11,
+   "kind": "box",
+   "text": "CAPSULE HOTEL",
+   "sub": "\u30ab\u30d7\u30bb\u30eb",
+   "color": "#22e5ff",
+   "uv": [
+    0.25391,
+    0.65234,
+    0.49609,
+    0.73828
+   ],
+   "aspect": 2.8182
+  },
+  {
+   "id": 12,
+   "kind": "box",
+   "text": "IMPLANTS",
+   "sub": "\u7fa9\u4f53\u30af\u30ea\u30cb\u30c3\u30af",
+   "color": "#ff2bd6",
+   "uv": [
+    0.50391,
+    0.65234,
+    0.74609,
+    0.73828
+   ],
+   "aspect": 2.8182
+  },
+  {
+   "id": 13,
+   "kind": "box",
+   "text": "PHARMACY +",
+   "sub": "\u85ac",
+   "color": "#9dff3a",
+   "uv": [
+    0.75391,
+    0.65234,
+    0.99609,
+    0.73828
+   ],
+   "aspect": 2.8182
+  },
+  {
+   "id": 14,
+   "kind": "box",
+   "text": "NIGHT MARKET",
+   "sub": "\u591c\u5e02",
+   "color": "#ffb02e",
+   "uv": [
+    0.00391,
+    0.55859,
+    0.24609,
+    0.64453
+   ],
+   "aspect": 2.8182
+  },
+  {
+   "id": 15,
+   "kind": "box",
+   "text": "REPAIR / PARTS",
+   "sub": "\u4fee\u7406",
+   "color": "#58b6ff",
+   "uv": [
+    0.25391,
+    0.55859,
+    0.49609,
+    0.64453
+   ],
+   "aspect": 2.8182
+  },
+  {
+   "id": 16,
+   "kind": "box",
+   "text": "BAR \u00b7 OPEN",
+   "sub": "\u9152",
+   "color": "#ff2a2a",
+   "uv": [
+    0.50391,
+    0.55859,
+    0.74609,
+    0.64453
+   ],
+   "aspect": 2.8182
+  },
+  {
+   "id": 17,
+   "kind": "box",
+   "text": "DATA CAFE",
+   "sub": "\u96fb\u8133\u55ab\u8336",
+   "color": "#a77bff",
+   "uv": [
+    0.75391,
+    0.55859,
+    0.99609,
+    0.64453
+   ],
+   "aspect": 2.8182
+  },
+  {
+   "id": 18,
+   "kind": "ad",
+   "text": "NEURAL LINK",
+   "sub": "THINK FASTER",
+   "color": "#22e5ff",
+   "uv": [
+    0.00391,
+    0.41016,
+    0.24609,
+    0.54688
+   ],
+   "aspect": 1.7714
+  },
+  {
+   "id": 19,
+   "kind": "ad",
+   "text": "SYNTH NOODLE",
+   "sub": "\u672c\u7269\u306e\u5473",
+   "color": "#ffb02e",
+   "uv": [
+    0.25391,
+    0.41016,
+    0.49609,
+    0.54688
+   ],
+   "aspect": 1.7714
+  },
+  {
+   "id": 20,
+   "kind": "ad",
+   "text": "LANE 3 \u2191",
+   "sub": "FLY SAFE",
+   "color": "#9dff3a",
+   "uv": [
+    0.50391,
+    0.41016,
+    0.74609,
+    0.54688
+   ],
+   "aspect": 1.7714
+  },
+  {
+   "id": 21,
+   "kind": "ad",
+   "text": "AIRSPACE",
+   "sub": "RESTRICTED",
+   "color": "#ff2a2a",
+   "uv": [
+    0.75391,
+    0.41016,
+    0.99609,
+    0.54688
+   ],
+   "aspect": 1.7714
+  },
+  {
+   "id": 22,
+   "kind": "ad",
+   "text": "HYDRO \u6c34",
+   "sub": "CLEAN WATER",
+   "color": "#58b6ff",
+   "uv": [
+    0.00391,
+    0.26562,
+    0.24609,
+    0.40234
+   ],
+   "aspect": 1.7714
+  },
+  {
+   "id": 23,
+   "kind": "ad",
+   "text": "VOLT BAR",
+   "sub": "OPEN LATE",
+   "color": "#ff2bd6",
+   "uv": [
+    0.25391,
+    0.26562,
+    0.49609,
+    0.40234
+   ],
+   "aspect": 1.7714
+  },
+  {
+   "id": 24,
+   "kind": "ad",
+   "text": "ORBIT AIR",
+   "sub": "SKY TAXI 24H",
+   "color": "#22e5ff",
+   "uv": [
+    0.50391,
+    0.26562,
+    0.74609,
+    0.40234
+   ],
+   "aspect": 1.7714
+  },
+  {
+   "id": 25,
+   "kind": "ad",
+   "text": "KAIJU ARCADE",
+   "sub": "\u30b2\u30fc\u30e0",
+   "color": "#a77bff",
+   "uv": [
+    0.75391,
+    0.26562,
+    0.99609,
+    0.40234
+   ],
+   "aspect": 1.7714
+  },
+  {
+   "id": 26,
+   "kind": "name",
+   "text": "RICHARD SIMMONS",
+   "sub": "AI ENGINEER",
+   "color": "#22e5ff",
+   "uv": [
+    0.00391,
+    0.00391,
+    0.49609,
+    0.26562
+   ],
+   "aspect": 1.8806
+  },
+  {
+   "id": 27,
+   "kind": "ad",
+   "text": "NEON DISTRICT",
+   "sub": "WELCOME",
+   "color": "#ff2bd6",
+   "uv": [
+    0.50391,
+    0.12891,
+    0.74609,
+    0.26562
+   ],
+   "aspect": 1.7714
+  },
+  {
+   "id": 28,
+   "kind": "ad",
+   "text": "SEE THE WORK",
+   "sub": "PROJECT AVE \u2192",
+   "color": "#ffb02e",
+   "uv": [
+    0.75195,
+    0.12891,
+    0.99414,
+    0.26562
+   ],
+   "aspect": 1.7714
+  }
+ ]
+}

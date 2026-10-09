@@ -2,7 +2,7 @@
 const projects = [
     {
         slug: 'zoan', name: 'Zoan Collective', title: ['ZOAN', 'COLLECTIVE'],
-        href: 'https://zoancollective.site', accent: '#bce685', secondary: '#f5d7a1',
+        href: 'https://zoancollective.com', accent: '#bce685', secondary: '#f5d7a1',
         eyebrow: 'Independent design studio', role: 'Founder + design operator',
         problem: 'Founders need a clear connection between their brand, product, and the people using it.',
         built: 'A boutique studio for brand identity, product design, and systems grounded in seven principles of Zen design.',

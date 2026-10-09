@@ -55,7 +55,9 @@
     e.firstPerson = false
     e.toggleView()
     e.updateCamera()
-    check('First-person camera uses eye height and close near plane', w.camera.instance.near === 0.08 && Math.abs(w.camera.instance.position.z - car.position.z - 0.85) < 0.01)
+    // Neon hover-car cockpit eye sits at body +0.64 m; the legacy F1 at +0.85 m.
+    const eye = w.config.neon ? 0.64 : 0.85
+    check('First-person camera uses eye height and close near plane', w.camera.instance.near === 0.08 && Math.abs(w.camera.instance.position.z - car.position.z - eye) < 0.03)
     e.toggleView()
     check('Camera restores overhead projection', w.camera.instance.near === 1 && w.camera.instance.fov === 40)
     e.exitCar()

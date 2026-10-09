@@ -278,7 +278,17 @@ export default class Sky
         this.sunUniforms.uSunStrength.value = Math.max(0, 1 - night * 1.2)
         this.sunUniforms.uSunColor.value.copy(this.gradient.horizon)
 
+        if(this.config.neon)
+        {
+            this.sun.children[0].material.opacity = 0.18
+            this.moon.children[0].material.opacity = 0.2
+            this.moon.children[1].material.opacity = 0.2
+            this.sunHalo.material.opacity *= 0.25
+            this.moonHalo.material.opacity *= 0.25
+        }
+
         this.starMaterial.uniforms.uOpacity.value = Math.max(0, (night - 0.25) / 0.75)
+        if(this.config.neon) this.starMaterial.uniforms.uOpacity.value *= 0.15
         this.starMaterial.uniforms.uTime.value = elapsed
         this.stars.rotation.z = elapsed * 0.004
 
@@ -294,6 +304,11 @@ export default class Sky
             cloud.lookAt(this.container.position)
             cloud.userData.material.color.copy(this.gradient.mid).lerp(new THREE.Color('#ffffff'), 0.55 - night * 0.35)
             cloud.userData.material.opacity = 0.68 - night * 0.32
+            if(this.config.neon)
+            {
+                cloud.userData.material.color.set('#8d9a9f')
+                cloud.userData.material.opacity *= 0.18
+            }
         }
     }
 }

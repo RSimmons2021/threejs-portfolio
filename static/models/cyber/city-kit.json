@@ -1,0 +1,550 @@
+{
+ "meta": {
+  "wall_window": {
+   "footprint": [
+    4,
+    0.25,
+    4
+   ],
+   "collision": [],
+   "notes": ""
+  },
+  "wall_strip": {
+   "footprint": [
+    4,
+    0.3,
+    4
+   ],
+   "collision": [],
+   "notes": ""
+  },
+  "wall_balcony": {
+   "footprint": [
+    4,
+    1.2,
+    4
+   ],
+   "collision": [],
+   "notes": ""
+  },
+  "storefront": {
+   "footprint": [
+    4,
+    1.2,
+    4
+   ],
+   "collision": [],
+   "notes": "Sign band behind anchor_sign_0 (3.6 x 0.8)."
+  },
+  "storefront_door": {
+   "footprint": [
+    4,
+    0.8,
+    4
+   ],
+   "collision": [],
+   "notes": "Career door variant. anchor_door is the walk-up point."
+  },
+  "corner_column": {
+   "footprint": [
+    0.6,
+    0.6,
+    4
+   ],
+   "collision": [],
+   "notes": "Pivot is the column centre; place on tower corners."
+  },
+  "ledge_spot": {
+   "footprint": [
+    4,
+    1.0,
+    0.35
+   ],
+   "collision": [],
+   "notes": "Setback ledge with two downlights; anchor_beam_* point down."
+  },
+  "roof_tile": {
+   "footprint": [
+    4,
+    4,
+    0.6
+   ],
+   "collision": [],
+   "notes": "Flat roof tile, top at z = 0. Tile across tower tops."
+  },
+  "parapet": {
+   "footprint": [
+    4,
+    0.3,
+    0.9
+   ],
+   "collision": [],
+   "notes": "Roof edge, wall plane y = 0 like facades."
+  },
+  "crown_tank": {
+   "footprint": [
+    3,
+    3,
+    5
+   ],
+   "collision": [],
+   "notes": ""
+  },
+  "crown_antenna": {
+   "footprint": [
+    1.5,
+    1.5,
+    12
+   ],
+   "collision": [],
+   "notes": "anchor_light_0 = red aircraft beacon (blink it)."
+  },
+  "crown_billboard": {
+   "footprint": [
+    8.4,
+    2,
+    7
+   ],
+   "collision": [],
+   "notes": "Screen = slot 'nd_screen' (uv 0..1). Map a project/ad texture."
+  },
+  "billboard_wall": {
+   "footprint": [
+    8.4,
+    0.5,
+    4.9
+   ],
+   "collision": [],
+   "notes": "Wall-mounted hero billboard. Screen slot 'nd_screen' uv 0..1 (16:9 at 8 x 4.5)."
+  },
+  "ac_cluster": {
+   "footprint": [
+    3,
+    0.8,
+    2.2
+   ],
+   "collision": [],
+   "notes": ""
+  },
+  "pipe_run": {
+   "footprint": [
+    1,
+    0.4,
+    4
+   ],
+   "collision": [],
+   "notes": "Tileable vertically."
+  },
+  "fire_escape": {
+   "footprint": [
+    4,
+    1.3,
+    4
+   ],
+   "collision": [],
+   "notes": "Stacks every 4 m."
+  },
+  "scaffold": {
+   "footprint": [
+    4,
+    1.4,
+    4
+   ],
+   "collision": [],
+   "notes": ""
+  },
+  "neon_tube": {
+   "footprint": [
+    1,
+    0.1,
+    0.1
+   ],
+   "collision": [],
+   "notes": "1 m tube along X, colour from 'neon_white' -> tint per instance."
+  },
+  "sign_blade": {
+   "footprint": [
+    0.9,
+    0.2,
+    3.2
+   ],
+   "collision": [],
+   "notes": "Vertical blade sign. Both faces slot 'nd_sign' (uv 0..1 -> remap to signs atlas rect). Mounts on a facade, sticks out along -Y."
+  },
+  "sign_box": {
+   "footprint": [
+    3,
+    0.3,
+    1
+   ],
+   "collision": [],
+   "notes": "Horizontal lightbox. Front face slot 'nd_sign' (uv 0..1)."
+  },
+  "skybridge": {
+   "footprint": [
+    20,
+    4,
+    3.4
+   ],
+   "collision": [
+    {
+     "center": [
+      0,
+      0,
+      1.7
+     ],
+     "size": [
+      20,
+      4.2,
+      3.4
+     ]
+    }
+   ],
+   "notes": "20 m span along X, floor at z = 0, pivot at span centre."
+  },
+  "rooftop_pad": {
+   "footprint": [
+    12,
+    12,
+    3.5
+   ],
+   "collision": [
+    {
+     "center": [
+      0,
+      0,
+      0.25
+     ],
+     "size": [
+      12,
+      12,
+      0.5
+     ]
+    },
+    {
+     "center": [
+      0,
+      5.95,
+      1.0
+     ],
+     "size": [
+      12,
+      0.1,
+      1.1
+     ]
+    },
+    {
+     "center": [
+      5.95,
+      0,
+      1.0
+     ],
+     "size": [
+      0.1,
+      12,
+      1.1
+     ]
+    },
+    {
+     "center": [
+      -5.95,
+      0,
+      1.0
+     ],
+     "size": [
+      0.1,
+      12,
+      1.1
+     ]
+    },
+    {
+     "center": [
+      -4.5,
+      4.5,
+      2.0
+     ],
+     "size": [
+      2.4,
+      2.4,
+      3.0
+     ]
+    }
+   ],
+   "notes": "Pad top at z = 0.5. Open edge is -Y (landing approach). anchor_lift = lift booth door (walk-up point)."
+  },
+  "launch_pad": {
+   "footprint": [
+    10,
+    10,
+    0.3
+   ],
+   "collision": [],
+   "notes": "Spawn pad. Disc top uses the pad tile."
+  },
+  "street_lamp": {
+   "footprint": [
+    0.4,
+    1.8,
+    6.4
+   ],
+   "collision": [
+    {
+     "center": [
+      0,
+      0,
+      3
+     ],
+     "size": [
+      0.25,
+      0.25,
+      6
+     ]
+    }
+   ],
+   "notes": "Arm reaches toward -Y (the road). anchor_beam_0 at the head."
+  },
+  "vending": {
+   "footprint": [
+    0.9,
+    0.75,
+    1.95
+   ],
+   "collision": [
+    {
+     "center": [
+      0,
+      0,
+      0.975
+     ],
+     "size": [
+      0.9,
+      0.75,
+      1.95
+     ]
+    }
+   ],
+   "notes": "Front faces -Y."
+  },
+  "bollard": {
+   "footprint": [
+    0.3,
+    0.3,
+    0.9
+   ],
+   "collision": [
+    {
+     "center": [
+      0,
+      0,
+      0.45
+     ],
+     "size": [
+      0.26,
+      0.26,
+      0.9
+     ]
+    }
+   ],
+   "notes": ""
+  },
+  "steam_vent": {
+   "footprint": [
+    1.2,
+    0.8,
+    0.1
+   ],
+   "collision": [],
+   "notes": "anchor_steam points up: spawn the steam sprite there."
+  },
+  "kiosk": {
+   "footprint": [
+    1.2,
+    1.2,
+    2.6
+   ],
+   "collision": [
+    {
+     "center": [
+      0,
+      0,
+      1.3
+     ],
+     "size": [
+      1.24,
+      1.24,
+      2.6
+     ]
+    }
+   ],
+   "notes": "Holo kiosk; replaces the old street trees at TREE_POSITIONS."
+  },
+  "planter_tree": {
+   "footprint": [
+    1.4,
+    1.4,
+    4.2
+   ],
+   "collision": [
+    {
+     "center": [
+      0,
+      0,
+      1.3
+     ],
+     "size": [
+      1.24,
+      1.24,
+      2.6
+     ]
+    }
+   ],
+   "notes": "Neon ginkgo in a concrete planter (alternative to kiosk at tree positions)."
+  },
+  "clutter_boxes": {
+   "footprint": [
+    1.6,
+    1.0,
+    1.0
+   ],
+   "collision": [],
+   "notes": ""
+  },
+  "dumpster": {
+   "footprint": [
+    1.8,
+    1.1,
+    1.3
+   ],
+   "collision": [
+    {
+     "center": [
+      0,
+      0,
+      0.65
+     ],
+     "size": [
+      1.8,
+      1.1,
+      1.3
+     ]
+    }
+   ],
+   "notes": ""
+  },
+  "holo_panel": {
+   "footprint": [
+    5,
+    1.2,
+    3.2
+   ],
+   "collision": [],
+   "notes": "Project board replacement. Screen slot 'nd_screen' uv 0..1 (16:9). Faces -Y, tilted back 15 deg."
+  },
+  "terminal": {
+   "footprint": [
+    1.4,
+    0.9,
+    1.4
+   ],
+   "collision": [
+    {
+     "center": [
+      0,
+      0,
+      0.6
+     ],
+     "size": [
+      1.4,
+      0.9,
+      1.2
+     ]
+    }
+   ],
+   "notes": "Comms terminal for contact links. Screen slot 'nd_screen' uv 0..1. Faces -Y."
+  },
+  "skyline_a": {
+   "footprint": [
+    18,
+    18,
+    120
+   ],
+   "collision": [],
+   "notes": "Out-of-bounds silhouette ring; no collision. LOD0 only."
+  },
+  "skyline_b": {
+   "footprint": [
+    24,
+    16,
+    170
+   ],
+   "collision": [],
+   "notes": "Out-of-bounds silhouette ring; no collision. LOD0 only."
+  },
+  "skyline_c": {
+   "footprint": [
+    14,
+    14,
+    220
+   ],
+   "collision": [],
+   "notes": "Out-of-bounds silhouette ring; no collision. LOD0 only."
+  }
+ },
+ "tris": {
+  "kit_wall_window_lod0": 82,
+  "kit_wall_window_lod1": 2,
+  "kit_wall_strip_lod0": 92,
+  "kit_wall_strip_lod1": 2,
+  "kit_wall_balcony_lod0": 234,
+  "kit_wall_balcony_lod1": 12,
+  "kit_storefront_lod0": 76,
+  "kit_storefront_lod1": 2,
+  "kit_storefront_door_lod0": 64,
+  "kit_storefront_door_lod1": 2,
+  "kit_corner_column_lod0": 24,
+  "kit_corner_column_lod1": 8,
+  "kit_ledge_spot_lod0": 92,
+  "kit_ledge_spot_lod1": 12,
+  "kit_roof_tile_lod0": 26,
+  "kit_roof_tile_lod1": 2,
+  "kit_parapet_lod0": 22,
+  "kit_parapet_lod1": 10,
+  "kit_crown_tank_lod0": 200,
+  "kit_crown_tank_lod1": 84,
+  "kit_crown_antenna_lod0": 288,
+  "kit_crown_antenna_lod1": 60,
+  "kit_crown_billboard_lod0": 102,
+  "kit_crown_billboard_lod1": 54,
+  "kit_billboard_wall_lod0": 60,
+  "kit_billboard_wall_lod1": 12,
+  "kit_ac_cluster_lod0": 108,
+  "kit_pipe_run_lod0": 68,
+  "kit_fire_escape_lod0": 444,
+  "kit_scaffold_lod0": 144,
+  "kit_neon_tube_lod0": 40,
+  "kit_sign_blade_lod0": 36,
+  "kit_sign_box_lod0": 10,
+  "kit_skybridge_lod0": 156,
+  "kit_skybridge_lod1": 20,
+  "kit_rooftop_pad_lod0": 994,
+  "kit_rooftop_pad_lod1": 34,
+  "kit_launch_pad_lod0": 214,
+  "kit_launch_pad_lod1": 70,
+  "kit_street_lamp_lod0": 68,
+  "kit_street_lamp_lod1": 48,
+  "kit_vending_lod0": 24,
+  "kit_bollard_lod0": 44,
+  "kit_bollard_lod1": 36,
+  "kit_steam_vent_lod0": 12,
+  "kit_kiosk_lod0": 76,
+  "kit_planter_tree_lod0": 112,
+  "kit_planter_tree_lod1": 52,
+  "kit_clutter_boxes_lod0": 76,
+  "kit_dumpster_lod0": 54,
+  "kit_holo_panel_lod0": 68,
+  "kit_terminal_lod0": 40,
+  "kit_skyline_a_lod0": 290,
+  "kit_skyline_b_lod0": 430,
+  "kit_skyline_c_lod0": 414
+ }
+}

@@ -253,7 +253,9 @@ export default class ExperienceHUD
             normalizedSpeed = Math.pow(normalizedSpeed, 0.72) // Better low-speed variation
 
             const maxMph = isBoosting ? this.speedDisplay.boostMaxMph : this.speedDisplay.normalMaxMph
-            const targetMph = carSpeed < 0.0005 ? 0 : normalizedSpeed * maxMph
+            // In flight: true airspeed, scaled so cruise (18 m/s) reads ~97 mph and boost ~160.
+            const flying = this.physics.car.hover?.airborne
+            const targetMph = carSpeed < 0.0005 ? 0 : flying ? carSpeed * 1000 * 5.4 : normalizedSpeed * maxMph
             const smoothing = isBoosting ? 0.35 : 0.22
             this.speedDisplay.currentMph += (targetMph - this.speedDisplay.currentMph) * smoothing
 

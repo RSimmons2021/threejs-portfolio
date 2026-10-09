@@ -10,35 +10,65 @@ const TREE_POSITIONS = [
 
 export default class City
 {
-    constructor({ resources, materials, physics, time, lighting })
+    constructor({ resources, materials, physics, time, lighting, replacedBlocks, neon = false })
     {
         this.container = new THREE.Group()
         this.container.name = 'Manhattan circuit / Blender assets'
         this.signPosts = []
         const blocks = new Map()
+        const staticBatches = new Map()
         resources.items.manhattan.scene.traverse((source) =>
         {
             if(!source.isMesh) return
+            const block = source.name.match(/block[ _]?(\d+)/)
+            if(block && replacedBlocks?.has(Number(block[1]))) return
+            // Neon District keeps only the street surface: the towers, trees,
+            // signals and NYC signage come from NeonCity instead.
+            const NEON_GROUND = { road: '#141619', sidewalk: '#2b2e33', cream: '#8f969b', gold: '#a5813a' }
+            const part = source.name.match(/^cel_([a-z]+)_avenue/)
+            if(neon && (block || !part || !NEON_GROUND[part[1]])) return
             const mesh = source.clone()
             const isWindow = source.name.includes('_block') && /^cel_(gold|glass)_/.test(source.name)
-            mesh.material = materials.getCelMaterial(source.material.color, isWindow ? 0.65 : 0)
+            const road = source.name.startsWith('cel_road_')
+            mesh.material = neon
+                ? materials.cyber.create({ color: new THREE.Color(NEON_GROUND[part[1]]), ground: part[1] === 'road' || part[1] === 'sidewalk' })
+                : road && materials.cyber
+                    ? materials.cyber.create({ color: source.material.color, ground: true })
+                    : materials.getCelMaterial(source.material.color, isWindow ? 0.65 : 0)
             if(source.name.startsWith('cel_road_'))
             {
                 // Keep all existing floor prompts, contact shadows and project
                 // panels above the asphalt, including their interaction zones.
                 mesh.position.z -= 0.06
-                mesh.material.uniforms.uAllowBelowGround.value = 1
+                if(mesh.material.uniforms.uAllowBelowGround) mesh.material.uniforms.uAllowBelowGround.value = 1
             }
             mesh.matrixAutoUpdate = false
             mesh.updateMatrix()
-            this.container.add(mesh)
-            const block = source.name.match(/block_?(\d+)/)
             if(block)
             {
                 if(!blocks.has(block[1])) blocks.set(block[1], new THREE.Box3())
                 blocks.get(block[1]).expandByObject(mesh)
             }
+            const geometry = mesh.geometry.clone().applyMatrix4(mesh.matrix)
+            const flattened = geometry.index ? geometry.toNonIndexed() : geometry
+            if(flattened !== geometry) geometry.dispose()
+            // Shared colors used to issue a draw per Blender object. Keep
+            // material/attribute-compatible batches, without changing bounds
+            // used by collision or touching any interaction coordinates.
+            const signature = Object.entries(flattened.attributes).map(([name, a]) => `${name}:${a.itemSize}:${a.normalized}`).sort().join(',')
+            const key = `${mesh.material.uuid}/${signature}`
+            if(!staticBatches.has(key)) staticBatches.set(key, { material: mesh.material, geometries: [] })
+            staticBatches.get(key).geometries.push(flattened)
         })
+        for(const { material, geometries } of staticBatches.values())
+        {
+            const merged = mergeGeometries(geometries)
+            const mesh = new THREE.Mesh(merged, material)
+            mesh.name = 'Manhattan / static material batch'
+            mesh.matrixAutoUpdate = false
+            this.container.add(mesh)
+            geometries.forEach(geometry => geometry.dispose())
+        }
 
         // One simple body per building. Windows and rooftop details never enter physics.
         const shadowGeometries = []
@@ -74,6 +104,17 @@ export default class City
             physics.world.addBody(body)
             return body
         })
+
+        if(neon)
+        {
+            // A wide wet-asphalt apron under the district; fog hides its edges.
+            const ground = new THREE.Mesh(new THREE.PlaneGeometry(900, 700), materials.cyber.create({ color: new THREE.Color('#16181b'), ground: true }))
+            ground.position.set(45, -30, -0.09)
+            ground.updateMatrix()
+            ground.matrixAutoUpdate = false
+            this.container.add(ground)
+            return
+        }
 
         if(shadowGeometries.length)
         {

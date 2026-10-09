@@ -1,4 +1,5 @@
 import * as THREE from 'three'
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 
 // A storefront is built facing +y and rotated into place, so every door in
 // careerData.js only has to name a wall ("east", "south") rather than an angle.
@@ -146,6 +147,7 @@ export default function createStorefront({ materials, name, sign, colour, facing
 
     const box = createStorefront.box ||= new THREE.BoxGeometry(1, 1, 1)
     const palette = createStorefront.palette ||= new Map()
+    const parts = []
     const cel = (hex, emission = 0) =>
     {
         const key = `${hex}|${emission}`
@@ -160,6 +162,7 @@ export default function createStorefront({ materials, name, sign, colour, facing
         mesh.matrixAutoUpdate = false
         mesh.updateMatrix()
         group.add(mesh)
+        parts.push(mesh)
         return mesh
     }
 
@@ -185,6 +188,28 @@ export default function createStorefront({ materials, name, sign, colour, facing
         glow.push(part([1.75, 0.06, 2.15], [0, 0.02, 1.12], colour, 0.85))
         glow.push(part([0.2, 0.2, 0.2], [- 1.13, - 0.06, 2.32], '#ffe7b0', 0.9))
         glow.push(part([0.2, 0.2, 0.2], [1.13, - 0.06, 2.32], '#ffe7b0', 0.9))
+    }
+    // Doorframes used five identical-color box draws per door. Merge just
+    // these immobile parts; lamps keep a distinct visibility bucket so the
+    // existing lock/unlock contract remains intact.
+    const buckets = new Map()
+    for(const mesh of parts)
+    {
+        const glowing = glow.includes(mesh)
+        const key = `${mesh.material.uuid}/${glowing}`
+        if(!buckets.has(key)) buckets.set(key, { material: mesh.material, glowing, meshes: [] })
+        buckets.get(key).meshes.push(mesh)
+    }
+    glow.length = 0
+    for(const { material, glowing, meshes } of buckets.values())
+    {
+        const geometries = meshes.map(mesh => mesh.geometry.clone().applyMatrix4(mesh.matrix))
+        const merged = new THREE.Mesh(mergeGeometries(geometries), material)
+        merged.matrixAutoUpdate = false
+        group.add(merged)
+        for(const mesh of meshes) group.remove(mesh)
+        geometries.forEach(geometry => geometry.dispose())
+        if(glowing) glow.push(merged)
     }
 
     // A lit floor decal in the doorway: the strongest "you can go in here" signal
