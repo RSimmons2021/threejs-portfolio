@@ -40,6 +40,7 @@ import EntryBeacons from './EntryBeacons.js'
 import MiniGameDirector from './MiniGames/MiniGameDirector.js'
 import NeonSky from './NeonSky.js'
 import CameraRig from './CameraRig.js'
+import LookShots, { shotFromSearch } from './LookShots.js'
 import NeonTraffic from './NeonTraffic.js'
 import HoverFlight from './HoverFlight.js'
 import CockpitDash from './CockpitDash.js'
@@ -176,6 +177,8 @@ export default class World
             this.hoverFlight = new HoverFlight(this)
             this.cockpitDash = new CockpitDash(this)
             this.cameraRig = new CameraRig(this)
+            const shot = import.meta.env.DEV && shotFromSearch(location.search)
+            if(shot) this.lookShots = new LookShots(this, shot)
             // The analytic headlight in the city shader replaces the solid cone meshes.
             this.advancedLighting.settings.headlightConesAutoNight = false
             this.advancedLighting.settings.headlightConesEnabled = false

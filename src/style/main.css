@@ -3200,3 +3200,6 @@ body.is-touch-input .interior-bar kbd { display: none; }
     }
     .has-destination-guide .arcade-panel:not([data-game]) { top: 250px; max-height: calc(100dvh - 260px); }
 }
+
+/* Dev-only ?shot= look review: canvas only. */
+.is-look-review > *:not(.js-canvas):not(script):not(style) { opacity: 0 !important; pointer-events: none !important; }

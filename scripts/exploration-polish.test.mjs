@@ -12,7 +12,7 @@ test('third-person chase stays behind a turning walker and skateboarder', () =>
     {
         const rig = Object.create(CameraRig.prototype)
         const camera = { instance: new THREE.PerspectiveCamera(), shake: { offset: new THREE.Vector3() }, fovKick: {} }
-        const explorer = { active: true, firstPerson: false, skating, heading: Math.PI / 2, renderPosition: new THREE.Vector3(0,0,.4), body: { velocity: { x: 0, y: skating ? 7.6 : 3.2 } } }
+        const explorer = { active: true, firstPerson: false, skating, inputAlong: 1, heading: Math.PI / 2, renderPosition: new THREE.Vector3(0,0,.4), body: { velocity: { x: 0, y: skating ? 7.6 : 3.2 } } }
         rig.world = { camera, explorer, car: {}, physics: { car: {} }, controls: { getViewYaw: () => 0 }, arcade: { state: 'idle' } }
         Object.assign(rig, { camera, instance: camera.instance, mode: 'chase', colliders: [], yaw: 0, wasOnFoot: true, orbit: { yaw: 0, pitch: 0, idle: 0, drag: null }, distanceScale: 1, pull: 1, initialised: false, ray: new THREE.Ray() })
         for(const name of ['position','look','desired','target','hit','toCam','ahead','lastSubject']) rig[name] = new THREE.Vector3()
@@ -22,6 +22,16 @@ test('third-person chase stays behind a turning walker and skateboarder', () =>
         explorer.heading = -Math.PI / 2
         for(let i = 0; i < 120; i++) rig.update(1000 / 60)
         assert.ok(camera.instance.position.y > 3, 'camera follows a subsequent turn too')
+        // Strafing or backing up (no forward share) moves the walker against a
+        // steady view: the camera must not swing round to its new facing.
+        for(const along of [0, -1])
+        {
+            explorer.inputAlong = along
+            explorer.heading = 0
+            const before = rig.yaw
+            for(let i = 0; i < 120; i++) rig.update(1000 / 60)
+            assert.ok(Math.abs(rig.yaw - before) < 1e-6, `camera held still for inputAlong=${along}`)
+        }
     }
 })
 

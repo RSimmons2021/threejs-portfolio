@@ -2,15 +2,17 @@ import * as THREE from 'three'
 import vertexShader from '../../shaders/cyber/vertex.glsl'
 import fragmentShader from '../../shaders/cyber/fragment.glsl'
 import NeonLightRig, { MAX_SPILL_LIGHTS } from './NeonLightRig.js'
+import { buildGroundOcclusion } from './groundOcclusion.js'
 
 // Day/night palette. Colours are written as sRGB hex and converted to linear by
 // THREE.Color; light intensities are linear multipliers. 'daylight' runs 0..1.
 const PALETTE = {
     night: { sky: [0.11, 0.15, 0.2], ground: [0.014, 0.02, 0.025], sun: [0, 0, 0], fogLow: '#18232c', fogHigh: '#34434f',
         zenith: '#080f18', horizon: '#25313b', glow: '#503047', density: 0.0105, neon: 2.2, lit: 0.13 },
-    // Cooler overcast fill, warm exposed edges, dark occluded street canyons.
-    day: { sky: [0.72, 0.79, 0.85], ground: [0.09, 0.11, 0.13], sun: [4.8, 4.1, 3.3], fogLow: '#5b6c76', fogHigh: '#bac5c8',
-        zenith: '#718897', horizon: '#c6cfd0', glow: '#e6d6bf', density: 0.0058, neon: 0.7, lit: 0.04 }
+    // Megacity daylight: warm sunlit concrete against a deep blue sky, dark
+    // neutral shadows (low sky fill), and haze that only takes the far distance.
+    day: { sky: [0.42, 0.52, 0.66], ground: [0.07, 0.075, 0.08], sun: [5.6, 4.7, 3.6], fogLow: '#5f707b', fogHigh: '#a3b5c3',
+        zenith: '#3f6a9e', horizon: '#a9bccb', glow: '#e6d6bf', density: 0.0042, neon: 0.7, lit: 0.04 }
 }
 
 export default class CyberMaterials
@@ -60,6 +62,7 @@ export default class CyberMaterials
             uLitFraction: { value: 0.1 },
             uDaylight: { value: 1 },
             uWetness: { value: 0.3 },
+            uDetail: { value: 1 },
             uReducedMotion: { value: materials.resources.config.reducedMotion ? 1 : 0 },
             uLightVolume: { value: this.volume },
             uVolumeMin: { value: new THREE.Vector3(...volume.grid.min) },
@@ -77,7 +80,22 @@ export default class CyberMaterials
             uHorizon: { value: new THREE.Color() },
             uGlow: { value: new THREE.Color() }
         }
+        const occlusion = buildGroundOcclusion(items.cyberLayout)
+        // Tiling value-noise lattice for the procedural weathering and fog (see tnoise()).
+        const lattice = new Uint8Array(64 * 64)
+        let seed = 1
+        for(let i = 0; i < lattice.length; i++) lattice[i] = (seed = (seed * 16807) % 2147483647) % 256
+        this.noise = new THREE.DataTexture(lattice, 64, 64, THREE.RedFormat, THREE.UnsignedByteType)
+        this.noise.wrapS = this.noise.wrapT = THREE.RepeatWrapping
+        this.noise.magFilter = THREE.LinearFilter
+        this.noise.minFilter = THREE.LinearMipmapLinearFilter
+        this.noise.generateMipmaps = true
+        this.noise.colorSpace = THREE.NoColorSpace
+        this.noise.needsUpdate = true
         Object.assign(this.shared, {
+            uGroundAO: { value: occlusion.texture },
+            uNoise: { value: this.noise },
+            uGroundAOBounds: { value: occlusion.bounds },
             uCloudCover: { value: 0.7 },
             uSpillCount: { value: 0 },
             uSpillPosition: { value: Array.from({ length: MAX_SPILL_LIGHTS }, () => new THREE.Vector4()) },
@@ -159,10 +177,13 @@ export default class CyberMaterials
     update(world, forcedDaylight)
     {
         let daylight = forcedDaylight
+        // Sun elevation proxy: 1 at noon, ~0.7 at 9:00/15:00, ~0.26 at 17:00.
+        let elevation = 1
         if(world)
         {
             const at = world.dayNightCycle.settings.currentTime
-            daylight = THREE.MathUtils.smoothstep(Math.sin((at - 0.25) * Math.PI * 2), -0.18, 0.3)
+            elevation = Math.sin((at - 0.25) * Math.PI * 2)
+            daylight = THREE.MathUtils.smoothstep(elevation, -0.18, 0.3)
         }
         const n = this.night, d = this.day, s = this.shared
         const mix = (a, b) => a + (b - a) * daylight
@@ -175,8 +196,10 @@ export default class CyberMaterials
         s.uHorizon.value.copy(n.horizon).lerp(d.horizon, daylight)
         s.uGlow.value.copy(n.glow).lerp(d.glow, daylight)
         // The key sun warms and reddens toward dawn/dusk, and is off at night.
+        // Warmth follows the sun's elevation, so mornings and late afternoons
+        // turn golden instead of looking like noon.
         const dusk = Math.max(0, 1 - Math.abs(daylight - 0.45) / 0.45) * (daylight < 0.98 ? 1 : 0)
-        const warm = THREE.MathUtils.smoothstep(daylight, 0.25, 0.85)
+        const warm = THREE.MathUtils.smoothstep(elevation, 0.05, 0.85)
         s.uSunColor.value.setRGB(
             daylight * (d.sun[0] * warm + 5.0 * (1 - warm)),
             daylight * (d.sun[1] * warm + 2.4 * (1 - warm)),
@@ -187,7 +210,7 @@ export default class CyberMaterials
         let density = mix(n.density, d.density)
         let wet = 0.3
         const weather = world?.weather?.state
-        const cover = weather === 'rain' || weather === 'fog' ? 0.96 : weather === 'snow' ? 0.88 : 0.7
+        const cover = weather === 'rain' || weather === 'fog' ? 0.96 : weather === 'snow' ? 0.88 : 0.52
         const transition = world ? 1 - Math.exp(-Math.min(world.time.delta, 60) / 1400) : 1
         s.uCloudCover.value += (cover - s.uCloudCover.value) * transition
         // Storm clouds dim the direct key, rather than retaining a sunny sky
@@ -204,9 +227,20 @@ export default class CyberMaterials
         {
             this.lightRig ||= new NeonLightRig(world, s)
             this.lightRig.update()
+            // Procedural weathering and fog patches cost ALU per pixel: off on the low tier.
+            s.uDetail.value = world.quality?.tier === 'low' ? 0 : 1
             const post = world.passes.screenFxPass.material.uniforms
-            post.uExposure.value = mix(1.12, 0.98)
-            post.uBloomStrength.value = mix(1.15, 0.75)
+            // Eye adaptation, cheaply: Megacity meters exposure; here the camera's
+            // height stands in for it. By day the shaded street canyons open up
+            // and the exposure eases back as you climb into direct sun.
+            const eyeZ = world.camera.instance.position.z
+            const canyon = 1 - THREE.MathUtils.smoothstep(eyeZ, 6, 45)
+            this.exposure = (this.exposure ?? 1) + (mix(1.12, 1.0 + canyon * 0.24) - (this.exposure ?? 1)) * Math.min(1, (world.time.delta || 16) / 900)
+            post.uExposure.value = this.exposure
+            post.uBloomStrength.value = mix(0.9, 0.7)
+            // The neon art is already saturated, so the grade pulls back slightly instead
+            // of Megacity's +10 (tuned against frame statistics of the reference).
+            post.uSaturation.value = mix(0.9, 0.95)
         }
     }
 }

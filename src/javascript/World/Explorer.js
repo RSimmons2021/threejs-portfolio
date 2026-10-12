@@ -210,9 +210,16 @@ export default class Explorer
         const hover = w.physics.car.hover
         if(hover ? hover.airborne : car.position.z > 2) return
         // Test candidate exits against existing bodies so a parked car beside a
-        // wall cannot spawn the walker inside it.
-        const offsets = [[0, 2], [0, -2], [2.8, 0], [-2.8, 0], [0, 3.5]]
-        const spot = offsets.map(([x, y]) => ({ x: car.position.x + x, y: car.position.y + y })).find(p =>
+        // wall cannot spawn the walker inside it. Offsets are in the car's frame
+        // (along, left): the driver's side first, then the other door, then
+        // behind and in front. World-axis offsets put the walker behind the
+        // boot, facing it, whenever the car pointed south.
+        const angle = w.physics.car.angle
+        const offsets = [[0, 1.9], [0, -1.9], [-3.2, 0], [3.2, 0], [0, 3.2], [0, -3.2]]
+        const spot = offsets.map(([along, left]) => ({
+            x: car.position.x + Math.cos(angle) * along - Math.sin(angle) * left,
+            y: car.position.y + Math.sin(angle) * along + Math.cos(angle) * left
+        })).find(p =>
             !w.physics.world.bodies.some(body =>
             {
                 if(body === car || !body.collisionResponse || body.shapes.some(shape => shape.type === CANNON.Shape.types.PLANE)) return false
@@ -334,6 +341,11 @@ export default class Explorer
                 right = Math.cos(joystick.angle.originalValue)
             }
             const angle = heldMovementYaw(this.movementInput, forward, right, this.firstPerson ? this.yaw : w.controls.getViewYaw(), this.firstPerson || !!w.cameraRig?.orbit.drag)
+            // How much of the held input pushes away from the camera (1 = W only,
+            // 0 = pure strafe, negative = backing up). The chase camera only
+            // swings behind the walker for the forward share.
+            const steering = Math.hypot(forward, right)
+            this.inputAlong = steering > .05 ? forward / steering : 0
             const speed = this.blocked || document.hidden ? 0 : (this.skating ? 7.6 : 3.2)
             const target = movementVector(forward, right, angle, speed)
 
@@ -351,7 +363,10 @@ export default class Explorer
             const travelling = Math.hypot(this.body.velocity.x, this.body.velocity.y)
             const moving = travelling > 0.1
             if(moving) this.body.wakeUp()
-            if(moving)
+            // Only steer the body round while there is input (or the board is
+            // rolling): a bump off a wall or the car must not spin the walker,
+            // and with it the chase camera, to face the rebound.
+            if(moving && (forward || right || (this.skating && travelling > 1.2)))
             {
                 // Turn towards the heading over a few frames; a hard set makes
                 // the avatar flick round whenever the input direction changes.

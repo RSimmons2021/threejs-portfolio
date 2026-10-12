@@ -56,6 +56,15 @@ This is a desktop mobile-layout check, **not** Nothing Phone (3) emulation or de
 
 To isolate the window change from that variability, a separate fixed-view check held Medium/DPR 0.75 and the same camera, geometry and lighting. Two alternating 6 s pairs measured **32.63 / 35.47 FPS with the fix** versus **33.30 / 35.36 FPS with the previous window shader**; all four had 191 draws and 121,990 triangles. No large window-fix regression was observed in this short check. This is not a phone acceptance test or a substitute for the warmed route benchmark.
 
+### Look pass (2026-10-12)
+
+The Megacity-derived grade, weathering, fog and ground occlusion are described in `docs/neon-district-look.md`.
+
+- **Method:** REA `?bench=1`, interleaved A/B against `cab8b23`, high tier at dpr 0.75 on the UHD 620.
+- **Result:** median 41 fps after against 46 fps before, about 2.5 ms per frame.
+- **Draw calls:** unchanged.
+- **Low tier:** turns the procedural detail off.
+
 ## Phone procedure
 
 1. `npm run dev -- --host 0.0.0.0 --port 4173`, then on the phone (same Wi-Fi) open `http://<laptop-LAN-IP>:4173/?perf=1&time=15:00&weather=clear`.

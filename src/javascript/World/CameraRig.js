@@ -107,9 +107,13 @@ export default class CameraRig
             this.orbit.yaw = 0
         }
         this.wasOnFoot = onFoot
-        // Heading follows with a little lag so turns read on screen.
+        // Heading follows with a little lag so turns read on screen. On foot the
+        // controls are camera-relative, so the camera only swings behind for
+        // the forward share of the input: strafing (A/D) and backing up (S)
+        // move the walker against a steady view instead of spinning it round.
         const diff = Math.atan2(Math.sin(heading - this.yaw), Math.cos(heading - this.yaw))
-        this.yaw += diff * (1 - Math.exp(-dt * (onFoot ? 5 : 3.2)))
+        const along = onFoot ? Math.max(0, w.explorer.inputAlong || 0) : 1
+        this.yaw += diff * (1 - Math.exp(-dt * (onFoot ? 5 * along * along : 3.2)))
         if(!this.orbit.drag)
         {
             this.orbit.idle += dt
@@ -122,7 +126,7 @@ export default class CameraRig
         const yaw = this.yaw + this.orbit.yaw
         const flying = !onFoot && w.physics.car.hover?.airborne
         const distance = (onFoot ? 4.4 : flying ? 9 + Math.min(speed, 30) * 0.1 : 7.2 + Math.min(speed, 20) * 0.08) * this.distanceScale
-        const height = (onFoot ? 1.9 : flying ? 3.2 : 2.6) + this.orbit.pitch * distance * 0.9 + (this.distanceScale - 1) * 1.5
+        const height = (onFoot ? 2.2 : flying ? 3.2 : 2.6) + this.orbit.pitch * distance * 0.9 + (this.distanceScale - 1) * 1.5
         const lookAhead = onFoot ? 1.2 : 3 + Math.min(speed, 20) * 0.15
         this.target.set(p.x, p.y, p.z + (onFoot ? 1.5 : 1.1))
         this.desired.set(p.x - Math.cos(yaw) * distance, p.y - Math.sin(yaw) * distance, p.z + height)
@@ -144,7 +148,9 @@ export default class CameraRig
         this.desired.z = Math.max(this.desired.z, 0.8)
 
         const lookYaw = onFoot ? yaw : this.yaw
-        const ahead = this.ahead.set(p.x + Math.cos(lookYaw) * lookAhead, p.y + Math.sin(lookYaw) * lookAhead, p.z + (onFoot ? 1.4 : 1.2))
+        // On foot, aim a little down the street so the walker sits in the lower
+        // middle of the frame, clear of the bottom control panel.
+        const ahead = this.ahead.set(p.x + Math.cos(lookYaw) * lookAhead, p.y + Math.sin(lookYaw) * lookAhead, p.z + (onFoot ? 0.55 : 1.2))
         if(!this.initialised)
         {
             this.position.copy(this.desired)

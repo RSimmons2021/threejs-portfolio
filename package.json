@@ -20,7 +20,8 @@
     "test:bowling-guide": "node --test scripts/bowling-audio.test.mjs scripts/city-guide.test.mjs scripts/dynamic-guide.test.mjs",
     "sounds:bowling": "node --env-file=.env scripts/generate-sounds.mjs --only=bowling",
     "sounds:cyber": "node --env-file=.env scripts/generate-sounds.mjs --only=cyber",
-    "sounds:master": "node scripts/master-cyber-sounds.mjs"
+    "sounds:master": "node scripts/master-cyber-sounds.mjs",
+    "test:look": "node --test scripts/look.test.mjs"
   },
   "devDependencies": {
     "vite": "^5.2.11",

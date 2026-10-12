@@ -268,7 +268,7 @@ export default class Car
         const brakeCenter = brakeBox.getCenter(new THREE.Vector3())
         this.backLightsBrake.glow = createGlowSprite('rgba(255, 60, 40, 0.9)', 'rgba(255, 40, 20, 0)')
         this.backLightsBrake.glow.position.copy(brakeCenter)
-        this.backLightsBrake.glow.scale.set(1.6, 1.6, 1.6)
+        this.backLightsBrake.glow.scale.set(1.1, 1.1, 1.1)
         this.backLightsBrake.object.add(this.backLightsBrake.glow)
 
         this.chassis.object.add(this.backLightsBrake.object)
@@ -302,7 +302,8 @@ export default class Car
 
             // Glows only appear once night falls (dayNightCycle is attached by World after creation)
             const nightFactor = this.dayNightCycle ? this.dayNightCycle.nightFactor : 0
-            this.backLightsBrake.glow.material.opacity = nightFactor * (braking ? 0.85 : 0.25)
+            // Bloom already haloes the tail bars; the additive disc only marks braking.
+            this.backLightsBrake.glow.material.opacity = nightFactor * (braking ? 0.6 : 0)
         })
     }
 

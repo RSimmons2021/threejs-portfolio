@@ -14,14 +14,16 @@ void main()
             * (1.0 - step(0.16, min(vUv.y, 1.0 - vUv.y)));
         alpha = rim * (0.48 + 0.3 * vActive) + corners * 0.15 + 0.012;
     #else
-        float edge = min(vUv.x, 1.0 - vUv.x);
+        // MSAA can shade a sample outside a thin, edge-on wall with an
+        // extrapolated UV; a negative edge would make exp() explode into Inf.
+        float edge = clamp(min(vUv.x, 1.0 - vUv.x), 0.0, 0.5);
         float core = 1.0 - smoothstep(0.002, 0.008, edge);
         float glow = exp(-edge * 48.0);
         float heightFade = mix(0.55, 0.12, smoothstep(0.02, 1.0, vUv.y));
         float pulse = mix(0.93 + 0.07 * sin(uTime * 1.4), 1.0, uReducedMotion);
         alpha = (core * 0.38 + glow * 0.08 + 0.007) * heightFade * (0.5 + vActive) * pulse;
     #endif
-    gl_FragColor = vec4(vColor * mix(2.2, 1.55, uDaylight), alpha);
+    gl_FragColor = vec4(vColor * mix(2.2, 1.55, uDaylight), clamp(alpha, 0.0, 1.0));
     #include <tonemapping_fragment>
     #include <colorspace_fragment>
 }

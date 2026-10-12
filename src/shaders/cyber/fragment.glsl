@@ -36,6 +36,12 @@ uniform float uDaylight;
 uniform float uTime;
 uniform float uReducedMotion;
 uniform float uWetness;
+uniform float uDetail;
+uniform sampler2D uNoise;
+#ifdef WET_GROUND
+uniform sampler2D uGroundAO;
+uniform vec4 uGroundAOBounds;
+#endif
 uniform vec3 uSpotPosition;
 uniform vec3 uSpotColor;
 uniform float uSpotIntensity;
@@ -61,6 +67,10 @@ float noise(vec2 p)
     f = f * f * (3.0 - 2.0 * f);
     return mix(mix(hash2(i), hash2(i + vec2(1.0, 0.0)), f.x), mix(hash2(i + vec2(0.0, 1.0)), hash2(i + vec2(1.0, 1.0)), f.x), f.y);
 }
+
+// Value noise from a 64x64 tiling texture: one bilinear fetch instead of
+// four sin() hashes, and its mipmaps keep distant detail from shimmering.
+float tnoise(vec2 p) { return texture2D(uNoise, p * 0.015625).r; }
 
 vec4 volumeSlice(vec3 grid, float slice)
 {
@@ -106,9 +116,17 @@ vec3 applyFog(vec3 color, vec3 bounce)
     // street and a street viewed from altitude must not get identical haze.
     float heightK = abs(dz) < 0.01 ? exp(-eye) : (exp(-eye) - exp(-end)) / dz;
     float density = uFogDensity * (0.6 + 1.2 * heightK);
+    // Megacity layers local density volumes over a thin global haze. Drifting
+    // low-frequency patches stand in for those volumes along the view ray.
+    vec2 mid = (vWorld.xy + cameraPosition.xy) * 0.5;
+    float patches = tnoise(mid * 0.021 + uTime * vec2(0.006, 0.004)) * 0.65 + tnoise(mid * 0.06 - uTime * 0.01) * 0.35;
+    density *= mix(1.0, 0.65 + 0.7 * patches, uDetail);
     // exp2 haze: near detail stays crisp, the far canyon dissolves completely.
-    float fog = 1.0 - exp(-pow(d * density, 2.0) - d * density * 0.25);
+    // The linear term is aerial perspective: towers recede even from altitude.
+    float fog = 1.0 - exp(-pow(d * density, 2.0) - d * uFogDensity * mix(0.55, 0.25, uDaylight));
     vec3 fogColor = mix(uFogColor, uFogHighColor, smoothstep(2.0, 85.0, (vWorld.z + cameraPosition.z) * 0.5));
+    // Teal canyon haze low down (Megacity's maze volumes), neutral above.
+    fogColor = mix(fogColor, fogColor * vec3(0.82, 1.08, 1.06), (1.0 - smoothstep(4.0, 30.0, vWorld.z)) * 0.6);
     // Keep coloured scatter local: the far canyon shouldn't become rainbow fog.
     fogColor += bounce * uNeonIntensity * 0.012 * exp(-d * 0.035);
     return mix(color, fogColor, clamp(fog, 0.0, 0.985));
@@ -149,6 +167,11 @@ void main()
         // hashing those interpolated IDs (which produces shimmering confetti).
         vec2 footprint = fwidth(vUv) * uAtlasSize;
         float detail = 1.0 - smoothstep(1.5, 6.0, max(footprint.x, footprint.y));
+        // Rooms are not flat panels: ceiling lights fall off toward the sill,
+        // some blinds are half drawn, and brightness wanders across a window.
+        float storey = fract(vWorld.z / 3.2);
+        float blind = step(0.62, hash(id * 53.1 + vSeed * 9.7)) * (1.0 - step(0.45 + 0.4 * hash(id * 7.9 + vSeed), storey));
+        level *= mix(1.0, (0.55 + 0.55 * storey) * (1.0 - blind * 0.75) * (0.75 + 0.5 * tnoise(vWorld.xy * 1.3 + vWorld.z * 0.9)), uDetail);
         on = mix(uLitFraction, on, detail);
         room = mix(vec3(0.8685, 0.7675, 0.659), room, detail);
         level = mix(1.0, level, detail);
@@ -191,10 +214,50 @@ void main()
         #endif
     #endif
 
+    // Weathering. Megacity's facades carry mask and detail maps. Here: rain
+    // streaks running down walls, soot near the street, patchy roofs. Faded
+    // out with distance before the value noise can alias.
+    float near = uDetail * (1.0 - smoothstep(45.0, 110.0, distance(cameraPosition, vWorld)));
+    if(near > 0.0)
+    {
+        vec3 an = abs(n);
+        float weathering = 1.0;
+        if(an.z < 0.6)
+        {
+            vec2 wall = vec2(an.x > an.y ? vWorld.y : vWorld.x, vWorld.z);
+            float streaks = tnoise(vec2(wall.x * 2.3, wall.y * 0.07 + vSeed * 31.0));
+            float blotches = tnoise(wall * vec2(0.4, 0.25) + vSeed * 17.0);
+            weathering = mix(0.62, 1.08, streaks * 0.55 + blotches * 0.45);
+            weathering *= mix(0.6, 1.0, smoothstep(0.0, 3.5, vWorld.z));
+        }
+        else if(n.z > 0.0)
+        {
+            #ifdef WET_GROUND
+                // Asphalt: aggregate, darker repair patches, polished wheel tracks.
+                float aggregate = tnoise(vWorld.xy * 3.7) * 0.6 + tnoise(vWorld.xy * 13.0) * 0.4;
+                float repairs = smoothstep(0.58, 0.66, tnoise(vWorld.xy * vec2(0.09, 0.13) + 7.0));
+                weathering = (0.8 + 0.35 * aggregate) * (1.0 - repairs * 0.3);
+            #else
+                weathering = mix(0.7, 1.05, tnoise(vWorld.xy * 0.45 + vSeed * 5.0) * 0.6 + tnoise(vWorld.xy * 2.1) * 0.4);
+            #endif
+        }
+        albedo *= mix(1.0, weathering, near * (1.0 - glass));
+    }
+    #ifdef WET_GROUND
+        // Asphalt dries to a mid grey in clear daylight; rain keeps it black and wet.
+        float dryness = uDaylight * clamp((1.0 - uWetness) / 0.7, 0.0, 1.0);
+        albedo *= mix(1.0, 2.1, dryness);
+    #endif
+    // Sunlit concrete reads sandstone-warm by day (Megacity's palette), not neutral grey.
+    albedo *= mix(vec3(1.0), vec3(1.07, 1.0, 0.9), uDaylight * (1.0 - glass));
+
     // Overcast hemisphere: roofs catch the sky, walls get a soft side light so the masses read.
     float hemi = clamp(n.z * 0.5 + 0.5, 0.0, 1.0);
     float side = 0.86 + 0.14 * dot(n.xy, normalize(vec2(-0.55, -0.83)));
-    vec3 ambient = mix(uGroundColor, uSkyColor, hemi) * side * mix(0.055, 1.0, sky * sqrt(sky));
+    // By day, shaded canyons are lit mostly by sun bounced off the facades
+    // opposite: a warm fill that grows as the sky closes in.
+    vec3 ambient = mix(uGroundColor, uSkyColor, hemi) * side * mix(mix(0.055, 0.22, uDaylight), 1.0, sky * sqrt(sky));
+    ambient += uSunColor * (1.0 - sky) * 0.045 * (0.6 + 0.4 * (1.0 - hemi));
     // Key sun, masked by the baked sun-shadow volume (soft, canyon-scale shadows).
     float sunVis = 0.0;
     float ndl = max(dot(n, uSunDir), 0.0);
@@ -238,14 +301,18 @@ void main()
     lit += uSunColor * glint * glass * 0.6;
 
     #ifdef WET_GROUND
-        float puddle = smoothstep(0.45, 0.75, noise(vWorld.xy * 0.18) * 0.7 + noise(vWorld.xy * 0.9) * 0.3);
-        float wet = clamp(uWetness * 0.75 + 0.25, 0.0, 1.0) * mix(0.35, 1.0, puddle);
+        float puddle = smoothstep(0.45, 0.75, tnoise(vWorld.xy * 0.18) * 0.7 + tnoise(vWorld.xy * 0.9) * 0.3);
+        float wet = clamp(uWetness * 0.75 + 0.25, 0.0, 1.0) * mix(0.35, 1.0, puddle) * (1.0 - 0.6 * dryness);
         float gloss = pow(1.0 - clamp(viewDir.z, 0.0, 1.0), 2.0);
         // Neon pools: the ground mirrors the coloured light around it, stretched by viewing angle.
         vec4 above = sampleVolume(vWorld + vec3(0.0, 0.0, 6.0));
         vec3 mirrored = above.rgb * above.rgb * uBounceScale * uNeonIntensity * 0.7 + uFogHighColor * 0.3 * above.a;
         lit = mix(lit, lit * 0.5 + mirrored * (0.12 + 0.7 * gloss), wet);
         lit += localSpecular * wet * (0.35 + gloss * 1.4);
+        // Baked contact occlusion: towers and street props sit in the pavement.
+        vec2 aoUv = (vWorld.xy - uGroundAOBounds.xy) / uGroundAOBounds.zw;
+        if(all(greaterThan(aoUv, vec2(0.0))) && all(lessThan(aoUv, vec2(1.0))))
+            lit *= texture2D(uGroundAO, aoUv).r;
     #endif
 
     // Emissives themselves follow the clock, not only their bounced light.
