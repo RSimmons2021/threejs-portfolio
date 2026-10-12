@@ -3,22 +3,22 @@
     "short_name": "Richard Simmons",
     "icons": [
         {
-            "src": "/favicon/favicon.svg",
+            "src": "/favicon/favicon.svg?v=rs-20261012",
             "sizes": "any",
             "type": "image/svg+xml"
         },
         {
-            "src": "/favicon/android-chrome-192x192.png",
+            "src": "/favicon/android-chrome-192x192.png?v=rs-20261012",
             "sizes": "192x192",
             "type": "image/png"
         },
         {
-            "src": "/favicon/android-chrome-256x256.png",
+            "src": "/favicon/android-chrome-256x256.png?v=rs-20261012",
             "sizes": "256x256",
             "type": "image/png"
         }
     ],
-    "theme_color": "#101716",
-    "background_color": "#101716",
+    "theme_color": "#07131e",
+    "background_color": "#07131e",
     "display": "standalone"
 }

@@ -107,13 +107,21 @@ export default class CameraRig
             this.orbit.yaw = 0
         }
         this.wasOnFoot = onFoot
-        // Heading follows with a little lag so turns read on screen. On foot the
-        // controls are camera-relative, so the camera only swings behind for
-        // the forward share of the input: strafing (A/D) and backing up (S)
-        // move the walker against a steady view instead of spinning it round.
+        // Heading follows with a little lag so turns read on screen, keeping
+        // the camera behind the walker as it turns (W, A, D). Backing up (S)
+        // walks the character toward a steady camera instead of whipping the
+        // view round 180°; with nothing held the camera finishes settling
+        // behind, unless the walker is facing it.
         const diff = Math.atan2(Math.sin(heading - this.yaw), Math.cos(heading - this.yaw))
-        const along = onFoot ? Math.max(0, w.explorer.inputAlong || 0) : 1
-        this.yaw += diff * (1 - Math.exp(-dt * (onFoot ? 5 * along * along : 3.2)))
+        let follow = 1
+        if(onFoot)
+        {
+            const along = w.explorer.inputAlong
+            follow = along === null || along === undefined
+                ? THREE.MathUtils.smoothstep(Math.cos(diff), -0.2, 0.3)
+                : THREE.MathUtils.smoothstep(along, -0.6, -0.1)
+        }
+        this.yaw += diff * (1 - Math.exp(-dt * (onFoot ? 5 : 3.2) * follow))
         if(!this.orbit.drag)
         {
             this.orbit.idle += dt

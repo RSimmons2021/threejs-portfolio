@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="RS — Richard Simmons">
+  <title>RS — Richard Simmons</title>
+  <rect width="64" height="64" rx="12" fill="#07131e"/>
+  <path fill="#68e9f5" fill-rule="evenodd" d="M8 16H23L31 24V33L25 37L32 48H23L17 38H16V48H8ZM16 24V31H22L24 29V26L22 24Z"/>
+  <path fill="#e6f0f4" d="M55 16V24H43V28H49L56 35V41L49 48H35V40H48V36H42L35 29V23L42 16Z"/>
+</svg>

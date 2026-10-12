@@ -64,3 +64,12 @@ test('contact and arcade use distinct approaches and bearings wrap safely', () =
     assert.equal(guideBearing({ x: 0, y: 0 }, [10, 0], Math.PI * 2).direction, 'Ahead')
     assert.deepEqual(cityGuideRoute({ x: 16, y: -56.5 }, { group: 'about', x: 16, y: -56.5 }), [[16,-56.5],[16,-56.5]])
 })
+
+test('the arrival guide card dismisses on a backdrop click, not on clicks inside or from the keyboard', async () =>
+{
+    const { isOutside } = await import('../src/javascript/World/VisitorGuide.js')
+    const card = { left: 340, right: 940, top: 80, bottom: 640 }
+    assert.equal(isOutside(card, { clientX: 30, clientY: 690, detail: 1 }), true, 'backdrop')
+    assert.equal(isOutside(card, { clientX: 640, clientY: 120, detail: 1 }), false, 'inside the card')
+    assert.equal(isOutside(card, { clientX: 0, clientY: 0, detail: 0 }), false, 'keyboard activation reports 0,0')
+})

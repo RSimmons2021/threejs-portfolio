@@ -342,10 +342,10 @@ export default class Explorer
             }
             const angle = heldMovementYaw(this.movementInput, forward, right, this.firstPerson ? this.yaw : w.controls.getViewYaw(), this.firstPerson || !!w.cameraRig?.orbit.drag)
             // How much of the held input pushes away from the camera (1 = W only,
-            // 0 = pure strafe, negative = backing up). The chase camera only
-            // swings behind the walker for the forward share.
+            // 0 = pure turn left/right, -1 = backing up toward it); null when
+            // nothing is held. CameraRig uses it to decide when to swing behind.
             const steering = Math.hypot(forward, right)
-            this.inputAlong = steering > .05 ? forward / steering : 0
+            this.inputAlong = steering > .05 ? forward / steering : null
             const speed = this.blocked || document.hidden ? 0 : (this.skating ? 7.6 : 3.2)
             const target = movementVector(forward, right, angle, speed)
 
@@ -373,7 +373,10 @@ export default class Explorer
                 const heading = Math.atan2(this.body.velocity.y, this.body.velocity.x) - Math.PI / 2
                 const current = this.avatar.rotation.z
                 const turn = Math.atan2(Math.sin(heading - current), Math.cos(heading - current))
-                this.avatar.rotation.z = current + turn * Math.min(1, delta * (this.skating ? 8 : 16))
+                // A coasting board follows gentle curves, never a rebound off a
+                // wall (that would spin the skater and the chase camera round).
+                const steered = forward || right || Math.abs(turn) < 1
+                if(steered) this.avatar.rotation.z = current + turn * Math.min(1, delta * (this.skating ? 8 : 16))
                 this.heading = this.avatar.rotation.z + Math.PI / 2
             }
             this.phase += delta * travelling * 2.5

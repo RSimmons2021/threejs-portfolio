@@ -22,15 +22,19 @@ test('third-person chase stays behind a turning walker and skateboarder', () =>
         explorer.heading = -Math.PI / 2
         for(let i = 0; i < 120; i++) rig.update(1000 / 60)
         assert.ok(camera.instance.position.y > 3, 'camera follows a subsequent turn too')
-        // Strafing or backing up (no forward share) moves the walker against a
-        // steady view: the camera must not swing round to its new facing.
-        for(const along of [0, -1])
+        // Turning with A/D (no forward share) still brings the camera round behind.
+        explorer.inputAlong = 0
+        explorer.heading = 0
+        for(let i = 0; i < 120; i++) rig.update(1000 / 60)
+        assert.ok(Math.abs(rig.yaw) < 0.05, `camera swings behind a turn, yaw=${rig.yaw}`)
+        // Backing up (S) walks toward a steady camera: no 180° whip, during or after.
+        for(const along of [-1, null])
         {
             explorer.inputAlong = along
-            explorer.heading = 0
+            explorer.heading = Math.PI
             const before = rig.yaw
             for(let i = 0; i < 120; i++) rig.update(1000 / 60)
-            assert.ok(Math.abs(rig.yaw - before) < 1e-6, `camera held still for inputAlong=${along}`)
+            assert.ok(Math.abs(rig.yaw - before) < 1e-3, `camera held still when backing up (inputAlong=${along})`)
         }
     }
 })

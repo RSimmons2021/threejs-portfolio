@@ -2,6 +2,13 @@ import * as THREE from 'three'
 import { cityGuideRoute, guideBearing, smoothGuideRotation, guideWaypoint, guideNeedsReroute, guideArrived } from './cityGuideRules.js'
 import GuideTrail from './GuideTrail.js'
 
+// Keyboard activation reports (0, 0); only a real pointer position can be outside.
+export function isOutside(rect, { clientX, clientY, detail })
+{
+    if(detail === 0) return false
+    return clientX < rect.left || clientX > rect.right || clientY < rect.top || clientY > rect.bottom
+}
+
 export default class VisitorGuide
 {
     constructor(world)
@@ -44,6 +51,9 @@ export default class VisitorGuide
         document.body.appendChild(this.$dialog)
         this.$dialog.addEventListener('click', event =>
         {
+            // A modal dialog receives backdrop clicks itself: any click outside
+            // the card's box dismisses it, the same as Close.
+            if(event.target === this.$dialog && isOutside(this.$dialog.getBoundingClientRect(), event)) { this.close(); return }
             const destination = event.target.closest('[data-destination]')?.dataset.destination
             if(destination) { this.close(); this.choose(destination, Number(this.$dialog.querySelector('select').value)) }
             if(event.target.closest('[data-guide-close], a[download]')) this.close()
