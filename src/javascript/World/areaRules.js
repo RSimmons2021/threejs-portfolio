@@ -1,5 +1,6 @@
 import { FLIGHT_CEILING } from './flightRules.js'
 
+// Sky-access columns keep the district ceiling, even when the Megacity sky opens up.
 export const ENTRY_HEIGHT = FLIGHT_CEILING + 2
 
 export function isInsideArea(area, position, airborne = false)

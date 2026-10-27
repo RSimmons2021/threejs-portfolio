@@ -6,13 +6,19 @@
 //   drop    looking down into a street canyon
 //   avenue  parked on the road down a long street (ground-level twin of canyon)
 //   horizon above the rooftops, looking across the district into the sky
+//   edge    near the clearing's east edge, looking out at the Megacity blocks
+//   overhead / plaza  fixed cameras over the district and its Megacity ring
 export const SHOTS = Object.freeze({
     street: null,
     canyon: { p: [18, -6, 14], yaw: 0, pitch: 0 },
     aerial: { p: [-60, -30, 48], yaw: 0.25, pitch: 0.55 },
     drop: { p: [40, -10, 40], yaw: 0, pitch: 0.9 },
     avenue: { p: [36, -30, 0.7], yaw: 0, pitch: -0.05, ground: true },
-    horizon: { p: [-40, -32, 58], yaw: 0.1, pitch: -0.2 }
+    horizon: { p: [-40, -32, 58], yaw: 0.1, pitch: -0.2 },
+    edge: { p: [150, -40, 22], yaw: 0.3, pitch: 0.1 },
+    // Fixed cameras (eye, target) for layout checks; the car stays on the road.
+    overhead: { p: [36, -30, 0.7], yaw: 0, ground: true, camera: { eye: [45, -160, 520], target: [45, -27, 0] } },
+    plaza: { p: [36, -30, 0.7], yaw: 0, ground: true, camera: { eye: [-60, -120, 90], target: [60, -20, 60] } }
 })
 
 export function shotFromSearch(search)
@@ -32,6 +38,18 @@ export default class LookShots
         // Wait for the reveal and the walker/car hand-off, then hold the pose.
         this.started = world.time.elapsed
         world.time.on('tick', () => this.update())
+    }
+
+    // Called by Application after the camera rig, so a fixed shot wins.
+    updateCamera()
+    {
+        const shot = this.pose?.camera
+        if(!shot || this.world.time.elapsed - this.started < 2500) return
+        const camera = this.world.camera.instance
+        camera.position.set(...shot.eye)
+        camera.up.set(0, 0, 1)
+        camera.lookAt(...shot.target)
+        camera.updateMatrixWorld()
     }
 
     update()
@@ -69,7 +87,7 @@ export default class LookShots
                 sky: f(u.uSkyColor.value), fog: +u.uFogDensity.value.toFixed(5), cloud: +u.uCloudCover.value.toFixed(2),
                 tier: w.quality?.tier }))
         }
-        if(w.cameraRig)
+        if(w.cameraRig && !this.pose.camera)
         {
             w.cameraRig.orbit.pitch = this.pose.pitch
             w.cameraRig.orbit.yaw = 0

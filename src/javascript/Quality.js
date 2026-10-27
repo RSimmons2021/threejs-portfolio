@@ -1,17 +1,53 @@
 export const TIERS = Object.freeze({
-    low: { dpr: 0.75, floor: 0.5, msaa: 0, bloom: 0, far: 100, lights: 4, beams: 12, traffic: 60, crowd: 18, rain: 100 },
-    medium: { dpr: 1, floor: 0.6, msaa: 0, bloom: 3, far: 140, lights: 8, beams: 20, traffic: 140, crowd: 36, rain: 180 },
-    high: { dpr: 1.25, floor: 0.75, msaa: 2, bloom: 4, far: 180, lights: 12, beams: 32, traffic: 250, crowd: 56, rain: 300 },
-    ultra: { dpr: 1.5, floor: 0.85, msaa: 4, bloom: 5, far: 220, lights: 16, beams: 48, traffic: 400, crowd: 72, rain: 350 }
+    low: { dpr: 0.75, floor: 0.5, msaa: 0, bloom: 0, far: 100, lights: 4, beams: 12, traffic: 40, crowd: 18, rain: 100 },
+    medium: { dpr: 1, floor: 0.6, msaa: 0, bloom: 3, far: 140, lights: 8, beams: 20, traffic: 70, crowd: 36, rain: 180 },
+    high: { dpr: 1.25, floor: 0.75, msaa: 2, bloom: 4, far: 180, lights: 12, beams: 32, traffic: 110, crowd: 56, rain: 300 },
+    ultra: { dpr: 1.5, floor: 0.85, msaa: 4, bloom: 5, far: 220, lights: 16, beams: 48, traffic: 160, crowd: 72, rain: 350 }
 })
 const NAMES = Object.keys(TIERS)
 
-export function detectTier({ touch = false, gpu = '', override = '' } = {})
+// GPU class from the WebGL renderer string (Chrome reports "ANGLE (vendor, model
+// ...)", Safari masks Apple GPUs as "Apple GPU").
+export function gpuClass(gpu = '')
+{
+    const g = gpu.toLowerCase()
+    if(/swiftshader|llvmpipe|softpipe|software|microsoft basic/.test(g)) return 'software'
+    const adreno = /adreno[^0-9]*(\d{3})/.exec(g)
+    if(adreno) return Number(adreno[1]) >= 730 ? 'mobile-high' : Number(adreno[1]) >= 640 ? 'mobile-mid' : 'mobile-low'
+    if(/immortalis|mali-g7[1-9]\d|mali-g9\d\d/.test(g)) return 'mobile-high'
+    if(/mali-g(6\d|7[0-7]|5[27])\b|xclipse/.test(g)) return 'mobile-mid'
+    if(/mali|powervr|videocore|tegra/.test(g)) return 'mobile-low'
+    if(/apple m\d (pro|max|ultra)/.test(g)) return 'discrete'
+    if(/apple (m\d|gpu)/.test(g)) return 'apple'
+    if(/nvidia|geforce|quadro|rtx|gtx|radeon (rx|pro)|radeon\(tm\) rx|arc\(tm\) a|intel.*arc /.test(g)) return 'discrete'
+    if(/iris\(r\) xe|iris xe|radeon(\(tm\))? (680m|780m|880m|890m)|arc\(tm\) graphics/.test(g)) return 'igpu-high'
+    if(/intel|uhd|hd graphics|iris|radeon(\(tm\))? (vega|graphics)/.test(g)) return 'igpu-low'
+    return 'unknown'
+}
+
+// Phones and tablets: their GPU name sets the tier, but they never go above
+// High (thermal limits, not peak speed, decide a phone's frame rate).
+const TIER_BY_CLASS = {
+    desktop: { software: 'low', 'igpu-low': 'medium', 'igpu-high': 'high', apple: 'high', discrete: 'ultra', unknown: 'high',
+        'mobile-low': 'medium', 'mobile-mid': 'medium', 'mobile-high': 'high' },
+    mobile: { software: 'low', 'mobile-low': 'low', 'mobile-mid': 'medium', 'mobile-high': 'high', apple: 'medium', unknown: 'medium',
+        'igpu-low': 'medium', 'igpu-high': 'high', discrete: 'high' }
+}
+
+export function detectTier({ mobile, touch = false, gpu = '', override = '' } = {})
 {
     if(TIERS[override]) return override
-    if(touch) return 'medium'
-    if(/swiftshader|llvmpipe|software/i.test(gpu)) return 'low'
-    return /intel|uhd|iris|mali|adreno|powervr|apple|radeon.*graphics/i.test(gpu) ? 'high' : 'ultra'
+    return TIER_BY_CLASS[(mobile ?? touch) ? 'mobile' : 'desktop'][gpuClass(gpu)]
+}
+
+// Platform, decided up front (a touch event can arrive long after loading).
+export function isMobileDevice({ userAgent = '', uaMobile, maxTouchPoints = 0, coarsePointer = false } = {})
+{
+    if(typeof uaMobile === 'boolean' && uaMobile) return true
+    if(/android|iphone|ipod|mobile|silk|kindle/i.test(userAgent)) return true
+    // iPadOS reports a desktop Mac user agent.
+    if(/macintosh/i.test(userAgent) && maxTouchPoints > 1) return true
+    return /ipad|tablet/i.test(userAgent) || (coarsePointer && maxTouchPoints > 0 && !/windows|linux x86|cros/i.test(userAgent))
 }
 
 export default class Quality

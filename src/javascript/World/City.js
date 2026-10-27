@@ -108,7 +108,8 @@ export default class City
         if(neon)
         {
             // A wide wet-asphalt apron under the district; fog hides its edges.
-            const ground = new THREE.Mesh(new THREE.PlaneGeometry(900, 700), materials.cyber.create({ color: new THREE.Color('#16181b'), ground: true }))
+            // Wide enough for the Megacity explore range around the district.
+            const ground = new THREE.Mesh(new THREE.PlaneGeometry(3200, 3000), materials.cyber.create({ color: new THREE.Color('#16181b'), ground: true }))
             ground.position.set(45, -30, -0.09)
             ground.updateMatrix()
             ground.matrixAutoUpdate = false

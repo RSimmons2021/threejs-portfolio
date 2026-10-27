@@ -65,6 +65,9 @@ export default class PerformanceMonitor
         if(!this.benchmark && this.params.has('bench') && !this.autoRan && this.app.world?.started)
         {
             if(this.app.time.elapsed - this.app.world.startedAt < 5000) return
+            // Measure the full scene: wait (up to 40 s) for the Megacity ring.
+            const ring = this.app.world.megacity
+            if(ring?.profile && !ring.ready && this.app.time.elapsed - this.app.world.startedAt < 40000) return
             this.autoRan = true
             this.startBenchmark()
         }

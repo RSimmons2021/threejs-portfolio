@@ -40,6 +40,12 @@ export default class HoverFlight
 
     get airborne() { return this.mode !== 'grounded' }
 
+    get envelope()
+    {
+        const ring = this.world.megacity
+        return ring?.flightBounds && ring.container.visible ? ring.flightBounds : this.bounds
+    }
+
     get blocked()
     {
         const w = this.world
@@ -167,7 +173,12 @@ export default class HoverFlight
         this.ray.skipBackfaces = true
         this.ray.collisionFilterMask = -1
         this.ray.intersectWorld(this.physics.world, { mode: CANNON.Ray.CLOSEST, result: this.rayResult, skipBackfaces: true })
-        return this.rayResult.hasHit ? this.rayResult.hitPointWorld.z : 0
+        const hit = this.rayResult.hasHit ? this.rayResult.hitPointWorld.z : 0
+        // Megacity rooftops: the ray starts below the chassis and can begin inside
+        // the height field, so read the field under the car directly as well.
+        const ring = this.world.megacity
+        const roof = ring?.collision && ring.container.visible ? ring.collision.heightAt(body.position.x, body.position.y) : 0
+        return roof <= body.position.z + 1 ? Math.max(hit, roof) : hit
     }
 
     step(dt)
@@ -210,13 +221,14 @@ export default class HoverFlight
         }
         if(this.mode === 'flying')
         {
-            vz = ceilingVelocity(body.position.z, vz)
+            vz = ceilingVelocity(body.position.z, vz, this.envelope.ceiling ?? FLIGHT_CEILING)
             if(this.altitude < MIN_ALT) vz = Math.max(vz, (MIN_ALT - this.altitude) * 4)
             if((this.keys.descend || this.touchDescend) && this.altitude < MIN_ALT + 0.3 && Math.abs(speed) < 6) this.beginLanding()
         }
         const target = new CANNON.Vec3(Math.cos(this.yaw) * speed, Math.sin(this.yaw) * speed, vz)
         // Soft walls at the district edge.
-        const b = this.bounds, margin = 10
+        // The Megacity ring widens the envelope once it has loaded (and is shown).
+        const b = this.envelope, margin = 10
         const push = (v, lo, hi) => v < lo + margin ? (lo + margin - v) * 1.5 : v > hi - margin ? -(v - hi + margin) * 1.5 : 0
         target.x += push(body.position.x, b.min[0], b.max[0])
         target.y += push(body.position.y, b.min[1], b.max[1])

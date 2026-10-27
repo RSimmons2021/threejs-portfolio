@@ -40,6 +40,8 @@ import EntryBeacons from './EntryBeacons.js'
 import MiniGameDirector from './MiniGames/MiniGameDirector.js'
 import NeonSky from './NeonSky.js'
 import CameraRig from './CameraRig.js'
+import MegacityRing from './MegacityRing.js'
+import MegacityAtmosphere from './MegacityAtmosphere.js'
 import LookShots, { shotFromSearch } from './LookShots.js'
 import NeonTraffic from './NeonTraffic.js'
 import HoverFlight from './HoverFlight.js'
@@ -137,6 +139,9 @@ export default class World
             this.container.add(this.neonProjects.container)
             this.neonTraffic = new NeonTraffic(this)
             this.container.add(this.neonTraffic.container)
+            // Unity's Megacity around the district (medium tier and up).
+            this.megacity = new MegacityRing(this)
+            this.container.add(this.megacity.container)
         }
         this.setDayNightCycle()
         const timePreview = previewTime(new URLSearchParams(location.search).get('time'))
@@ -148,6 +153,9 @@ export default class World
         this.setSky()
         if(this.config.neon)
         {
+            // Megacity's HDR sky, sun and image light (every tier), then the dome.
+            this.megacityAtmosphere = new MegacityAtmosphere(this)
+            this.container.add(this.megacityAtmosphere.container)
             // The overcast dome and the street apron replace the cartoon sky and floor.
             this.neonSky = new NeonSky(this)
             this.sky.container.visible = false

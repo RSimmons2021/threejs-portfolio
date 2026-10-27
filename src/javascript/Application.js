@@ -12,7 +12,7 @@ import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js'
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js'
 import BlurPass from './Passes/Blur.js'
 import ScreenFxPass from './Passes/ScreenFx.js'
-import Quality, { detectTier } from './Quality.js'
+import Quality, { detectTier, isMobileDevice } from './Quality.js'
 import PerformanceMonitor from './PerformanceMonitor.js'
 import NeonBloom from './Passes/NeonBloom.js'
 import { neonEnabled, entryPosition } from './World/neonDistrictRules.js'
@@ -225,8 +225,9 @@ export default class Application
         const params = new URLSearchParams(location.search)
         let saved = ''
         try { saved = localStorage.getItem('portfolio-quality') || '' } catch {}
-        const tier = detectTier({ touch: navigator.maxTouchPoints > 0 || matchMedia('(pointer: coarse)').matches,
-            gpu: this.gpu, override: params.get('quality') || saved })
+        this.config.mobile = isMobileDevice({ userAgent: navigator.userAgent, uaMobile: navigator.userAgentData?.mobile,
+            maxTouchPoints: navigator.maxTouchPoints, coarsePointer: matchMedia('(pointer: coarse)').matches })
+        const tier = detectTier({ mobile: this.config.mobile, gpu: this.gpu, override: params.get('quality') || saved })
         this.quality = new Quality({ tier, deviceDpr: window.devicePixelRatio, onChange: () => this.applyQuality() })
         this.performance.currentDpr = this.quality.settings.dpr
         // this.renderer.setClearColor(0x414141, 1)
@@ -417,6 +418,8 @@ export default class Application
             this.world?.cameraRig?.update(this.time.delta)
             this.world?.explorer?.updateCamera()
             this.world?.miniGames?.updateCamera()
+            this.world?.lookShots?.updateCamera()
+            this.world?.megacity?.update()
             this.world?.visitorGuide?.updateBearing()
             if(this.world?.neonCity) this.world.materials.cyber.update(this.world)
             this.passes.horizontalBlurPass.enabled = false
@@ -460,11 +463,13 @@ export default class Application
         if(this.camera)
         {
             // Neon District: distance is handled by fog and per-cell culling;
-            // the far plane only has to reach the skyline ring.
-            this.camera.instance.far = this.config.neon ? 480 : settings.far
+            // the far plane only has to reach the skyline ring, or the Megacity
+            // ring around it when this tier draws one.
+            this.camera.instance.far = this.config.neon ? (this.world?.megacity?.cameraFar ?? 480) : settings.far
             this.camera.instance.updateProjectionMatrix()
         }
         this.world?.neonCity?.setQuality(settings)
+        this.world?.megacity?.setQuality(this.quality.tier)
         this.world?.neonTraffic?.setQuality(settings)
         this.world?.weather?.setQuality(settings)
         this.passes?.neonBloom?.setQuality(settings)

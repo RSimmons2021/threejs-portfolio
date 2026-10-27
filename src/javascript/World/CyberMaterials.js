@@ -11,7 +11,7 @@ const PALETTE = {
         zenith: '#080f18', horizon: '#25313b', glow: '#503047', density: 0.0105, neon: 2.2, lit: 0.13 },
     // Megacity daylight: warm sunlit concrete against a deep blue sky, dark
     // neutral shadows (low sky fill), and haze that only takes the far distance.
-    day: { sky: [0.42, 0.52, 0.66], ground: [0.07, 0.075, 0.08], sun: [5.6, 4.7, 3.6], fogLow: '#5f707b', fogHigh: '#a3b5c3',
+    day: { sky: [0.42, 0.52, 0.66], ground: [0.07, 0.075, 0.08], sun: [5.6, 4.7, 3.6], fogLow: '#55636a', fogHigh: '#76858c',
         zenith: '#3f6a9e', horizon: '#a9bccb', glow: '#e6d6bf', density: 0.0042, neon: 0.7, lit: 0.04 }
 }
 
@@ -219,6 +219,9 @@ export default class CyberMaterials
         s.uSunColor.value.multiplyScalar(key)
         if(weather === 'rain') { density *= 1.35; wet = 1 }
         if(weather === 'fog') density *= 1.8
+        // With Megacity's blocks around the district the haze thins to the
+        // port's values, so the 450 m towers read through it.
+        if(world?.megacity?.ready) density *= THREE.MathUtils.lerp(0.25, 0.38, daylight)
         if(weather === 'snow') { density *= 1.35; wet = 0.5 }
         s.uFogDensity.value += (density - s.uFogDensity.value) * transition
         s.uWetness.value += (wet - s.uWetness.value) * transition

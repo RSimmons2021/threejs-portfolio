@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import Quality, { detectTier } from '../src/javascript/Quality.js'
+import Quality, { detectTier, gpuClass, isMobileDevice } from '../src/javascript/Quality.js'
 import { summarizeFrames } from '../src/javascript/PerformanceMonitor.js'
 import { inLookSlice, previewTime, neonEnabled, entryPosition } from '../src/javascript/World/neonDistrictRules.js'
 
@@ -18,12 +18,34 @@ test('Neon entry starts in the review crossroads without moving landmarks', () =
     assert.deepEqual(entryPosition(false), { x: 0, y: 0, z: 12 })
 })
 
-test('Touch devices default to Medium; explicit valid overrides win', () => {
-    assert.equal(detectTier({ touch: true, gpu: 'Adreno' }), 'medium')
+test('Tier follows platform and GPU class; explicit valid overrides win', () => {
+    // Phones: the GPU decides, capped at High.
+    assert.equal(detectTier({ mobile: true, gpu: 'Adreno (TM) 830' }), 'high')
+    assert.equal(detectTier({ mobile: true, gpu: 'ANGLE (Qualcomm, Adreno (TM) 825, OpenGL ES 3.2)' }), 'high')
+    assert.equal(detectTier({ mobile: true, gpu: 'Adreno (TM) 650' }), 'medium')
+    assert.equal(detectTier({ mobile: true, gpu: 'Adreno (TM) 506' }), 'low')
+    assert.equal(detectTier({ mobile: true, gpu: 'Mali-G57 MC2' }), 'medium')
+    assert.equal(detectTier({ mobile: true, gpu: 'Apple GPU' }), 'medium')
+    assert.equal(detectTier({ mobile: true, gpu: 'NVIDIA GeForce RTX 4090' }), 'high')
     assert.equal(detectTier({ touch: true, override: 'low' }), 'low')
-    assert.equal(detectTier({ gpu: 'Intel UHD 620', override: 'invalid' }), 'high')
+    // Desktops: integrated GPUs split by generation, discrete GPUs get Ultra.
+    assert.equal(detectTier({ gpu: 'ANGLE (Intel, Mesa Intel(R) UHD Graphics 620 (KBL GT2), OpenGL 4.6)', override: 'invalid' }), 'medium')
+    assert.equal(detectTier({ gpu: 'ANGLE (Intel, Intel(R) Iris(R) Xe Graphics Direct3D11 vs_5_0 ps_5_0, D3D11)' }), 'high')
+    assert.equal(detectTier({ gpu: 'ANGLE (Apple, ANGLE Metal Renderer: Apple M2, Unspecified Version)' }), 'high')
+    assert.equal(detectTier({ gpu: 'ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Max, Unspecified Version)' }), 'ultra')
     assert.equal(detectTier({ gpu: 'SwiftShader' }), 'low')
-    assert.equal(detectTier({ gpu: 'NVIDIA RTX' }), 'ultra')
+    assert.equal(detectTier({ gpu: 'ANGLE (NVIDIA, NVIDIA GeForce RTX 3060 Direct3D11)' }), 'ultra')
+    assert.equal(gpuClass('ANGLE (AMD, AMD Radeon(TM) Graphics (renoir), OpenGL 4.6)'), 'igpu-low')
+    assert.equal(gpuClass('ANGLE (AMD, AMD Radeon RX 7800 XT Direct3D11)'), 'discrete')
+})
+
+test('Phones and tablets are detected before any touch event', () => {
+    assert.equal(isMobileDevice({ userAgent: 'Mozilla/5.0 (Linux; Android 15; A024) Chrome/140 Mobile Safari/537.36' }), true)
+    assert.equal(isMobileDevice({ userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X)' }), true)
+    assert.equal(isMobileDevice({ userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)', maxTouchPoints: 5 }), true)
+    // A touchscreen laptop is still a desktop.
+    assert.equal(isMobileDevice({ userAgent: 'Mozilla/5.0 (X11; Linux x86_64) Chrome/140', maxTouchPoints: 10, coarsePointer: false }), false)
+    assert.equal(isMobileDevice({ userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)', maxTouchPoints: 10, coarsePointer: true }), false)
 })
 
 test('Governor measures unclamped frame time and respects its cooldown', () => {

@@ -14,10 +14,14 @@ export default class NeonSky
             depthWrite: false, depthTest: true, depthFunc: THREE.LessEqualDepth, side: THREE.BackSide,
             uniforms: { uZenith: shared.uZenith, uHorizon: shared.uHorizon, uGlow: shared.uGlow, uFogHigh: shared.uFogHighColor,
                 uDaylight: shared.uDaylight, uDusk: shared.uDusk, uSunDir: shared.uSunDir, uSunColor: shared.uSunColor,
-                uCloudCover: shared.uCloudCover, uReducedMotion: shared.uReducedMotion, uTime: { value: 0 } },
+                uCloudCover: shared.uCloudCover, uReducedMotion: shared.uReducedMotion, uTime: { value: 0 },
+                // Megacity's HDR sky (MegacityAtmosphere); uSkyMix is 0 until it loads and after dark.
+                uSkyHdr: shared.uSkyHdr || { value: null }, uSkyRotation: shared.uSkyRotation || { value: new THREE.Matrix3() },
+                uSkyMix: shared.uSkyMix || { value: 0 } },
             vertexShader: `varying vec3 vDir; void main(){ vDir = position; vec4 p = projectionMatrix * modelViewMatrix * vec4(position, 1.0); gl_Position = p.xyww; }`,
             fragmentShader: `uniform vec3 uZenith; uniform vec3 uHorizon; uniform vec3 uGlow; uniform vec3 uFogHigh; uniform float uDaylight; uniform float uDusk;
                 uniform vec3 uSunDir; uniform vec3 uSunColor; uniform float uTime; uniform float uCloudCover; uniform float uReducedMotion;
+                uniform sampler2D uSkyHdr; uniform mat3 uSkyRotation; uniform float uSkyMix;
                 varying vec3 vDir;
                 float h(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
                 float n(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
@@ -56,6 +60,13 @@ export default class NeonSky
                         vec3 cloud = mix(cloudNight, cloudDay, uDaylight);
                         float fade = smoothstep(0.0, 0.18, up);
                         col = mix(col, cloud, c * fade * 0.95);
+                    }
+                    if(uSkyMix > 0.0)
+                    {
+                        // Equirectangular lookup in the HDR's Y-up frame.
+                        vec3 e = uSkyRotation * d;
+                        vec2 uv = vec2(atan(e.z, e.x) * 0.15915494 + 0.5, asin(clamp(e.y, -1.0, 1.0)) * 0.31830989 + 0.5);
+                        col = mix(col, texture2D(uSkyHdr, uv).rgb * 1.7, uSkyMix);
                     }
                     // Haze toward and below the horizon matches the fog, so the skyline dissolves.
                     col = mix(col, uFogHigh, smoothstep(0.16, -0.04, up) * mix(0.85, 0.7, uDaylight));

@@ -150,6 +150,9 @@ export default class CameraRig
             const t = this.hit.distanceTo(this.target)
             if(t < nearest) nearest = t
         }
+        // Megacity towers (height map) pull the camera in too.
+        const field = w.megacity?.collision
+        if(field && w.megacity.container.visible) nearest = Math.min(nearest, field.rayDistance(this.target, this.ray.direction, nearest))
         const pull = Math.max(0.12, (nearest - 0.6) / full)
         this.pull = pull < this.pull ? pull : this.pull + (pull - this.pull) * Math.min(1, dt * 2.5)
         this.desired.copy(this.target).addScaledVector(this.ray.direction, full * this.pull)

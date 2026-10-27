@@ -21,7 +21,9 @@
     "sounds:bowling": "node --env-file=.env scripts/generate-sounds.mjs --only=bowling",
     "sounds:cyber": "node --env-file=.env scripts/generate-sounds.mjs --only=cyber",
     "sounds:master": "node scripts/master-cyber-sounds.mjs",
-    "test:look": "node --test scripts/look.test.mjs"
+    "test:look": "node --test scripts/look.test.mjs",
+    "test:megacity": "node --test scripts/megacity.test.mjs",
+    "assets:megacity": "python3 scripts/megacity/build_ring.py"
   },
   "devDependencies": {
     "vite": "^5.2.11",

@@ -215,14 +215,16 @@ export default class Explorer
         // behind and in front. World-axis offsets put the walker behind the
         // boot, facing it, whenever the car pointed south.
         const angle = w.physics.car.angle
+        // Megacity's towers are one height field: test candidate spots against it directly.
+        const field = w.megacity?.container.visible ? w.megacity.collision : null
         const offsets = [[0, 1.9], [0, -1.9], [-3.2, 0], [3.2, 0], [0, 3.2], [0, -3.2]]
         const spot = offsets.map(([along, left]) => ({
             x: car.position.x + Math.cos(angle) * along - Math.sin(angle) * left,
             y: car.position.y + Math.sin(angle) * along + Math.cos(angle) * left
-        })).find(p =>
+        })).find(p => (!field || field.heightAt(p.x, p.y) < car.position.z + 0.5) &&
             !w.physics.world.bodies.some(body =>
             {
-                if(body === car || !body.collisionResponse || body.shapes.some(shape => shape.type === CANNON.Shape.types.PLANE)) return false
+                if(body === car || !body.collisionResponse || body.shapes.some(shape => shape.type === CANNON.Shape.types.PLANE || shape.type === CANNON.Shape.types.HEIGHTFIELD)) return false
                 body.computeAABB()
                 const a = body.aabb
                 return a.upperBound.z > car.position.z + 0.1 && a.lowerBound.z < car.position.z + 1.4 &&
