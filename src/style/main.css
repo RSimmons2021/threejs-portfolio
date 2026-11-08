@@ -84,6 +84,13 @@
 
 .city-welcome
 {
+    /* Keep the original entry palette when the city applies its blue theme. */
+    --ui-ink: #16130e;
+    --ui-text: #ffe7b0;
+    --ui-dim: #e7c98c;
+    --ui-accent: #ffb627;
+    --ui-border: rgba(255, 182, 39, 0.5);
+    --ui-soft: rgba(255, 182, 39, 0.16);
     position: fixed;
     inset: 0;
     z-index: 1000;
@@ -2878,19 +2885,11 @@ body.is-touch-input .interior-bar kbd { display: none; }
     box-shadow: 0 8px 24px #02080d40;
     backdrop-filter: none;
 }
-.is-neon-district .city-welcome { background-image: radial-gradient(#68e9f51c 1px, transparent 1px); }
-.is-neon-district .city-welcome::before { background: radial-gradient(circle, #68e9f510, transparent 64%); }
-.is-neon-district .city-welcome h1 { text-shadow: 0 0 24px #68e9f51c; }
-.is-neon-district .city-welcome__name::before,
-.is-neon-district .city-welcome__name::after { border-color: var(--ui-border); }
 .is-neon-district .city-welcome__copy { max-width: 48ch; }
-.is-neon-district :is(.city-welcome__start, .city-welcome__brief, .city-welcome__resume) { background: #68e9f508; letter-spacing: .07em; }
-.is-neon-district .city-welcome__start { background: var(--ui-soft); }
-.is-neon-district :is(.city-welcome__start:not(:disabled), .city-welcome__brief, .city-welcome__resume):hover
-{ color: var(--ui-text); background: #163a46; border-color: var(--ui-accent); }
+.is-neon-district :is(.city-welcome__start, .city-welcome__brief, .city-welcome__resume) { letter-spacing: .07em; }
 .is-neon-district :is(.city-welcome__start, .city-welcome__brief, .city-welcome__resume):active { transform: translateY(1px); }
 .is-neon-district .city-welcome__hint span { background: var(--ui-accent); box-shadow: none; animation: none; }
-.is-neon-district .city-welcome__hint { color: var(--ui-dim); }
+.city-welcome ::selection { background: var(--ui-accent); color: var(--ui-ink); }
 .is-neon-district :is(button, a, select, summary, input, textarea, [tabindex]):focus-visible { outline: 2px solid var(--ui-accent); outline-offset: 3px; }
 .is-neon-district .minimap { border-color: var(--ui-border); box-shadow: 0 8px 24px #02080d40; }
 .is-neon-district :is(.guided-tour__button, .guided-tour__project, .experience-tools button, .experience-tools a, .experience-tools summary)
