@@ -1,6 +1,7 @@
 import * as THREE from 'three'
 import CANNON from 'cannon'
 import { FLIGHT_CEILING, SOFT_CEILING, ceilingVelocity } from './flightRules.js'
+import { setTravelButton } from './travelControls.js'
 
 // Drive <-> fly for the Neon District hover car.
 //   T            take off / land
@@ -82,16 +83,32 @@ export default class HoverFlight
         this.pad = document.createElement('div')
         this.pad.className = 'flight-pad'
         this.pad.hidden = true
-        this.pad.innerHTML = '<button type="button" data-dir="climb" aria-label="Climb">▲</button><button type="button" data-dir="descend" aria-label="Descend">▼</button>'
-        document.body.appendChild(this.pad)
+        this.pad.setAttribute('role', 'group')
+        this.pad.setAttribute('aria-label', 'Hold to change altitude')
+        this.pad.innerHTML = '<button type="button" data-dir="climb" aria-label="Hold to climb"><span aria-hidden="true">↑</span> Up</button><button type="button" data-dir="descend" aria-label="Hold to descend"><span aria-hidden="true">↓</span> Down</button>'
+        explorer.panel.querySelector('.explorer-controls__flight').appendChild(this.pad)
         for(const b of this.pad.querySelectorAll('button'))
         {
             const key = b.dataset.dir === 'climb' ? 'touchClimb' : 'touchDescend'
-            const on = (e) => { e.preventDefault(); this[key] = true }
+            const on = (e) =>
+            {
+                e.preventDefault()
+                if(this.blocked || this.mode !== 'flying') return
+                b.setPointerCapture(e.pointerId)
+                this[key] = true
+            }
             const off = () => { this[key] = false }
             b.addEventListener('pointerdown', on)
             b.addEventListener('pointerup', off); b.addEventListener('pointercancel', off); b.addEventListener('pointerleave', off)
+            b.addEventListener('lostpointercapture', off)
+            b.addEventListener('keydown', event =>
+            {
+                if(['Space', 'Enter'].includes(event.code) && !this.blocked && this.mode === 'flying') { event.preventDefault(); this[key] = true }
+            })
+            b.addEventListener('keyup', event => { if(['Space', 'Enter'].includes(event.code)) { event.preventDefault(); off() } })
+            b.addEventListener('blur', off)
         }
+        window.addEventListener('blur', () => { this.touchClimb = this.touchDescend = false })
         this.lastUi = ''
     }
 
@@ -102,14 +119,20 @@ export default class HoverFlight
         if(state === this.lastUi) return
         this.lastUi = state
         this.button.hidden = !!onFoot
-        this.button.innerHTML = this.mode === 'grounded' ? 'Take off <kbd>T</kbd>' : 'Land <kbd>T</kbd>'
+        const transitioning = this.mode === 'takeoff' || this.mode === 'landing'
+        const label = this.mode === 'grounded' ? 'Take off' : this.mode === 'takeoff' ? 'Taking off…' : this.mode === 'landing' ? 'Landing…' : 'Land'
+        setTravelButton(this.button, this.mode === 'grounded' || this.mode === 'takeoff' ? 'takeoff' : 'land', label, 'T')
+        this.button.disabled = transitioning
         this.button.setAttribute('aria-pressed', String(this.mode !== 'grounded'))
+        for(const button of this.pad.querySelectorAll('button')) button.disabled = transitioning
         this.pad.hidden = !this.airborne || !!onFoot
+        this.touchClimb = this.touchDescend = false
         this.world.explorer?.updateInterface()
     }
 
     toggle()
     {
+        if(this.blocked) return
         if(this.mode === 'grounded') this.takeOff()
         else if(this.mode === 'flying') this.beginLanding()
     }
@@ -119,6 +142,7 @@ export default class HoverFlight
         if(this.mode === 'landing' || this.mode === 'grounded') return
         this.mode = 'landing'
         this.world.sounds?.playVehicleTransform('down')
+        this.updateInterface()
     }
 
     takeOff(forMiniGame = false)
@@ -136,6 +160,7 @@ export default class HoverFlight
         this.world.sounds?.playVehicleTransform('up')
         this.world.dispatchFlightChange?.(true)
         document.body.classList.add('is-flying')
+        this.updateInterface()
     }
 
     touchDown()
@@ -149,6 +174,7 @@ export default class HoverFlight
         this.car.vehicle.addToWorld(this.physics.world)
         this.mode = 'grounded'
         document.body.classList.remove('is-flying')
+        this.updateInterface()
     }
 
     // Tour, project navigation and the arcade need the car on the road immediately.

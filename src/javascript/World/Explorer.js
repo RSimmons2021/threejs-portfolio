@@ -3,6 +3,7 @@ import CANNON from 'cannon'
 import { createPerson } from './Pedestrians.js'
 import { renderPosition } from '../Utils/renderTransform.js'
 import { movementVector, heldMovementYaw } from './movementRules.js'
+import { setTravelButton } from './travelControls.js'
 
 export default class Explorer
 {
@@ -111,17 +112,34 @@ export default class Explorer
     {
         this.panel = document.createElement('section')
         this.panel.className = 'explorer-controls'
-        this.panel.setAttribute('aria-label', 'Explore the city')
-        this.panel.innerHTML = `<div class="explorer-controls__buttons">
-            <button type="button" data-explorer="mode">Exit car <kbd>F</kbd></button>
-            <button type="button" data-explorer="view" aria-pressed="false">First person <kbd>V</kbd></button>
-            <button type="button" data-explorer="run" aria-pressed="false" hidden>Skateboard <kbd>Shift</kbd></button>
-            </div><p role="status">F exit car · V first person</p>`
+        this.panel.setAttribute('aria-label', 'City travel controls')
+        this.panel.innerHTML = `<div class="explorer-controls__header">
+                <strong class="explorer-controls__state">Driving</strong>
+                <div class="explorer-controls__flight"><span class="explorer-controls__context">City view</span></div>
+            </div>
+            <div class="explorer-controls__buttons">
+                <button type="button" data-explorer="mode"></button>
+                <button type="button" data-explorer="view" aria-pressed="false"></button>
+                <button type="button" data-explorer="run" aria-pressed="false" hidden></button>
+            </div><p class="explorer-controls__hint" role="status">Take off to fly · Exit car to explore</p>`
         document.body.appendChild(this.panel)
         this.modeButton = this.panel.querySelector('[data-explorer="mode"]')
         this.viewButton = this.panel.querySelector('[data-explorer="view"]')
         this.runButton = this.panel.querySelector('[data-explorer="run"]')
         this.hint = this.panel.querySelector('p')
+        this.travelState = this.panel.querySelector('.explorer-controls__state')
+        this.viewContext = this.panel.querySelector('.explorer-controls__context')
+        setTravelButton(this.modeButton, 'exit', 'Exit car', 'F')
+        setTravelButton(this.viewButton, 'firstPerson', 'First person', 'V')
+        setTravelButton(this.runButton, 'skate', 'Skateboard', 'Shift')
+        // The touch controls follow the dock's actual height, including flight
+        // controls, wrapped hints, safe areas, and larger text settings.
+        this.panelResize = new ResizeObserver(() =>
+        {
+            document.body.style.setProperty('--travel-dock-clearance', `${Math.ceil(this.panel.getBoundingClientRect().height) + 16}px`)
+            this.world.controls.touch?.joystick.resize()
+        })
+        this.panelResize.observe(this.panel)
         this.panel.addEventListener('click', event =>
         {
             const action = event.target.closest('button')?.dataset.explorer
@@ -304,16 +322,25 @@ export default class Explorer
     {
         document.body.classList.toggle('is-on-foot', this.active)
         document.body.classList.toggle('is-first-person', this.firstPerson)
-        this.modeButton.innerHTML = this.active ? 'Enter car <kbd>F</kbd>' : 'Exit car <kbd>F</kbd>'
-        this.viewButton.innerHTML = this.firstPerson ? 'City view <kbd>V</kbd>' : 'First person <kbd>V</kbd>'
+        const flight = this.world.physics.car.hover
+        const airborne = !this.active && !!flight?.airborne
+        this.travelState.textContent = this.active ? this.skating ? 'Skating' : 'On foot'
+            : airborne ? ({ takeoff: 'Taking off', landing: 'Landing' }[flight.mode] || 'Flying') : 'Driving'
+        setTravelButton(this.modeButton, this.active ? 'car' : 'exit', this.active ? 'Enter car' : 'Exit car', 'F')
+        this.modeButton.disabled = airborne
+        this.modeButton.title = airborne ? 'Land before exiting the car' : ''
+        this.viewContext.textContent = this.firstPerson ? 'First person' : 'City view'
+        this.viewContext.hidden = airborne
+        setTravelButton(this.viewButton, this.firstPerson ? 'cityView' : 'firstPerson', this.firstPerson ? 'City view' : 'First person', 'V')
+        setTravelButton(this.runButton, this.skating ? 'walk' : 'skate', this.skating ? 'Walk' : 'Skateboard', 'Shift')
         this.viewButton.setAttribute('aria-pressed', String(this.firstPerson))
         this.runButton.hidden = !this.active
         this.world.controls.setTravelMode?.(this.active, this.skating)
         this.world.experienceHUD.updateInstructionText()
         const touch = this.world.config.touch || window.matchMedia('(max-width: 767px)').matches
         this.hint.textContent = touch
-            ? (this.active ? 'Joystick walks · Skateboard doubles your pace · Enter beside your car'
-                : this.world.physics.car.hover?.airborne ? 'Joystick steers · ▲ ▼ climb / descend · Land to exit' : 'Take off to fly · Exit car to explore on foot') + (this.firstPerson ? ' · Drag to look' : '')
+            ? (this.active ? 'Enter beside your car · Skate or walk'
+                : airborne ? 'Hold ↑ / ↓ for altitude · Land to exit' : 'Joystick to steer · Pedals to move') + (this.firstPerson ? ' · Drag to look' : '')
             : this.active
                 ? `WASD / arrows walk · Shift ${this.skating ? 'steps off the board' : 'grabs the skateboard'} · F enter car · E interact` + (this.firstPerson ? ' · Drag to look / Esc release mouse' : '')
                 : this.world.physics.car.hover?.airborne

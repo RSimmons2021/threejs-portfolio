@@ -801,8 +801,7 @@ textarea
     padding: 0;
 }
 
-.guided-tour__button,
-.guided-tour__project
+.guided-tour__button
 {
     min-width: 74px;
     min-height: 42px;
@@ -819,18 +818,8 @@ textarea
     transition: color 180ms ease, background-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
 }
 
-.guided-tour__project
-{
-    width: 220px;
-    max-width: 220px;
-    border-right: 0;
-    border-left: 1px solid rgba(255, 182, 39, .28);
-    color-scheme: dark;
-}
-
 .guided-tour__button:hover,
-.guided-tour__button.is-active,
-.guided-tour__project:hover
+.guided-tour__button.is-active
 {
     color: var(--ui-accent);
     border-color: rgba(255, 182, 39, .28);
@@ -839,8 +828,7 @@ textarea
 }
 
 .guided-tour__button:active { transform: translateY(1px); }
-.guided-tour__button:focus-visible,
-.guided-tour__project:focus-visible { outline: 2px solid var(--ui-accent); outline-offset: 3px; }
+.guided-tour__button:focus-visible { outline: 2px solid var(--ui-accent); outline-offset: 3px; }
 
 .arcade-panel
 {
@@ -1966,13 +1954,6 @@ textarea
         font-size: 12px;
     }
 
-    .guided-tour__project
-    {
-        grid-column: 1 / -1;
-        width: 100%;
-        max-width: none;
-        min-height: 38px;
-    }
 }
 
 .experience-tools
@@ -2126,16 +2107,6 @@ textarea
         font-size: 9px;
     }
 
-    .guided-tour__project
-    {
-        grid-column: 1 / -1;
-        width: 100%;
-        max-width: none;
-        min-height: 38px;
-        border-top: 1px solid rgba(255, 182, 39, .22);
-        border-left: 0;
-        font-size: 10px;
-    }
 
     .experience-hud__pill
     {
@@ -2153,36 +2124,47 @@ textarea
     bottom: 24px;
     left: 50%;
     transform: translateX(-50%);
-    max-width: min(540px, calc(100vw - 32px));
-    color: #f5e4c3;
-    background: #19160fed;
-    border: 1px solid #a97b31;
-    padding: 10px 14px;
+    width: min(500px, calc(100vw - 32px));
+    color: var(--ui-text);
+    background: var(--ui-bg);
+    border: 1px solid var(--ui-border);
+    border-radius: 12px;
+    padding: 12px;
     font: 11px/1.5 'JetBrains Mono', monospace;
     box-shadow: 0 6px 24px #0005;
 }
 .explorer-controls[hidden], .explorer-controls button[hidden] { display: none; }
-.explorer-controls__buttons { display: flex; gap: 8px; }
+.explorer-controls__header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+.explorer-controls__state { display: inline-flex; align-items: center; gap: 8px; color: var(--ui-dim); font-size: 10px; font-weight: 400; letter-spacing: .08em; text-transform: uppercase; }
+.explorer-controls__state::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--ui-accent); }
+.explorer-controls__flight { display: flex; align-items: center; }
+.explorer-controls__context { color: var(--ui-dim); font-size: 10px; }
+.explorer-controls__buttons { display: flex; gap: 4px; }
 .explorer-controls button {
+    display: inline-flex;
+    flex: 1 1 0;
+    min-width: 0;
     min-height: 44px;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
     padding: 8px 12px;
-    border: 1px solid #8a6935;
-    background: #292218;
-    color: #ffcf75;
+    border: 1px solid var(--ui-border);
+    border-radius: 6px;
+    background: var(--ui-soft);
+    color: var(--ui-text);
     font: inherit;
     cursor: pointer;
     white-space: nowrap;
+    touch-action: manipulation;
+    transition: background-color 120ms ease-out, border-color 120ms ease-out;
 }
-.explorer-controls button:hover, .explorer-controls button[aria-pressed="true"] { background: #ffb627; color: #19160f; }
-.explorer-controls button:focus-visible { outline: 2px solid #ffe4a6; outline-offset: 3px; }
+.explorer-controls button svg { width: 20px; height: 20px; flex: 0 0 auto; }
+.explorer-controls button:hover, .explorer-controls button[aria-pressed="true"] { background: var(--ui-soft); border-color: var(--ui-accent); }
+.explorer-controls button:disabled { opacity: .45; cursor: default; }
+.explorer-controls button:focus-visible { outline: 2px solid var(--ui-accent); outline-offset: 3px; }
 .explorer-controls kbd { margin-left: 8px; opacity: .65; font: inherit; }
-.explorer-controls p { margin: 8px 0 0; max-width: 440px; font-size: 10px; }
-@media (max-width: 767px) {
-    .explorer-controls { top: 104px; bottom: auto; padding: 8px; width: max-content; }
-    .explorer-controls button { padding: 8px; }
-    .explorer-controls kbd { display: none; }
-    .explorer-controls p { max-width: 290px; }
-}
+.explorer-controls p { margin: 8px 0 0; max-width: 100%; color: var(--ui-dim); font-size: 10px; }
 
 /* ----------------------------------------------------------------- career layer
    The walking-mode RPG: an on-foot HUD on the left rail, and one modal used by
@@ -2810,32 +2792,10 @@ body.is-touch-input .interior-bar kbd { display: none; }
 @media (max-height: 500px) { .mini-game { top: 8px; max-height: calc(100dvh - 16px); overflow: auto; } .mini-game__actions { position: static; } }
 
 .flight-pad {
-    position: fixed;
-    z-index: 23;
-    /* Sits above the existing right-hand touch column (boost / brake / horn / reset). */
-    right: max(16px, env(safe-area-inset-right));
-    bottom: calc(312px + env(safe-area-inset-bottom));
     display: none;
-    flex-direction: column;
-    gap: 10px;
+    gap: 4px;
 }
-.flight-pad button {
-    width: 60px;
-    height: 60px;
-    border: 1px solid #22e5ff99;
-    border-radius: 50%;
-    background: #05080bcc;
-    color: #22e5ff;
-    font: 700 20px/1 'JetBrains Mono', monospace;
-    touch-action: none;
-    user-select: none;
-}
-.flight-pad button:active { background: #22e5ff; color: #05080b; }
 @media (pointer: coarse) { .flight-pad:not([hidden]) { display: flex; } }
-@media (pointer: coarse) and (max-height: 600px) {
-    /* Landscape: beside the touch column instead of above it. */
-    .flight-pad { right: calc(112px + env(safe-area-inset-right)); bottom: calc(24px + env(safe-area-inset-bottom)); }
-}
 .sky-entry {
     position: fixed;
     z-index: 35;
@@ -2903,7 +2863,7 @@ body.is-touch-input .interior-bar kbd { display: none; }
 :is(.city-welcome, .brief) ::selection { background: var(--ui-accent); color: var(--ui-ink); }
 .is-neon-district :is(button, a, select, summary, input, textarea, [tabindex]):focus-visible { outline: 2px solid var(--ui-accent); outline-offset: 3px; }
 .is-neon-district .minimap { border-color: var(--ui-border); box-shadow: 0 8px 24px #02080d40; }
-.is-neon-district :is(.guided-tour__button, .guided-tour__project, .experience-tools button, .experience-tools a, .experience-tools summary)
+.is-neon-district :is(.guided-tour__button, .experience-tools button, .experience-tools a, .experience-tools summary)
 {
     min-height: 44px;
     border-color: var(--ui-border);
@@ -3195,19 +3155,107 @@ body.is-touch-input .interior-bar kbd { display: none; }
     .has-destination-guide .arcade-panel:not([data-game]) { top: 344px; max-height: min(40dvh, calc(100dvh - 360px)); }
 }
 @media (max-height: 550px) and (min-aspect-ratio: 1/1) {
-    .is-neon-district .explorer-controls {
-        top: 104px; left: 8px; right: auto; transform: none;
-        width: min(320px, calc(55vw - 24px)); box-sizing: border-box;
-    }
-    .explorer-controls p { display: none; }
-    .explorer-controls__buttons { flex-wrap: wrap; }
-    .is-neon-district .explorer-controls button { padding: 6px; font-size: 9px; }
     .is-neon-district .experience-tools { top: 104px; right: 8px; max-width: 45vw; }
     .experience-tools :is(button, a, summary) { padding: 0 5px; font-size: 8px; }
     .is-neon-district .career-hud, .arcade-panel:not([data-game]) {
         top: 158px; left: auto; right: 8px; width: min(330px, 45vw); max-height: calc(100dvh - 170px);
     }
     .has-destination-guide .arcade-panel:not([data-game]) { top: 250px; max-height: calc(100dvh - 260px); }
+}
+
+/* Travel is one console: actions, current mode, and altitude holds share a
+   surface. Touch driving controls sit just above its measured safe area. */
+body:not(.has-started) .explorer-controls { display: none; }
+.explorer-controls .flight-pad {
+    position: static;
+    flex-direction: row;
+    gap: 4px;
+}
+.explorer-controls .flight-pad button {
+    width: auto;
+    min-width: 64px;
+    height: 44px;
+    padding: 0 8px;
+    border-radius: 6px;
+    color: var(--ui-text);
+    background: var(--ui-soft);
+    border-color: var(--ui-border);
+    font: 11px var(--font-ui);
+    touch-action: none;
+}
+.explorer-controls .flight-pad span { font-size: 18px; }
+.is-neon-district .explorer-controls [data-flight="toggle"]:not(:disabled) {
+    color: var(--ui-ink);
+    border-color: var(--ui-accent);
+    background: var(--ui-accent);
+}
+.is-neon-district .explorer-controls button:not(:disabled):active { background: var(--ui-soft); border-color: var(--ui-accent); }
+.is-neon-district .explorer-controls [data-flight="toggle"]:not(:disabled):active { background: var(--experience-secondary); }
+@media (max-width: 768px), (hover: none) and (pointer: coarse) {
+    .is-neon-district .explorer-controls, .explorer-controls {
+        top: auto;
+        bottom: max(8px, env(safe-area-inset-bottom));
+        left: max(8px, env(safe-area-inset-left));
+        right: max(8px, env(safe-area-inset-right));
+        width: auto;
+        max-width: none;
+        transform: none;
+        padding: 10px;
+        border-radius: 12px;
+        box-shadow: none;
+    }
+    .explorer-controls__header { min-height: 44px; margin-bottom: 8px; }
+    .explorer-controls__buttons { flex-wrap: nowrap; }
+    .is-neon-district .explorer-controls__buttons button, .explorer-controls__buttons button {
+        flex-direction: column;
+        min-height: 60px;
+        padding: 8px 4px;
+        gap: 6px;
+        font-size: 11px;
+        line-height: 1.2;
+        border-radius: 8px;
+    }
+    .explorer-controls kbd { display: none; }
+    .explorer-controls__label { white-space: normal; text-align: center; }
+    .explorer-controls .explorer-controls__hint { display: block; font-size: 10px; line-height: 1.5; }
+    .explorer-controls .flight-pad:not([hidden]) { display: flex; }
+    .is-neon-district .experience-tools { top: 64px; right: 8px; max-width: calc(100vw - 16px); }
+    .is-neon-district .guided-tour { top: 8px; }
+    .experience-tools :is(button, a, summary) { font-size: 10px; padding: 0 10px; }
+    .is-neon-district .guided-tour__button { min-height: 44px; }
+    body:not(.is-indoors) .world-touch-control[data-world-control="joystick"] { bottom: calc(var(--travel-dock-clearance, 140px) + 10px + env(safe-area-inset-bottom)) !important; }
+    body:not(.is-indoors) .world-touch-control[data-world-control="backward"] { bottom: calc(var(--travel-dock-clearance, 140px) + env(safe-area-inset-bottom)) !important; }
+    body:not(.is-indoors) .world-touch-control[data-world-control="brake"] { bottom: calc(var(--travel-dock-clearance, 140px) + 70px + env(safe-area-inset-bottom)) !important; }
+    body:not(.is-indoors) .world-touch-control[data-world-control="forward"] { bottom: calc(var(--travel-dock-clearance, 140px) + 140px + env(safe-area-inset-bottom)) !important; }
+    body:not(.is-indoors) .world-touch-control[data-world-control="boost"] { bottom: calc(var(--travel-dock-clearance, 140px) + 210px + env(safe-area-inset-bottom)) !important; }
+    .sky-entry { bottom: calc(var(--travel-dock-clearance, 140px) + 16px + env(safe-area-inset-bottom)); max-width: calc(100vw - 220px); }
+}
+@media (max-height: 550px) and (min-aspect-ratio: 1/1) {
+    .is-neon-district .explorer-controls {
+        left: calc(184px + env(safe-area-inset-left));
+        right: calc(104px + env(safe-area-inset-right));
+        width: auto;
+        padding: 8px;
+    }
+    .is-neon-district .explorer-controls__buttons button { min-height: 52px; font-size: 10px; }
+    .explorer-controls .explorer-controls__hint { font-size: 9px; }
+    body:not(.is-indoors) .world-touch-control[data-world-control] { bottom: var(--touch-control-bottom) !important; }
+    .world-touch-control[data-world-control="joystick"] { --touch-control-bottom: calc(10px + env(safe-area-inset-bottom)); }
+    .world-touch-control[data-world-control="backward"] { --touch-control-bottom: calc(15px + env(safe-area-inset-bottom)); }
+    .world-touch-control[data-world-control="brake"] { --touch-control-bottom: calc(85px + env(safe-area-inset-bottom)); }
+    .world-touch-control[data-world-control="forward"] { --touch-control-bottom: calc(155px + env(safe-area-inset-bottom)); }
+    .world-touch-control[data-world-control="boost"] { --touch-control-bottom: calc(225px + env(safe-area-inset-bottom)); }
+    .is-neon-district .experience-tools { right: calc(104px + env(safe-area-inset-right)); }
+    .is-neon-district .guided-tour {
+        top: 8px;
+        left: calc(184px + env(safe-area-inset-left));
+        right: calc(104px + env(safe-area-inset-right));
+        max-width: none;
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+    .destination-guide { top: 120px; right: calc(104px + env(safe-area-inset-right)); }
+    .sky-entry { bottom: calc(var(--travel-dock-clearance, 140px) + 16px); max-width: calc(100vw - 320px); }
 }
 
 /* Dev-only ?shot= look review: canvas only. */

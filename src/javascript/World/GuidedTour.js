@@ -1,5 +1,4 @@
 import CANNON from 'cannon'
-import projects from './Sections/projectCatalog.js'
 
 export default class GuidedTour
 {
@@ -29,17 +28,7 @@ export default class GuidedTour
             <button class="guided-tour__button" type="button" data-tour-target="${_target.id}">
                 ${_target.label}
             </button>
-        `).join('') + `
-            <select class="guided-tour__project" aria-label="Jump to a project">
-                <option value="">Choose a project</option>
-                ${projects.map((project, index) => `<option value="${index}">0${index + 1} / ${project.name}</option>`).join('')}
-            </select>
-        `
-        this.$element.querySelector('select').addEventListener('change', (event) =>
-        {
-            if(event.target.value === '') return
-            this.goTo({ id: 'projects', x: 30 + Number(event.target.value) * 24, y: -30, z: 2, heading: 0, cameraAngle: 'projects', zoom: 0.3 })
-        })
+        `).join('')
 
         this.$element.addEventListener('click', (_event) =>
         {

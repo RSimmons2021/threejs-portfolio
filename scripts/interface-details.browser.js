@@ -81,7 +81,8 @@
     check('Shared city material remains front-sided', w.materials.cyber.forSlot('nd_atlas').side === 0)
     const tools = document.querySelector('.experience-tools').getBoundingClientRect(), controls = e.panel.getBoundingClientRect()
     check('Mobile toolbar does not cover movement controls', innerWidth > 768 || tools.top >= controls.bottom || tools.left >= controls.right || controls.left >= tools.right || tools.bottom <= controls.top)
-    check('Native project select has a 44px touch target', document.querySelector('.guided-tour__project').getBoundingClientRect().height >= 44)
+    check('Project shortcut menu is removed', !document.querySelector('.guided-tour__project'))
+    check('System X-ray button is removed', !document.querySelector('[data-experience-action="xray"]'))
     check('No runtime errors', window.validationErrors.length === 0)
     return { passed: results.length, viewport: [innerWidth, innerHeight], results }
 })()

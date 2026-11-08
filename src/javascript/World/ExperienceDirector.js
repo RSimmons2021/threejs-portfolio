@@ -11,7 +11,6 @@ export default class ExperienceDirector
         this.controls = _options.controls
         this.sounds = _options.sounds
         this.dayNightCycle = _options.dayNightCycle
-        this.diagnostics = _options.diagnostics
         this.projects = _options.projects || []
 
         this.locks = new Set()
@@ -39,7 +38,6 @@ export default class ExperienceDirector
 
         this.time.on('tick', () => this.update())
 
-        this.diagnostics.on('change.experience', (_state) => this.updateXrayButton(_state.enabled))
     }
 
     setElements()
@@ -58,9 +56,6 @@ export default class ExperienceDirector
                         <p>The city and arcade are optional. Nothing you need to review is locked behind a game.</p>
                     </div>
                 </details>
-                <button type="button" data-experience-action="xray" aria-pressed="false">
-                    <span>X</span> System X-ray
-                </button>
             </nav>
 
 
@@ -124,7 +119,6 @@ export default class ExperienceDirector
         document.body.appendChild(this.$portal)
 
         this.$tools = this.$root.querySelector('.experience-tools')
-        this.$xrayButton = this.$root.querySelector('[data-experience-action="xray"]')
         this.$toast = this.$root.querySelector('.world-toast')
 
         this.$portalProject = this.$portal.querySelector('.js-portal-project')
@@ -190,7 +184,6 @@ export default class ExperienceDirector
             const button = _event.target.closest('[data-experience-action]')
             if(!button) return
 
-            if(button.dataset.experienceAction === 'xray') this.diagnostics.toggle()
             if(button.dataset.experienceAction === 'overview') window.dispatchEvent(new Event('portfolio:brief'))
         })
 
@@ -686,12 +679,6 @@ export default class ExperienceDirector
 
 
 
-
-    updateXrayButton(_enabled)
-    {
-        this.$xrayButton.setAttribute('aria-pressed', `${_enabled}`)
-        this.$xrayButton.classList.toggle('is-active', _enabled)
-    }
 
     setInteractionLock(_reason, _locked)
     {
