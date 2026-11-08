@@ -1,7 +1,7 @@
 import * as THREE from 'three'
 import CANNON from 'cannon'
 import { FLIGHT_CEILING, SOFT_CEILING, ceilingVelocity } from './flightRules.js'
-import { setTravelButton } from './travelControls.js'
+import { bindTravelAction, setTravelButton } from './travelControls.js'
 
 // Drive <-> fly for the Neon District hover car.
 //   T            take off / land
@@ -78,7 +78,7 @@ export default class HoverFlight
         this.button.type = 'button'
         this.button.dataset.flight = 'toggle'
         explorer?.panel.querySelector('.explorer-controls__buttons')?.prepend(this.button)
-        this.button.addEventListener('click', (event) => { event.stopPropagation(); this.toggle() })
+        bindTravelAction(this.button, () => this.toggle())
         // Touch: hold to climb / descend while airborne.
         this.pad = document.createElement('div')
         this.pad.className = 'flight-pad'

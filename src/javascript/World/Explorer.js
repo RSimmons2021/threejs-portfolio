@@ -3,7 +3,7 @@ import CANNON from 'cannon'
 import { createPerson } from './Pedestrians.js'
 import { renderPosition } from '../Utils/renderTransform.js'
 import { movementVector, heldMovementYaw } from './movementRules.js'
-import { setTravelButton } from './travelControls.js'
+import { bindTravelAction, setTravelButton } from './travelControls.js'
 
 export default class Explorer
 {
@@ -41,6 +41,7 @@ export default class Explorer
             if(!this.blocked) this.setSkating(!this.skating)
             return true
         }
+        world.controls.isTravelBlocked = () => this.blocked
         world.physics.getPlayerHeading = () =>
         {
             if(!this.active) return world.physics.car.angle
@@ -132,21 +133,14 @@ export default class Explorer
         setTravelButton(this.modeButton, 'exit', 'Exit car', 'F')
         setTravelButton(this.viewButton, 'firstPerson', 'First person', 'V')
         setTravelButton(this.runButton, 'skate', 'Skateboard', 'Shift')
-        // The touch controls follow the dock's actual height, including flight
-        // controls, wrapped hints, safe areas, and larger text settings.
-        this.panelResize = new ResizeObserver(() =>
+        for(const [button, action] of [
+            [this.modeButton, () => this.active ? this.enterCar() : this.exitCar()],
+            [this.viewButton, () => this.toggleView()],
+            [this.runButton, () => this.setSkating(!this.skating)]
+        ]) bindTravelAction(button, () =>
         {
-            document.body.style.setProperty('--travel-dock-clearance', `${Math.ceil(this.panel.getBoundingClientRect().height) + 16}px`)
-            this.world.controls.touch?.joystick.resize()
-        })
-        this.panelResize.observe(this.panel)
-        this.panel.addEventListener('click', event =>
-        {
-            const action = event.target.closest('button')?.dataset.explorer
             if(this.blocked) return
-            if(action === 'mode') this.active ? this.enterCar() : this.exitCar()
-            if(action === 'view') this.toggleView()
-            if(action === 'run') this.setSkating(!this.skating)
+            action()
         })
     }
 
@@ -249,7 +243,7 @@ export default class Explorer
                     p.x > a.lowerBound.x - 0.4 && p.x < a.upperBound.x + 0.4 &&
                     p.y > a.lowerBound.y - 0.4 && p.y < a.upperBound.y + 0.4
             }))
-        if(!spot) { this.hint.textContent = 'Move the car into an open space to get out.'; return }
+        if(!spot) { this.showTravelNotice('Move the car into an open space to get out.'); return }
         w.guidedTour.clearControls()
         this.parked = { position: car.position.clone(), quaternion: car.quaternion.clone() }
         w.physics.onFoot = true
@@ -271,7 +265,7 @@ export default class Explorer
         if(!this.active) return
         if(!force && (this.blocked || this.distanceToCar() > 4))
         {
-            this.hint.textContent = 'Walk back to your car to get in.'
+            this.showTravelNotice('Walk back to your car to get in.')
             return
         }
         this.world.physics.world.removeBody(this.body)
@@ -293,6 +287,22 @@ export default class Explorer
     {
         const car = this.world.physics.car.chassis.body.position
         return Math.hypot(car.x - this.body.position.x, car.y - this.body.position.y)
+    }
+
+    updateCarProximity()
+    {
+        const nearby = !this.active || this.distanceToCar() <= 4
+        if(nearby === this.nearbyCar) return
+        this.nearbyCar = nearby
+        this.modeButton.dataset.nearby = String(nearby)
+    }
+
+    showTravelNotice(message)
+    {
+        this.hint.textContent = message
+        this.hint.classList.add('is-notice')
+        window.clearTimeout(this.noticeTimeout)
+        this.noticeTimeout = window.setTimeout(() => this.hint.classList.remove('is-notice'), 4000)
     }
 
     toggleView()
@@ -335,12 +345,17 @@ export default class Explorer
         setTravelButton(this.runButton, this.skating ? 'walk' : 'skate', this.skating ? 'Walk' : 'Skateboard', 'Shift')
         this.viewButton.setAttribute('aria-pressed', String(this.firstPerson))
         this.runButton.hidden = !this.active
-        this.world.controls.setTravelMode?.(this.active, this.skating)
+        this.updateCarProximity()
+        this.world.controls.setTravelMode?.(this.active, this.skating, flight)
+        // Sync flight actions immediately when entering/leaving the car. The
+        // flight interface caches its state, so reciprocal updates stop here.
+        flight?.updateInterface()
         this.world.experienceHUD.updateInstructionText()
         const touch = this.world.config.touch || window.matchMedia('(max-width: 767px)').matches
+        this.hint.classList.remove('is-notice')
         this.hint.textContent = touch
-            ? (this.active ? 'Enter beside your car · Skate or walk'
-                : airborne ? 'Hold ↑ / ↓ for altitude · Land to exit' : 'Joystick to steer · Pedals to move') + (this.firstPerson ? ' · Drag to look' : '')
+            ? (this.active ? 'Joystick to move · Skate or walk · Enter beside your car'
+                : airborne ? 'Joystick to fly · Hold Up / Down for altitude' : 'Joystick to steer · Hold Drive or Reverse to move') + (this.firstPerson ? ' · Drag to look' : '')
             : this.active
                 ? `WASD / arrows walk · Shift ${this.skating ? 'steps off the board' : 'grabs the skateboard'} · F enter car · E interact` + (this.firstPerson ? ' · Drag to look / Esc release mouse' : '')
                 : this.world.physics.car.hover?.airborne
@@ -352,6 +367,8 @@ export default class Explorer
     {
         const w = this.world
         this.panel.hidden = this.blocked
+        if(this.blocked) w.controls.cancelTouchInput?.()
+        this.updateCarProximity()
         if(this.blocked && document.pointerLockElement) document.exitPointerLock()
         if(this.active)
         {

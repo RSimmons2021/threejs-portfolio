@@ -1,6 +1,4 @@
-import mobileDoubleTriangle from '../../images/mobile/doubleTriangle.png'
-import mobileTriangle from '../../images/mobile/triangle.png'
-import mobileCross from '../../images/mobile/cross.png'
+import { bindTravelAction, setTravelButton } from './travelControls.js'
 import EventEmitter from '../Utils/EventEmitter'
 import * as THREE from 'three'
 import { joystickWorldYaw } from './movementRules.js'
@@ -32,22 +30,125 @@ export default class Controls extends EventEmitter
         return this.lastViewYaw
     }
 
-    setTravelMode(onFoot, skating = false)
+    setTravelMode(onFoot, skating = false, flight = this.flight)
     {
+        const state = `${onFoot}|${skating}|${flight?.mode || 'grounded'}`
+        this.flight = flight
         this.travelMode = { onFoot, skating }
-        const boost = this.touch?.boost
-        if(!boost) return
-        boost.$element.setAttribute('aria-label', onFoot ? skating ? 'Step off skateboard and walk' : 'Get on skateboard' : 'Boost the car')
-        boost.$element.setAttribute('aria-pressed', String(onFoot && skating))
-        boost.$icon.style.backgroundImage = onFoot ? 'none' : `url(${mobileDoubleTriangle})`
-        boost.$icon.textContent = onFoot ? skating ? 'WALK' : 'BOARD' : ''
-        boost.$icon.style.font = '10px var(--font-ui)'
-        boost.$icon.style.color = '#cee5e9'
-        boost.$icon.style.width = onFoot ? '52px' : '22px'
-        boost.$icon.style.left = onFoot ? 'calc(50% - 26px)' : 'calc(50% - 11px)'
-        boost.$icon.style.textAlign = 'center'
-        boost.$icon.style.lineHeight = '26px'
-        if(onFoot) this.actions.boost = false
+        if(!this.touch?.boost || state === this.touchTravelState) return
+        this.touchTravelState = state
+        this.releaseTouchPedals()
+        const airborne = !onFoot && !!flight?.airborne
+        const transitioning = airborne && flight.mode !== 'flying'
+        const labels = {
+            boost: onFoot ? [skating ? 'walk' : 'skate', skating ? 'Walk' : 'Skate', skating ? 'Step off skateboard and walk' : 'Get on skateboard'] : ['boost', 'Boost', 'Hold to boost'],
+            forward: airborne ? ['up', 'Up', 'Hold to climb'] : ['forward', 'Drive', 'Hold to accelerate'],
+            backward: airborne ? ['down', 'Down', 'Hold to descend'] : ['reverse', 'Reverse', 'Hold to reverse'],
+            brake: ['brake', 'Brake', 'Hold to brake']
+        }
+        for(const name of ['boost', 'forward', 'backward', 'brake'])
+        {
+            const button = this.touch[name].$element
+            const [icon, label, accessibleLabel] = labels[name]
+            setTravelButton(button, icon, label, '')
+            button.setAttribute('aria-label', accessibleLabel)
+            button.hidden = name !== 'boost' && (onFoot || (airborne && name === 'brake'))
+            button.disabled = transitioning && ['forward', 'backward'].includes(name)
+        }
+        this.touch.boost.$element.setAttribute('aria-pressed', String(onFoot && skating))
+    }
+
+    releaseTouchPedals()
+    {
+        if(!this.touchHeld) return
+        for(const control of Object.values(this.touch)) control.release?.()
+    }
+
+    updateTouchPedalInput()
+    {
+        const held = name => this.touchHeld.has(name)
+        const airborne = !!this.flight?.airborne
+        const onFoot = this.travelMode.onFoot
+        this.actions.up = !onFoot && (held('boost') || (!airborne && held('forward')))
+        this.actions.down = !onFoot && !airborne && held('backward')
+        this.actions.brake = !onFoot && !airborne && held('brake')
+        this.actions.boost = !onFoot && held('boost')
+        if(this.flight)
+        {
+            this.flight.touchClimb = airborne && held('forward')
+            this.flight.touchDescend = airborne && held('backward')
+        }
+    }
+
+    cancelTouchInput()
+    {
+        this.releaseTouchPedals()
+        const joystick = this.touch?.joystick
+        if(!joystick?.active) return
+        joystick.events.touchend({ changedTouches: [{ identifier: joystick.touchIdentifier }] })
+    }
+
+    createTouchPedal(name)
+    {
+        const control = { $element: document.createElement('button') }
+        const button = control.$element
+        button.type = 'button'
+        button.className = 'world-touch-control touch-pedal'
+        button.dataset.worldControl = name
+        button.style.opacity = '0'
+        document.body.appendChild(button)
+        this.touch[name] = control
+        let pointer = null, keyHeld = false
+        const release = () =>
+        {
+            const captured = pointer
+            pointer = null
+            keyHeld = false
+            const wasHeld = this.touchHeld.delete(name)
+            button.classList.remove('is-held')
+            if(wasHeld) this.updateTouchPedalInput()
+            if(captured !== null && button.hasPointerCapture(captured)) button.releasePointerCapture(captured)
+        }
+        control.release = release
+        const press = () =>
+        {
+            if(button.disabled || this.isTravelBlocked?.()) return
+            this.touchHeld.add(name)
+            button.classList.add('is-held')
+            this.camera.pan.reset()
+            this.updateTouchPedalInput()
+        }
+        button.addEventListener('pointerdown', event =>
+        {
+            // The same pedal is a discrete skateboard toggle while on foot.
+            if(name === 'boost' && this.travelMode.onFoot) return
+            event.preventDefault()
+            if(pointer !== null) return
+            pointer = event.pointerId
+            button.setPointerCapture(pointer)
+            press()
+        })
+        for(const type of ['pointerup', 'pointercancel', 'lostpointercapture'])
+            button.addEventListener(type, event => { if(event.pointerId === pointer) release() })
+        button.addEventListener('keydown', event =>
+        {
+            if(!['Space', 'Enter'].includes(event.code) || (name === 'boost' && this.travelMode.onFoot)) return
+            event.preventDefault()
+            if(event.repeat || keyHeld) return
+            keyHeld = true
+            press()
+        })
+        button.addEventListener('keyup', event =>
+        {
+            if(!['Space', 'Enter'].includes(event.code) || !keyHeld) return
+            event.preventDefault()
+            release()
+        })
+        button.addEventListener('blur', release)
+        if(name === 'boost') bindTravelAction(button, () =>
+        {
+            if(this.travelMode.onFoot) this.onFootBoost?.()
+        })
     }
 
     setActions()
@@ -171,7 +272,9 @@ export default class Controls extends EventEmitter
 
     setTouch()
     {
+        if(this.touch) return
         this.touch = {}
+        this.touchHeld = new Set()
 
         /**
          * Joystick
@@ -305,6 +408,7 @@ export default class Controls extends EventEmitter
                 this.touch.joystick.$cursor.style.boxShadow = '0 0 18px rgba(142, 212, 255, 0.4), inset 0 0 10px rgba(142, 212, 255, 0.15)'
 
                 document.addEventListener('touchend', this.touch.joystick.events.touchend)
+                document.addEventListener('touchcancel', this.touch.joystick.events.touchend)
                 document.addEventListener('touchmove', this.touch.joystick.events.touchmove, { passive: false })
 
                 this.trigger('joystickStart')
@@ -343,6 +447,8 @@ export default class Controls extends EventEmitter
                 this.touch.joystick.$cursor.style.transform = 'translateX(0px) translateY(0px)'
 
                 document.removeEventListener('touchend', this.touch.joystick.events.touchend)
+                document.removeEventListener('touchcancel', this.touch.joystick.events.touchend)
+                document.removeEventListener('touchmove', this.touch.joystick.events.touchmove)
 
                 this.trigger('joystickEnd')
             }
@@ -350,391 +456,22 @@ export default class Controls extends EventEmitter
 
         this.touch.joystick.$element.addEventListener('touchstart', this.touch.joystick.events.touchstart, { passive: false })
 
-        /**
-         * Boost
-         */
-        this.touch.boost = {}
-
-        // Element
-        this.touch.boost.$element = document.createElement('button')
-        this.touch.boost.$element.type = 'button'
-        this.touch.boost.$element.setAttribute('aria-label', 'Boost the car')
-        this.touch.boost.$element.style.background = 'transparent'
-        this.touch.boost.$element.style.border = '0'
-        this.touch.boost.$element.style.padding = '0'
-        this.touch.boost.$element.style.userSelect = 'none'
-        this.touch.boost.$element.style.position = 'fixed'
-        this.touch.boost.$element.style.bottom = 'calc(70px * 3 + 15px)'
-        this.touch.boost.$element.style.right = '0px'
-        this.touch.boost.$element.style.width = '95px'
-        this.touch.boost.$element.style.height = '70px'
-        this.touch.boost.$element.style.transition = 'opacity 0.3s 0.4s'
-        this.touch.boost.$element.style.willChange = 'opacity'
-        this.touch.boost.$element.style.opacity = '0'
-        // this.touch.boost.$element.style.backgroundColor = '#00ff00'
-        document.body.appendChild(this.touch.boost.$element)
-
-        this.touch.boost.$border = document.createElement('div')
-        this.touch.boost.$border.style.position = 'absolute'
-        this.touch.boost.$border.style.top = 'calc(50% - 30px)'
-        this.touch.boost.$border.style.left = 'calc(50% - 30px)'
-        this.touch.boost.$border.style.width = '60px'
-        this.touch.boost.$border.style.height = '60px'
-        this.touch.boost.$border.style.border = '1px solid rgba(173, 222, 255, 0.4)'
-        this.touch.boost.$border.style.borderRadius = '12px'
-        this.touch.boost.$border.style.background = 'linear-gradient(140deg, rgba(17, 32, 46, 0.55), rgba(33, 56, 76, 0.3))'
-        this.touch.boost.$border.style.backdropFilter = 'blur(6px)'
-        this.touch.boost.$border.style.boxShadow = 'inset 0 0 0 1px rgba(255, 255, 255, 0.06), 0 6px 18px rgba(3, 10, 16, 0.25)'
-        this.touch.boost.$border.style.boxSizing = 'border-box'
-        this.touch.boost.$border.style.opacity = '0.65'
-        this.touch.boost.$border.style.willChange = 'opacity'
-        this.touch.boost.$border.style.transition = 'opacity 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease'
-        this.touch.boost.$element.appendChild(this.touch.boost.$border)
-
-        this.touch.boost.$icon = document.createElement('div')
-        this.touch.boost.$icon.style.position = 'absolute'
-        this.touch.boost.$icon.style.top = 'calc(50% - 13px)'
-        this.touch.boost.$icon.style.left = 'calc(50% - 11px)'
-        this.touch.boost.$icon.style.width = '22px'
-        this.touch.boost.$icon.style.height = '26px'
-        this.touch.boost.$icon.style.backgroundImage = `url(${mobileDoubleTriangle})`
-        this.touch.boost.$icon.style.backgroundSize = 'cover'
-        this.touch.boost.$element.appendChild(this.touch.boost.$icon)
-
-        // Events
-        this.touch.boost.events = {}
-        this.touch.boost.touchIdentifier = null
-        this.touch.boost.events.touchstart = (_event) =>
-        {
-            _event.preventDefault()
-
-            if(this.onFootBoost?.()) return
-
-            const touch = _event.changedTouches[0]
-
-            if(touch)
-            {
-                this.camera.pan.reset()
-
-                this.touch.boost.touchIdentifier = touch.identifier
-
-                this.actions.up = true
-                this.actions.boost = true
-
-                this.touch.boost.$border.style.opacity = '1'
-                this.touch.boost.$border.style.borderColor = 'rgba(142, 212, 255, 0.7)'
-                this.touch.boost.$border.style.boxShadow = 'inset 0 0 0 1px rgba(255, 255, 255, 0.1), 0 0 16px rgba(142, 212, 255, 0.3)'
-
-                document.addEventListener('touchend', this.touch.boost.events.touchend)
-            }
-        }
-
-        this.touch.boost.events.touchend = (_event) =>
-        {
-            const touches = [..._event.changedTouches]
-            const touch = touches.find((_touch) => _touch.identifier === this.touch.boost.touchIdentifier)
-
-            if(touch)
-            {
-                this.actions.up = false
-                this.actions.boost = false
-
-                this.touch.boost.$border.style.opacity = '0.65'
-                this.touch.boost.$border.style.borderColor = 'rgba(173, 222, 255, 0.4)'
-                this.touch.boost.$border.style.boxShadow = 'inset 0 0 0 1px rgba(255, 255, 255, 0.06), 0 6px 18px rgba(3, 10, 16, 0.25)'
-
-                document.removeEventListener('touchend', this.touch.boost.events.touchend)
-            }
-        }
-
-        this.touch.boost.$element.addEventListener('touchstart', this.touch.boost.events.touchstart)
-        this.touch.boost.$element.addEventListener('click', () => this.onFootBoost?.())
-        this.setTravelMode(this.travelMode?.onFoot || false, this.travelMode?.skating || false)
-
-        /**
-         * Forward
-         */
-        this.touch.forward = {}
-
-        // Element
-        this.touch.forward.$element = document.createElement('div')
-        this.touch.forward.$element.style.userSelect = 'none'
-        this.touch.forward.$element.style.position = 'fixed'
-        this.touch.forward.$element.style.bottom = 'calc(70px * 2 + 15px)'
-        this.touch.forward.$element.style.right = '0px'
-        this.touch.forward.$element.style.width = '95px'
-        this.touch.forward.$element.style.height = '70px'
-        this.touch.forward.$element.style.transition = 'opacity 0.3s 0.3s'
-        this.touch.forward.$element.style.willChange = 'opacity'
-        this.touch.forward.$element.style.opacity = '0'
-        // this.touch.forward.$element.style.backgroundColor = '#00ff00'
-        document.body.appendChild(this.touch.forward.$element)
-
-        this.touch.forward.$border = document.createElement('div')
-        this.touch.forward.$border.style.position = 'absolute'
-        this.touch.forward.$border.style.top = 'calc(50% - 30px)'
-        this.touch.forward.$border.style.left = 'calc(50% - 30px)'
-        this.touch.forward.$border.style.width = '60px'
-        this.touch.forward.$border.style.height = '60px'
-        this.touch.forward.$border.style.border = '1px solid rgba(173, 222, 255, 0.4)'
-        this.touch.forward.$border.style.borderRadius = '12px'
-        this.touch.forward.$border.style.background = 'linear-gradient(140deg, rgba(17, 32, 46, 0.55), rgba(33, 56, 76, 0.3))'
-        this.touch.forward.$border.style.backdropFilter = 'blur(6px)'
-        this.touch.forward.$border.style.boxShadow = 'inset 0 0 0 1px rgba(255, 255, 255, 0.06), 0 6px 18px rgba(3, 10, 16, 0.25)'
-        this.touch.forward.$border.style.boxSizing = 'border-box'
-        this.touch.forward.$border.style.opacity = '0.65'
-        this.touch.forward.$border.style.willChange = 'opacity'
-        this.touch.forward.$border.style.transition = 'opacity 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease'
-        this.touch.forward.$element.appendChild(this.touch.forward.$border)
-
-        this.touch.forward.$icon = document.createElement('div')
-        this.touch.forward.$icon.style.position = 'absolute'
-        this.touch.forward.$icon.style.top = 'calc(50% - 9px)'
-        this.touch.forward.$icon.style.left = 'calc(50% - 11px)'
-        this.touch.forward.$icon.style.width = '22px'
-        this.touch.forward.$icon.style.height = '18px'
-        this.touch.forward.$icon.style.backgroundImage = `url(${mobileTriangle})`
-        this.touch.forward.$icon.style.backgroundSize = 'cover'
-        this.touch.forward.$element.appendChild(this.touch.forward.$icon)
-
-        // Events
-        this.touch.forward.events = {}
-        this.touch.forward.touchIdentifier = null
-        this.touch.forward.events.touchstart = (_event) =>
-        {
-            _event.preventDefault()
-
-            const touch = _event.changedTouches[0]
-
-            if(touch)
-            {
-                this.camera.pan.reset()
-
-                this.touch.forward.touchIdentifier = touch.identifier
-
-                this.actions.up = true
-
-                this.touch.forward.$border.style.opacity = '1'
-                this.touch.forward.$border.style.borderColor = 'rgba(142, 212, 255, 0.7)'
-                this.touch.forward.$border.style.boxShadow = 'inset 0 0 0 1px rgba(255, 255, 255, 0.1), 0 0 16px rgba(142, 212, 255, 0.3)'
-
-                document.addEventListener('touchend', this.touch.forward.events.touchend)
-            }
-        }
-
-        this.touch.forward.events.touchend = (_event) =>
-        {
-            const touches = [..._event.changedTouches]
-            const touch = touches.find((_touch) => _touch.identifier === this.touch.forward.touchIdentifier)
-
-            if(touch)
-            {
-                this.actions.up = false
-
-                this.touch.forward.$border.style.opacity = '0.65'
-                this.touch.forward.$border.style.borderColor = 'rgba(173, 222, 255, 0.4)'
-                this.touch.forward.$border.style.boxShadow = 'inset 0 0 0 1px rgba(255, 255, 255, 0.06), 0 6px 18px rgba(3, 10, 16, 0.25)'
-
-                document.removeEventListener('touchend', this.touch.forward.events.touchend)
-            }
-        }
-
-        this.touch.forward.$element.addEventListener('touchstart', this.touch.forward.events.touchstart)
-
-        /**
-         * Brake
-         */
-        this.touch.brake = {}
-
-        // Element
-        this.touch.brake.$element = document.createElement('div')
-        this.touch.brake.$element.style.userSelect = 'none'
-        this.touch.brake.$element.style.position = 'fixed'
-        this.touch.brake.$element.style.bottom = 'calc(70px + 15px)'
-        this.touch.brake.$element.style.right = '0px'
-        this.touch.brake.$element.style.width = '95px'
-        this.touch.brake.$element.style.height = '70px'
-        this.touch.brake.$element.style.transition = 'opacity 0.3s 0.2s'
-        this.touch.brake.$element.style.willChange = 'opacity'
-        this.touch.brake.$element.style.opacity = '0'
-        // this.touch.brake.$element.style.backgroundColor = '#ff0000'
-        document.body.appendChild(this.touch.brake.$element)
-
-        this.touch.brake.$border = document.createElement('div')
-        this.touch.brake.$border.style.position = 'absolute'
-        this.touch.brake.$border.style.top = 'calc(50% - 30px)'
-        this.touch.brake.$border.style.left = 'calc(50% - 30px)'
-        this.touch.brake.$border.style.width = '60px'
-        this.touch.brake.$border.style.height = '60px'
-        this.touch.brake.$border.style.border = '1px solid rgba(173, 222, 255, 0.4)'
-        this.touch.brake.$border.style.borderRadius = '12px'
-        this.touch.brake.$border.style.background = 'linear-gradient(140deg, rgba(17, 32, 46, 0.55), rgba(33, 56, 76, 0.3))'
-        this.touch.brake.$border.style.backdropFilter = 'blur(6px)'
-        this.touch.brake.$border.style.boxShadow = 'inset 0 0 0 1px rgba(255, 255, 255, 0.06), 0 6px 18px rgba(3, 10, 16, 0.25)'
-        this.touch.brake.$border.style.boxSizing = 'border-box'
-        this.touch.brake.$border.style.opacity = '0.65'
-        this.touch.brake.$border.style.willChange = 'opacity'
-        this.touch.brake.$border.style.transition = 'opacity 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease'
-        this.touch.brake.$element.appendChild(this.touch.brake.$border)
-
-        this.touch.brake.$icon = document.createElement('div')
-        this.touch.brake.$icon.style.position = 'absolute'
-        this.touch.brake.$icon.style.top = 'calc(50% - 7px)'
-        this.touch.brake.$icon.style.left = 'calc(50% - 7px)'
-        this.touch.brake.$icon.style.width = '15px'
-        this.touch.brake.$icon.style.height = '15px'
-        this.touch.brake.$icon.style.backgroundImage = `url(${mobileCross})`
-        this.touch.brake.$icon.style.backgroundSize = 'cover'
-        this.touch.brake.$icon.style.transform = 'rotate(180deg)'
-        this.touch.brake.$element.appendChild(this.touch.brake.$icon)
-
-        // Events
-        this.touch.brake.events = {}
-        this.touch.brake.touchIdentifier = null
-        this.touch.brake.events.touchstart = (_event) =>
-        {
-            _event.preventDefault()
-
-            const touch = _event.changedTouches[0]
-
-            if(touch)
-            {
-                this.touch.brake.touchIdentifier = touch.identifier
-
-                this.actions.brake = true
-
-                this.touch.brake.$border.style.opacity = '1'
-                this.touch.brake.$border.style.borderColor = 'rgba(142, 212, 255, 0.7)'
-                this.touch.brake.$border.style.boxShadow = 'inset 0 0 0 1px rgba(255, 255, 255, 0.1), 0 0 16px rgba(142, 212, 255, 0.3)'
-
-                document.addEventListener('touchend', this.touch.brake.events.touchend)
-            }
-        }
-
-        this.touch.brake.events.touchend = (_event) =>
-        {
-            const touches = [..._event.changedTouches]
-            const touch = touches.find((_touch) => _touch.identifier === this.touch.brake.touchIdentifier)
-
-            if(touch)
-            {
-                this.actions.brake = false
-
-                this.touch.brake.$border.style.opacity = '0.65'
-                this.touch.brake.$border.style.borderColor = 'rgba(173, 222, 255, 0.4)'
-                this.touch.brake.$border.style.boxShadow = 'inset 0 0 0 1px rgba(255, 255, 255, 0.06), 0 6px 18px rgba(3, 10, 16, 0.25)'
-
-                document.removeEventListener('touchend', this.touch.brake.events.touchend)
-            }
-        }
-
-        this.touch.brake.$element.addEventListener('touchstart', this.touch.brake.events.touchstart)
-
-        /**
-         * Backward
-         */
-        this.touch.backward = {}
-
-        // Element
-        this.touch.backward.$element = document.createElement('div')
-        this.touch.backward.$element.style.userSelect = 'none'
-        this.touch.backward.$element.style.position = 'fixed'
-        this.touch.backward.$element.style.bottom = '15px'
-        this.touch.backward.$element.style.right = '0px'
-        this.touch.backward.$element.style.width = '95px'
-        this.touch.backward.$element.style.height = '70px'
-        this.touch.backward.$element.style.transition = 'opacity 0.3s 0.1s'
-        this.touch.backward.$element.style.willChange = 'opacity'
-        this.touch.backward.$element.style.opacity = '0'
-        // this.touch.backward.$element.style.backgroundColor = '#0000ff'
-        document.body.appendChild(this.touch.backward.$element)
-
-        this.touch.backward.$border = document.createElement('div')
-        this.touch.backward.$border.style.position = 'absolute'
-        this.touch.backward.$border.style.top = 'calc(50% - 30px)'
-        this.touch.backward.$border.style.left = 'calc(50% - 30px)'
-        this.touch.backward.$border.style.width = '60px'
-        this.touch.backward.$border.style.height = '60px'
-        this.touch.backward.$border.style.border = '1px solid rgba(173, 222, 255, 0.4)'
-        this.touch.backward.$border.style.borderRadius = '12px'
-        this.touch.backward.$border.style.background = 'linear-gradient(140deg, rgba(17, 32, 46, 0.55), rgba(33, 56, 76, 0.3))'
-        this.touch.backward.$border.style.backdropFilter = 'blur(6px)'
-        this.touch.backward.$border.style.boxShadow = 'inset 0 0 0 1px rgba(255, 255, 255, 0.06), 0 6px 18px rgba(3, 10, 16, 0.25)'
-        this.touch.backward.$border.style.boxSizing = 'border-box'
-        this.touch.backward.$border.style.opacity = '0.65'
-        this.touch.backward.$border.style.willChange = 'opacity'
-        this.touch.backward.$border.style.transition = 'opacity 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease'
-        this.touch.backward.$element.appendChild(this.touch.backward.$border)
-
-        this.touch.backward.$icon = document.createElement('div')
-        this.touch.backward.$icon.style.position = 'absolute'
-        this.touch.backward.$icon.style.top = 'calc(50% - 9px)'
-        this.touch.backward.$icon.style.left = 'calc(50% - 11px)'
-        this.touch.backward.$icon.style.width = '22px'
-        this.touch.backward.$icon.style.height = '18px'
-        this.touch.backward.$icon.style.backgroundImage = `url(${mobileTriangle})`
-        this.touch.backward.$icon.style.backgroundSize = 'cover'
-        this.touch.backward.$icon.style.transform = 'rotate(180deg)'
-        this.touch.backward.$element.appendChild(this.touch.backward.$icon)
-
-        // Events
-        this.touch.backward.events = {}
-        this.touch.backward.touchIdentifier = null
-        this.touch.backward.events.touchstart = (_event) =>
-        {
-            _event.preventDefault()
-
-            const touch = _event.changedTouches[0]
-
-            if(touch)
-            {
-                this.camera.pan.reset()
-
-                this.touch.backward.touchIdentifier = touch.identifier
-
-                this.actions.down = true
-
-                this.touch.backward.$border.style.opacity = '1'
-                this.touch.backward.$border.style.borderColor = 'rgba(142, 212, 255, 0.7)'
-                this.touch.backward.$border.style.boxShadow = 'inset 0 0 0 1px rgba(255, 255, 255, 0.1), 0 0 16px rgba(142, 212, 255, 0.3)'
-
-                document.addEventListener('touchend', this.touch.backward.events.touchend)
-            }
-        }
-
-        this.touch.backward.events.touchend = (_event) =>
-        {
-            const touches = [..._event.changedTouches]
-            const touch = touches.find((_touch) => _touch.identifier === this.touch.backward.touchIdentifier)
-
-            if(touch)
-            {
-                this.actions.down = false
-
-                this.touch.backward.$border.style.opacity = '0.65'
-                this.touch.backward.$border.style.borderColor = 'rgba(173, 222, 255, 0.4)'
-                this.touch.backward.$border.style.boxShadow = 'inset 0 0 0 1px rgba(255, 255, 255, 0.06), 0 6px 18px rgba(3, 10, 16, 0.25)'
-
-                document.removeEventListener('touchend', this.touch.backward.events.touchend)
-            }
-        }
-
-        this.touch.backward.$element.addEventListener('touchstart', this.touch.backward.events.touchstart)
-
-        // Reveal
+        for(const name of ['boost', 'forward', 'brake', 'backward']) this.createTouchPedal(name)
         this.touch.reveal = () =>
         {
-            this.touch.joystick.$element.style.opacity = 1
-            this.touch.backward.$element.style.opacity = 1
-            this.touch.brake.$element.style.opacity = 1
-            this.touch.forward.$element.style.opacity = 1
-            this.touch.boost.$element.style.opacity = 1
+            for(const control of Object.values(this.touch))
+                if(control.$element) control.$element.style.opacity = '1'
         }
+        window.addEventListener('blur', () => this.cancelTouchInput())
+        document.addEventListener('visibilitychange', () => { if(document.hidden) this.cancelTouchInput() })
         for(const [name, control] of Object.entries(this.touch))
         {
             if(!control.$element) continue
             control.$element.classList.add('world-touch-control')
             control.$element.dataset.worldControl = name
         }
+        this.touchTravelState = ''
+        this.setTravelMode(this.travelMode?.onFoot || false, this.travelMode?.skating || false)
+        this.touch.joystick.resize()
     }
 }

@@ -3163,8 +3163,7 @@ body.is-touch-input .interior-bar kbd { display: none; }
     .has-destination-guide .arcade-panel:not([data-game]) { top: 250px; max-height: calc(100dvh - 260px); }
 }
 
-/* Travel is one console: actions, current mode, and altitude holds share a
-   surface. Touch driving controls sit just above its measured safe area. */
+/* Desktop travel controls. Touch layouts place actions in the thumb zones. */
 body:not(.has-started) .explorer-controls { display: none; }
 .explorer-controls .flight-pad {
     position: static;
@@ -3191,71 +3190,157 @@ body:not(.has-started) .explorer-controls { display: none; }
 }
 .is-neon-district .explorer-controls button:not(:disabled):active { background: var(--ui-soft); border-color: var(--ui-accent); }
 .is-neon-district .explorer-controls [data-flight="toggle"]:not(:disabled):active { background: var(--experience-secondary); }
+/* On touch screens the controls occupy two thumb zones, leaving the center
+   open. Their positions stay fixed when pedals change from driving to flight. */
+.touch-pedal {
+    position: fixed;
+    right: 12px;
+    bottom: 16px;
+    z-index: 24;
+    width: 60px;
+    height: 60px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 4px;
+    border: 1px solid var(--ui-border);
+    border-radius: 12px;
+    background: var(--ui-bg);
+    color: var(--ui-text);
+    font: 10px/1.15 var(--font-ui);
+    touch-action: none;
+    user-select: none;
+    transition: background-color 120ms ease-out, border-color 120ms ease-out;
+}
+.touch-pedal[data-world-control="boost"] { bottom: 220px; }
+.touch-pedal[data-world-control="forward"] { bottom: 152px; }
+.touch-pedal[data-world-control="brake"] { bottom: 84px; }
+.touch-pedal svg { width: 22px; height: 22px; }
+.touch-pedal kbd { display: none; }
+.touch-pedal:is(.is-held, [aria-pressed="true"]) { background: var(--ui-soft); border-color: var(--ui-accent); }
+.touch-pedal:disabled { opacity: .45 !important; }
+.touch-pedal[hidden], .world-touch-control[hidden] { display: none !important; }
+@media (prefers-reduced-motion: reduce) { .touch-pedal { transition: none; } }
+body:not(.has-started) .world-touch-control { display: none; }
+body:is(.is-experience-locked, .has-visitor-guide, .has-career-dialog, .has-brief) .world-touch-control { visibility: hidden; }
 @media (max-width: 768px), (hover: none) and (pointer: coarse) {
+    body {
+        --touch-edge-left: max(12px, env(safe-area-inset-left));
+        --touch-edge-right: max(12px, env(safe-area-inset-right));
+        --touch-bottom: max(16px, env(safe-area-inset-bottom));
+        --touch-step: 68px;
+    }
     .is-neon-district .explorer-controls, .explorer-controls {
-        top: auto;
-        bottom: max(8px, env(safe-area-inset-bottom));
-        left: max(8px, env(safe-area-inset-left));
-        right: max(8px, env(safe-area-inset-right));
-        width: auto;
-        max-width: none;
+        display: contents;
+        position: static;
         transform: none;
-        padding: 10px;
+    }
+    .explorer-controls[hidden], .is-neon-district .explorer-controls[hidden] { display: none; }
+    .explorer-controls__header, .explorer-controls [data-explorer="run"] { display: none; }
+    .is-neon-district .explorer-controls__buttons button, .explorer-controls__buttons button {
+        position: fixed;
+        z-index: 23;
+        width: 60px;
+        height: 60px;
+        min-height: 60px;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        padding: 4px;
         border-radius: 12px;
+        font-size: 9.5px;
+        line-height: 1.15;
+        background: var(--ui-bg);
+        color: var(--ui-text);
+        border-color: var(--ui-border);
         box-shadow: none;
     }
-    .explorer-controls__header { min-height: 44px; margin-bottom: 8px; }
-    .explorer-controls__buttons { flex-wrap: nowrap; }
-    .is-neon-district .explorer-controls__buttons button, .explorer-controls__buttons button {
-        flex-direction: column;
-        min-height: 60px;
-        padding: 8px 4px;
-        gap: 6px;
-        font-size: 11px;
-        line-height: 1.2;
-        border-radius: 8px;
-    }
+    .explorer-controls__buttons button svg { width: 20px; height: 20px; }
     .explorer-controls kbd { display: none; }
     .explorer-controls__label { white-space: normal; text-align: center; }
-    .explorer-controls .explorer-controls__hint { display: block; font-size: 10px; line-height: 1.5; }
-    .explorer-controls .flight-pad:not([hidden]) { display: flex; }
+    .explorer-controls [data-explorer="mode"] {
+        left: var(--touch-edge-left);
+        bottom: calc(var(--touch-bottom) + 148px);
+    }
+    .explorer-controls [data-explorer="view"] {
+        left: calc(var(--touch-edge-left) + var(--touch-step));
+        bottom: calc(var(--touch-bottom) + 148px);
+    }
+    .explorer-controls [data-flight="toggle"] {
+        right: calc(var(--touch-edge-right) + var(--touch-step));
+        bottom: calc(var(--touch-bottom) + var(--touch-step));
+    }
+    .is-neon-district .explorer-controls [data-flight="toggle"]:not(:disabled) {
+        background: var(--ui-bg);
+        color: var(--ui-accent);
+        border-color: var(--ui-border);
+    }
+    .is-neon-district .explorer-controls button:not(:disabled):active { background: var(--ui-soft); border-color: var(--ui-accent); }
+    .is-flying .explorer-controls [data-explorer="mode"],
+    .is-on-foot .explorer-controls [data-flight="toggle"],
+    .is-on-foot .explorer-controls [data-explorer="mode"][data-nearby="false"] { display: none; }
+    .explorer-controls .explorer-controls__hint {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip-path: inset(50%);
+        margin: 0;
+    }
+    .explorer-controls .explorer-controls__hint.is-notice {
+        position: fixed;
+        left: 50%;
+        bottom: calc(var(--touch-bottom) + 220px);
+        transform: translateX(-50%);
+        width: min(280px, calc(100vw - 32px));
+        height: auto;
+        padding: 8px 12px;
+        clip-path: none;
+        background: var(--ui-bg);
+        border: 1px solid var(--ui-border);
+        border-radius: 8px;
+        font-size: 11px;
+        z-index: 30;
+    }
+    .world-touch-control[data-world-control="joystick"] {
+        width: 140px !important;
+        height: 140px !important;
+        left: var(--touch-edge-left) !important;
+        bottom: var(--touch-bottom) !important;
+    }
+    .world-touch-control[data-world-control="joystick"] > div:nth-child(2) {
+        width: 130px !important;
+        height: 130px !important;
+        top: calc(50% - 65px) !important;
+        left: calc(50% - 65px) !important;
+    }
+    .touch-pedal { right: var(--touch-edge-right); }
+    .touch-pedal[data-world-control="boost"] { bottom: calc(var(--touch-bottom) + 2 * var(--touch-step)); }
+    .touch-pedal[data-world-control="forward"] { bottom: calc(var(--touch-bottom) + var(--touch-step)); }
+    .touch-pedal[data-world-control="backward"] { bottom: var(--touch-bottom); }
+    .touch-pedal[data-world-control="brake"] { right: calc(var(--touch-edge-right) + var(--touch-step)); bottom: var(--touch-bottom); }
+    .is-on-foot .touch-pedal[data-world-control="boost"] { bottom: var(--touch-bottom); }
     .is-neon-district .experience-tools { top: 64px; right: 8px; max-width: calc(100vw - 16px); }
     .is-neon-district .guided-tour { top: 8px; }
     .experience-tools :is(button, a, summary) { font-size: 10px; padding: 0 10px; }
     .is-neon-district .guided-tour__button { min-height: 44px; }
-    body:not(.is-indoors) .world-touch-control[data-world-control="joystick"] { bottom: calc(var(--travel-dock-clearance, 140px) + 10px + env(safe-area-inset-bottom)) !important; }
-    body:not(.is-indoors) .world-touch-control[data-world-control="backward"] { bottom: calc(var(--travel-dock-clearance, 140px) + env(safe-area-inset-bottom)) !important; }
-    body:not(.is-indoors) .world-touch-control[data-world-control="brake"] { bottom: calc(var(--travel-dock-clearance, 140px) + 70px + env(safe-area-inset-bottom)) !important; }
-    body:not(.is-indoors) .world-touch-control[data-world-control="forward"] { bottom: calc(var(--travel-dock-clearance, 140px) + 140px + env(safe-area-inset-bottom)) !important; }
-    body:not(.is-indoors) .world-touch-control[data-world-control="boost"] { bottom: calc(var(--travel-dock-clearance, 140px) + 210px + env(safe-area-inset-bottom)) !important; }
-    .sky-entry { bottom: calc(var(--travel-dock-clearance, 140px) + 16px + env(safe-area-inset-bottom)); max-width: calc(100vw - 220px); }
+    .minimap { display: none; }
+    .sky-entry { bottom: calc(var(--touch-bottom) + 220px); max-width: calc(100vw - 32px); }
 }
 @media (max-height: 550px) and (min-aspect-ratio: 1/1) {
-    .is-neon-district .explorer-controls {
-        left: calc(184px + env(safe-area-inset-left));
-        right: calc(104px + env(safe-area-inset-right));
-        width: auto;
-        padding: 8px;
-    }
-    .is-neon-district .explorer-controls__buttons button { min-height: 52px; font-size: 10px; }
-    .explorer-controls .explorer-controls__hint { font-size: 9px; }
-    body:not(.is-indoors) .world-touch-control[data-world-control] { bottom: var(--touch-control-bottom) !important; }
-    .world-touch-control[data-world-control="joystick"] { --touch-control-bottom: calc(10px + env(safe-area-inset-bottom)); }
-    .world-touch-control[data-world-control="backward"] { --touch-control-bottom: calc(15px + env(safe-area-inset-bottom)); }
-    .world-touch-control[data-world-control="brake"] { --touch-control-bottom: calc(85px + env(safe-area-inset-bottom)); }
-    .world-touch-control[data-world-control="forward"] { --touch-control-bottom: calc(155px + env(safe-area-inset-bottom)); }
-    .world-touch-control[data-world-control="boost"] { --touch-control-bottom: calc(225px + env(safe-area-inset-bottom)); }
-    .is-neon-district .experience-tools { right: calc(104px + env(safe-area-inset-right)); }
+    .is-neon-district .experience-tools { right: calc(152px + env(safe-area-inset-right)); }
     .is-neon-district .guided-tour {
         top: 8px;
-        left: calc(184px + env(safe-area-inset-left));
-        right: calc(104px + env(safe-area-inset-right));
+        left: calc(160px + env(safe-area-inset-left));
+        right: calc(152px + env(safe-area-inset-right));
         max-width: none;
         display: grid;
         grid-template-columns: repeat(4, minmax(0, 1fr));
     }
-    .destination-guide { top: 120px; right: calc(104px + env(safe-area-inset-right)); }
-    .sky-entry { bottom: calc(var(--travel-dock-clearance, 140px) + 16px); max-width: calc(100vw - 320px); }
+    .destination-guide { top: 120px; right: calc(152px + env(safe-area-inset-right)); }
 }
 
 /* Dev-only ?shot= look review: canvas only. */
