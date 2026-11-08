@@ -82,15 +82,22 @@
     .arcade-panel button, .arcade-progress span { transition: none; }
 }
 
-.city-welcome
+.city-welcome,
+.brief
 {
-    /* Keep the original entry palette when the city applies its blue theme. */
+    /* Keep the entry and overview orange when the city applies its blue theme. */
     --ui-ink: #16130e;
+    --ui-surface: rgba(22, 19, 14, 0.92);
     --ui-text: #ffe7b0;
     --ui-dim: #e7c98c;
     --ui-accent: #ffb627;
     --ui-border: rgba(255, 182, 39, 0.5);
     --ui-soft: rgba(255, 182, 39, 0.16);
+    --experience-secondary: #ffd37a;
+}
+
+.city-welcome
+{
     position: fixed;
     inset: 0;
     z-index: 1000;
@@ -2578,6 +2585,9 @@ body.is-touch-input .interior-bar kbd { display: none; }
 .brief__contact a
 {
     display: inline-flex;
+    flex-wrap: wrap;
+    max-width: 100%;
+    overflow-wrap: anywhere;
     align-items: baseline;
     gap: 7px;
     padding: 8px 12px;
@@ -2877,6 +2887,7 @@ body.is-touch-input .interior-bar kbd { display: none; }
     scrollbar-color: #376875 #091824;
     scrollbar-gutter: stable;
 }
+.brief { scrollbar-color: var(--ui-border) var(--ui-surface); }
 .is-neon-district :is(.guided-tour, .experience-tools, .experience-hud__pill, .experience-hud__tip, .explorer-controls, .career-hud, .arcade-panel, .mini-game, .interior-bar)
 {
     border: 1px solid var(--ui-border);
@@ -2889,7 +2900,7 @@ body.is-touch-input .interior-bar kbd { display: none; }
 .is-neon-district :is(.city-welcome__start, .city-welcome__brief, .city-welcome__resume) { letter-spacing: .07em; }
 .is-neon-district :is(.city-welcome__start, .city-welcome__brief, .city-welcome__resume):active { transform: translateY(1px); }
 .is-neon-district .city-welcome__hint span { background: var(--ui-accent); box-shadow: none; animation: none; }
-.city-welcome ::selection { background: var(--ui-accent); color: var(--ui-ink); }
+:is(.city-welcome, .brief) ::selection { background: var(--ui-accent); color: var(--ui-ink); }
 .is-neon-district :is(button, a, select, summary, input, textarea, [tabindex]):focus-visible { outline: 2px solid var(--ui-accent); outline-offset: 3px; }
 .is-neon-district .minimap { border-color: var(--ui-border); box-shadow: 0 8px 24px #02080d40; }
 .is-neon-district :is(.guided-tour__button, .guided-tour__project, .experience-tools button, .experience-tools a, .experience-tools summary)
@@ -2962,7 +2973,7 @@ body.is-touch-input .interior-bar kbd { display: none; }
     background: var(--ui-soft);
     cursor: pointer;
 }
-.brief__contact button:hover { background: #163a46; }
+.brief__contact button:hover { background: rgba(255, 182, 39, .2); }
 .brief__copy-status { min-height: 20px; margin: 10px 0 0; color: var(--ui-accent); font-size: 11px; overflow-wrap: anywhere; }
 .brief__close { min-height: 44px; }
 .brief h3 a { display: inline-flex; align-items: center; min-height: 44px; }
@@ -2970,9 +2981,8 @@ body.is-touch-input .interior-bar kbd { display: none; }
 .brief__project-facts div { display: grid; grid-template-columns: 62px 1fr; gap: 12px; }
 .brief__project-facts dt { color: var(--ui-accent); }
 .brief__project-facts dd { margin: 0; color: var(--ui-dim); }
-.is-neon-district :is(.brief__project, .brief__role) { background: #68e9f505; }
 .is-neon-district :is(.brief, .project-portal, .career-dialog) { border-radius: 12px; background: var(--ui-surface); border: 1px solid var(--ui-border); color: var(--ui-text); }
-.is-neon-district :is(.brief, .project-portal)::backdrop { background: #02090ee0; backdrop-filter: none; }
+.is-neon-district .project-portal::backdrop { background: #02090ee0; backdrop-filter: none; }
 .is-neon-district :is(.project-portal__footer, .project-prototype, .career-dialog__foot) { background: #07131e; border-color: var(--ui-border); }
 .project-portal__slides button { min-width: 44px; min-height: 44px; background: transparent; position: relative; box-shadow: none; }
 .project-portal__slides button::after { content: ''; width: 9px; height: 9px; border-radius: 50%; background: #7a98a4; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); }
