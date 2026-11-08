@@ -350,6 +350,7 @@ export default class Controls extends EventEmitter
 
             this.touch.joystick.angle.center.x = boundings.left + boundings.width * 0.5
             this.touch.joystick.angle.center.y = boundings.top + boundings.height * 0.5
+            this.touch.joystick.maxRadius = Math.max(0, Math.min(43, boundings.width * 0.5 - 30))
         }
 
         this.sizes.on('resize', this.touch.joystick.resize)
@@ -375,9 +376,9 @@ export default class Controls extends EventEmitter
                 {
                     radius = 20 + Math.log(distance - 20) * 5
                 }
-                if(radius > 43)
+                if(radius > this.touch.joystick.maxRadius)
                 {
-                    radius = 43
+                    radius = this.touch.joystick.maxRadius
                 }
                 const cursorX = Math.sin(this.touch.joystick.angle.originalValue + Math.PI * 0.5) * radius
                 const cursorY = Math.cos(this.touch.joystick.angle.originalValue + Math.PI * 0.5) * radius
@@ -396,6 +397,9 @@ export default class Controls extends EventEmitter
 
             if(touch)
             {
+                // The first touch can build this control while the welcome
+                // screen still hides it. Measure its visible position per gesture.
+                this.touch.joystick.resize()
                 this.touch.joystick.active = true
 
                 this.touch.joystick.touchIdentifier = touch.identifier
@@ -461,6 +465,7 @@ export default class Controls extends EventEmitter
         {
             for(const control of Object.values(this.touch))
                 if(control.$element) control.$element.style.opacity = '1'
+            this.touch.joystick.resize()
         }
         window.addEventListener('blur', () => this.cancelTouchInput())
         document.addEventListener('visibilitychange', () => { if(document.hidden) this.cancelTouchInput() })

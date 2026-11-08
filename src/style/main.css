@@ -3231,6 +3231,8 @@ body:is(.is-experience-locked, .has-visitor-guide, .has-career-dialog, .has-brie
         --touch-edge-right: max(12px, env(safe-area-inset-right));
         --touch-bottom: max(16px, env(safe-area-inset-bottom));
         --touch-step: 68px;
+        --joystick-size: clamp(112px, calc(100vw - 208px), 140px);
+        --touch-action-left: calc((100vw + var(--touch-edge-left) + var(--joystick-size) - var(--touch-edge-right) - var(--touch-step) - 104px) / 2);
     }
     .is-neon-district .explorer-controls, .explorer-controls {
         display: contents;
@@ -3262,12 +3264,26 @@ body:is(.is-experience-locked, .has-visitor-guide, .has-career-dialog, .has-brie
     .explorer-controls kbd { display: none; }
     .explorer-controls__label { white-space: normal; text-align: center; }
     .explorer-controls [data-explorer="mode"] {
-        left: var(--touch-edge-left);
-        bottom: calc(var(--touch-bottom) + 148px);
+        left: var(--touch-action-left);
+        bottom: calc(var(--touch-bottom) + 52px);
     }
     .explorer-controls [data-explorer="view"] {
-        left: calc(var(--touch-edge-left) + var(--touch-step));
-        bottom: calc(var(--touch-bottom) + 148px);
+        left: var(--touch-action-left);
+        bottom: var(--touch-bottom);
+    }
+    .is-neon-district .explorer-controls [data-explorer="mode"],
+    .is-neon-district .explorer-controls [data-explorer="view"] {
+        width: 44px;
+        height: 44px;
+        min-height: 44px;
+        border-radius: 10px;
+    }
+    .explorer-controls :is([data-explorer="mode"], [data-explorer="view"]) .explorer-controls__label {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip-path: inset(50%);
     }
     .explorer-controls [data-flight="toggle"] {
         right: calc(var(--touch-edge-right) + var(--touch-step));
@@ -3306,16 +3322,16 @@ body:is(.is-experience-locked, .has-visitor-guide, .has-career-dialog, .has-brie
         z-index: 30;
     }
     .world-touch-control[data-world-control="joystick"] {
-        width: 140px !important;
-        height: 140px !important;
+        width: var(--joystick-size) !important;
+        height: var(--joystick-size) !important;
         left: var(--touch-edge-left) !important;
         bottom: var(--touch-bottom) !important;
     }
     .world-touch-control[data-world-control="joystick"] > div:nth-child(2) {
-        width: 130px !important;
-        height: 130px !important;
-        top: calc(50% - 65px) !important;
-        left: calc(50% - 65px) !important;
+        width: calc(var(--joystick-size) - 10px) !important;
+        height: calc(var(--joystick-size) - 10px) !important;
+        top: 5px !important;
+        left: 5px !important;
     }
     .touch-pedal { right: var(--touch-edge-right); }
     .touch-pedal[data-world-control="boost"] { bottom: calc(var(--touch-bottom) + 2 * var(--touch-step)); }

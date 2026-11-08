@@ -91,8 +91,7 @@ export default class Application
 
         this.resources.on('ready', () =>
         {
-            this.showStatus('Portfolio ready. Select START to enter.')
-            this.statusHideTimeout = window.setTimeout(() => this.hideStatus(), 2500)
+            this.hideStatus()
         })
 
         this.resources.on('error', (_details) =>
@@ -556,7 +555,6 @@ export default class Application
      */
     destructor()
     {
-        window.clearTimeout(this.statusHideTimeout)
         document.removeEventListener('visibilitychange', this.onVisibilityChange)
         this.$canvas.removeEventListener('webglcontextlost', this.onWebglContextLost, false)
         this.$canvas.removeEventListener('webglcontextrestored', this.onWebglContextRestored, false)

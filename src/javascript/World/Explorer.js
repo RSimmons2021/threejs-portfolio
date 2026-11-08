@@ -338,10 +338,11 @@ export default class Explorer
             : airborne ? ({ takeoff: 'Taking off', landing: 'Landing' }[flight.mode] || 'Flying') : 'Driving'
         setTravelButton(this.modeButton, this.active ? 'car' : 'exit', this.active ? 'Enter car' : 'Exit car', 'F')
         this.modeButton.disabled = airborne
-        this.modeButton.title = airborne ? 'Land before exiting the car' : ''
+        this.modeButton.title = airborne ? 'Land before exiting the car' : this.active ? 'Enter car' : 'Exit car'
         this.viewContext.textContent = this.firstPerson ? 'First person' : 'City view'
         this.viewContext.hidden = airborne
         setTravelButton(this.viewButton, this.firstPerson ? 'cityView' : 'firstPerson', this.firstPerson ? 'City view' : 'First person', 'V')
+        this.viewButton.title = this.firstPerson ? 'City view' : 'First person'
         setTravelButton(this.runButton, this.skating ? 'walk' : 'skate', this.skating ? 'Walk' : 'Skateboard', 'Shift')
         this.viewButton.setAttribute('aria-pressed', String(this.firstPerson))
         this.runButton.hidden = !this.active
